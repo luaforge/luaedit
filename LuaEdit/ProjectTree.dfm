@@ -194,12 +194,24 @@ object frmProjectTree: TfrmProjectTree
     object ActivateSelectedProject1: TMenuItem
       Action = frmMain.actActiveSelPrj
     end
-    object N1: TMenuItem
-      Caption = '-'
-    end
     object UnloadFileProject1: TMenuItem
       Caption = 'Unload File/Project'
       OnClick = UnloadFileProject1Click
+    end
+    object N2: TMenuItem
+      Caption = '-'
+    end
+    object AddUnittoProject1: TMenuItem
+      Action = frmMain.actAddToPrj
+    end
+    object RemoveUnitFromProject1: TMenuItem
+      Action = frmMain.actRemoveFromPrj
+    end
+    object N1: TMenuItem
+      Caption = '-'
+    end
+    object Options1: TMenuItem
+      Action = frmMain.actPrjSettings
     end
   end
   object JvDockClient1: TJvDockClient

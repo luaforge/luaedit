@@ -17,6 +17,10 @@ type
     UnloadFileProject1: TMenuItem;
     JvDockClient1: TJvDockClient;
     trvProjectTree: TJvDotNetTreeView;
+    N2: TMenuItem;
+    AddUnittoProject1: TMenuItem;
+    RemoveUnitFromProject1: TMenuItem;
+    Options1: TMenuItem;
     procedure trvProjectTreeDblClick(Sender: TObject);
     procedure trvProjectTreeMouseDown(Sender: TObject;
       Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -286,32 +290,30 @@ begin
 end;
 
 procedure TfrmProjectTree.ppmProjectTreePopup(Sender: TObject);
+var
+  pNode: TTreeNode;
 begin
+  // set all menus status initially to false
+  UnloadFileProject1.Enabled := False;
+  AddUnittoProject1.Enabled := False;
+  RemoveUnitFromProject1.Enabled := False;
+  Options1.Enabled := False;
+
+  // Only if a menu is selected
   if Assigned(trvProjectTree.Selected) then
   begin
-    if ((trvProjectTree.Selected.ImageIndex = 0) or (trvProjectTree.Selected.SelectedIndex = 0)) then
+    // Only if data is attached to the selected node
+    if Assigned(trvProjectTree.Selected.Data) then
     begin
-      UnloadFileProject1.Enabled := True;
-    end
-    else if ((trvProjectTree.Selected.ImageIndex = 1) or (trvProjectTree.Selected.SelectedIndex = 1)) then
-    begin
-      if not Assigned(trvProjectTree.Selected.Parent) then
-      begin
-        UnloadFileProject1.Enabled := True;
-      end
-      else
-      begin
-        UnloadFileProject1.Enabled := False;
-      end;
-    end
-    else
-    begin
-      UnloadFileProject1.Enabled := False;
+      // getting selected node
+      pNode := trvProjectTree.Selected;
+
+      // setting menu status
+      AddUnittoProject1.Enabled := (trvProjectTree.Selected.Data = ActiveProject);
+      RemoveUnitFromProject1.Enabled := (trvProjectTree.Selected.Data = ActiveProject);
+      Options1.Enabled := (trvProjectTree.Selected.Data = ActiveProject);
+      UnloadFileProject1.Enabled := (((((pNode.ImageIndex = 1) or (pNode.SelectedIndex = 1)) and (not Assigned(pNode.Parent))) or ((pNode.ImageIndex = 0) or (pNode.SelectedIndex = 0))));
     end;
-  end
-  else
-  begin
-    UnloadFileProject1.Enabled := False;
   end;
 end;
 
