@@ -4,7 +4,7 @@ object frmAbout: TfrmAbout
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'About LuaEdit'
-  ClientHeight = 289
+  ClientHeight = 305
   ClientWidth = 409
   Color = clWhite
   Font.Charset = DEFAULT_CHARSET
@@ -517,7 +517,7 @@ object frmAbout: TfrmAbout
   end
   object btnClose: TButton
     Left = 325
-    Top = 256
+    Top = 272
     Width = 75
     Height = 25
     Cancel = True
@@ -530,65 +530,65 @@ object frmAbout: TfrmAbout
     Left = 8
     Top = 104
     Width = 393
-    Height = 145
+    Height = 161
     Caption = 'Product Description'
     TabOrder = 1
     object lblVersion: TLabel
-      Left = 82
-      Top = 51
+      Left = 98
+      Top = 43
       Width = 15
       Height = 13
       Caption = '1.0'
     end
     object Label2: TLabel
-      Left = 16
-      Top = 51
+      Left = 32
+      Top = 43
       Width = 38
       Height = 13
       Caption = 'Version:'
     end
     object Label3: TLabel
-      Left = 82
-      Top = 34
+      Left = 98
+      Top = 26
       Width = 115
       Height = 13
       Caption = 'Jean-Fran'#231'ois Goulet  -  '
     end
     object Label5: TLabel
-      Left = 16
-      Top = 34
+      Left = 32
+      Top = 26
       Width = 34
       Height = 13
       Caption = 'Author:'
     end
     object Label6: TLabel
-      Left = 16
-      Top = 120
+      Left = 32
+      Top = 128
       Width = 145
       Height = 13
       Caption = 'Memory Available to Windows:'
     end
     object lblMemory: TLabel
-      Left = 168
-      Top = 120
+      Left = 184
+      Top = 128
       Width = 56
       Height = 13
       Caption = '523 520 KB'
     end
     object lblOS: TLabel
-      Left = 16
-      Top = 104
+      Left = 32
+      Top = 112
       Width = 114
       Height = 13
       Caption = 'Windows XP Build 2600'
     end
     object Label7: TLabel
-      Left = 198
-      Top = 34
-      Width = 108
+      Left = 214
+      Top = 26
+      Width = 82
       Height = 13
       Cursor = crHandPoint
-      Caption = 'hay0b29@hotmail.com'
+      Caption = 'gouletje@vif.com'
       DragCursor = crArrow
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clBlue
@@ -599,18 +599,40 @@ object frmAbout: TfrmAbout
       OnClick = Label7Click
     end
     object Label8: TLabel
-      Left = 16
-      Top = 68
+      Left = 32
+      Top = 60
       Width = 47
       Height = 13
       Caption = 'Copyright:'
     end
     object Label9: TLabel
-      Left = 82
-      Top = 68
+      Left = 98
+      Top = 60
       Width = 210
       Height = 13
       Caption = 'Copyright'#169' 2004-2005 Jean-Fran'#231'ois Goulet'
+    end
+    object Label10: TLabel
+      Left = 32
+      Top = 80
+      Width = 40
+      Height = 13
+      Caption = 'Support:'
+    end
+    object Label1: TLabel
+      Left = 98
+      Top = 80
+      Width = 114
+      Height = 13
+      Cursor = crHandPoint
+      Caption = 'luaedit.support@vif.com'
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clBlue
+      Font.Height = -11
+      Font.Name = 'MS Sans Serif'
+      Font.Style = []
+      ParentFont = False
+      OnClick = Label1Click
     end
   end
 end

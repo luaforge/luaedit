@@ -22,11 +22,14 @@ type
     Label8: TLabel;
     Label9: TLabel;
     Image1: TImage;
+    Label10: TLabel;
+    Label1: TLabel;
     procedure imgLuaLogoClick(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure Label7Click(Sender: TObject);
     procedure Image1Click(Sender: TObject);
+    procedure Label1Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -76,12 +79,17 @@ end;
 
 procedure TfrmAbout.Label7Click(Sender: TObject);
 begin
-  ShellExecute(Self.Handle, 'open', 'mailto:hay0b29@hotmail.com?subject=About LuaEdit...', nil, nil, SW_SHOWNORMAL);
+  ShellExecute(Self.Handle, 'open', 'mailto:gouletje@vif.com?subject=About LuaEdit...', nil, nil, SW_SHOWNORMAL);
 end;
 
 procedure TfrmAbout.Image1Click(Sender: TObject);
 begin
   ShellExecute(Self.Handle, 'open', 'http://luaedit.luaforge.net', nil, nil, SW_SHOWNORMAL);
+end;
+
+procedure TfrmAbout.Label1Click(Sender: TObject);
+begin
+  ShellExecute(Self.Handle, 'open', 'mailto:luaedit.support@vif.com?subject=LuaEdit Support...', nil, nil, SW_SHOWNORMAL);
 end;
 
 end.
