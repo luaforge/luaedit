@@ -372,7 +372,6 @@ object frmMain: TfrmMain
         Left = 66
         Top = 0
         Action = actCut
-        DropdownMenu = mnuReopen
         ParentShowHint = False
         ShowHint = True
       end

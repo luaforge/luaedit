@@ -1,4 +1,4 @@
-dofile(".\Function.lua")
+dofile(".\\Function.lua")
 local addition = 0
 
 function test(param1)

@@ -29,9 +29,7 @@ const
   BKPT_ENABLED  = 1;
 
   JVPAGE_RING_FILES     = 0;
-  JVPAGE_RING_UNDO      = 1;
-  JVPAGE_RING_REDO      = 1;
-  JVPAGE_RING_CLIPBOARD = 3;
+  JVPAGE_RING_CLIPBOARD = 1;
 
   HOOK_MASK    = LUA_MASKCALL or LUA_MASKRET or LUA_MASKLINE;
   PRINT_SIZE   = 32;
@@ -2714,31 +2712,76 @@ end;
 procedure TfrmMain.actCutExecute(Sender: TObject);
 var
   jvOBBtn: TJvOutlookBarButton;
+  x: Integer;
+  pLuaUnit: TLuaUnit;
 begin
-  TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.CutToClipboard;
+  if Assigned(jvUnitBar.SelectedTab) then
+  begin
+    if Assigned(jvUnitBar.SelectedTab.Data) then
+    begin
+      pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
+  
+      if pLuaUnit.synUnit.SelText <> '' then
+      begin
+        pLuaUnit.synUnit.CutToClipboard;
 
-  // Remove last item if already 10 are listed
-  if frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons.Count = 10 then
-    frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons.Delete(9);
+        // Make sure we don't add content that was already there
+        for x := 0 to frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons.Count - 1 do
+        begin
+          if frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons[x].Caption = pLuaUnit.synUnit.SelText then
+          begin
+            frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons[x].Free;
+            Break;
+          end;
+        end;
 
-  jvOBBtn := frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons.Insert(0);
-  jvOBBtn.Caption := Clipboard.AsText;
-  jvOBBtn.OnClick := btnXClipboardClick;
+        // Remove last item if already 10 are listed
+        if frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons.Count = 10 then
+          frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons.Delete(9);
+
+        jvOBBtn := frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons.Insert(0);
+        jvOBBtn.Caption := Clipboard.AsText;
+        jvOBBtn.OnClick := btnXClipboardClick;
+      end;
+    end;
+  end;
 end;
 
 procedure TfrmMain.actCopyExecute(Sender: TObject);
 var
   jvOBBtn: TJvOutlookBarButton;
+  x: Integer;
+  pLuaUnit: TLuaUnit;
 begin
-  TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.CopyToClipboard;
+  if Assigned(jvUnitBar.SelectedTab) then
+  begin
+    if Assigned(jvUnitBar.SelectedTab.Data) then
+    begin
+      pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
+      if pLuaUnit.synUnit.SelText <> '' then
+      begin
+        pLuaUnit.synUnit.CopyToClipboard;
 
-  // Remove last item if already 10 are listed
-  if frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons.Count = 10 then
-    frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons.Delete(9);
+        // Make sure we don't add content that was already there
+        for x := 0 to frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons.Count - 1 do
+        begin
+          if frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons[x].Caption = pLuaUnit.synUnit.SelText then
+          begin
+            frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons[x].Free;
+            Break;
+          end;
+        end;
 
-  jvOBBtn := frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons.Insert(0);
-  jvOBBtn.Caption := Clipboard.AsText;
-  jvOBBtn.OnClick := btnXClipboardClick;
+        // Remove last item if already 10 are listed
+        if frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons.Count = 10 then
+          frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons.Delete(9);
+
+        jvOBBtn := frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons.Insert(0);
+        jvOBBtn.Caption := Clipboard.AsText;
+        jvOBBtn.OnClick := btnXClipboardClick;
+      end;
+    end;
+  end;
 end;
 
 procedure TfrmMain.actPasteExecute(Sender: TObject);
