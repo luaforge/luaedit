@@ -1,0 +1,70 @@
+object frmReplaceQuerry: TfrmReplaceQuerry
+  Left = 413
+  Top = 261
+  BorderStyle = bsDialog
+  Caption = 'Replace?'
+  ClientHeight = 95
+  ClientWidth = 329
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  Font.Style = []
+  FormStyle = fsStayOnTop
+  OldCreateOrder = False
+  PixelsPerInch = 96
+  TextHeight = 13
+  object lblConfirmation: TLabel
+    Left = 60
+    Top = 12
+    Width = 261
+    Height = 44
+    AutoSize = False
+    WordWrap = True
+  end
+  object imgIcon: TImage
+    Left = 16
+    Top = 16
+    Width = 32
+    Height = 32
+  end
+  object btnReplace: TButton
+    Left = 8
+    Top = 67
+    Width = 75
+    Height = 23
+    Caption = '&Yes'
+    Default = True
+    ModalResult = 6
+    TabOrder = 0
+  end
+  object btnSkip: TButton
+    Left = 87
+    Top = 67
+    Width = 75
+    Height = 23
+    Caption = '&No'
+    ModalResult = 7
+    TabOrder = 1
+  end
+  object btnCancel: TButton
+    Left = 166
+    Top = 67
+    Width = 75
+    Height = 23
+    Cancel = True
+    Caption = 'Cancel'
+    ModalResult = 2
+    TabOrder = 2
+  end
+  object btnReplaceAll: TButton
+    Left = 245
+    Top = 67
+    Width = 75
+    Height = 23
+    Caption = 'Yes to &All'
+    ModalResult = 10
+    TabOrder = 3
+  end
+end

@@ -1,0 +1,40 @@
+[OPTIONS]
+Compatibility=1.1 or later
+Compiled file=LuaEdit.chm
+Contents file=Table of Contents.hhc
+Default Window=BaseWindow
+Default topic=Welcome.html
+Display compile progress=Yes
+Error log file=c:\Prog\Delphi\LuaEditor\HelpCore\Compile.log
+Full-text search=Yes
+Index file=Index.hhk
+Language=0x1009 English (Canada)
+Title=LuaEdit Application Help
+
+[WINDOWS]
+BaseWindow="LuaEdit Application Help","Table of Contents.hhc","Index.hhk","Welcome.html",,,,,,0x42520,,0x300e,[50,50,550,750],,,,,,,0
+
+
+[FILES]
+Welcome.html
+Editor Settings.html
+Getting Started.html
+Minimum Requirements.html
+Project Settings.html
+LuaEdit Settings.html
+Legal.html
+
+[ALIAS]
+EdtSettings=Editor Settings.html
+Legal=Legal.html
+LuaEditSettings=LuaEdit Settings.html
+MainWindow=Getting Started.html
+MinRequirements=Minimum Requirements.html
+PrjSettings=Project Settings.html
+Welcome=Welcome.html
+
+[MAP]
+#include Ident.h
+
+[INFOTYPES]
+

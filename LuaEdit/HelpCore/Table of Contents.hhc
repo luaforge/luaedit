@@ -1,0 +1,58 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD>
+<meta name="GENERATOR" content="Microsoft&reg; HTML Help Workshop 4.1">
+<!-- Sitemap 1.0 -->
+</HEAD><BODY>
+<OBJECT type="text/site properties">
+	<param name="ImageType" value="Folder">
+</OBJECT>
+<UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Welcome">
+		<param name="Local" value="Welcome.html">
+		<param name="URL" value="Welcome.html">
+		<param name="ImageNumber" value="2">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Minimum Requirements">
+			<param name="Local" value="Minimum Requirements.html">
+			<param name="URL" value="Minimum Requirements.html">
+			<param name="ImageNumber" value="9">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Getting Started">
+			<param name="Local" value="Getting Started.html">
+			<param name="URL" value="Getting Started.html">
+			<param name="ImageNumber" value="9">
+			</OBJECT>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="LuaEdit Settings">
+		<param name="Local" value="LuaEdit Settings.html">
+		<param name="URL" value="LuaEdit Settings.html">
+		<param name="ImageNumber" value="2">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Project Settings">
+			<param name="Local" value="Project Settings.html">
+			<param name="URL" value="Project Settings.html">
+			<param name="ImageNumber" value="9">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Editor Settings">
+			<param name="Local" value="Editor Settings.html">
+			<param name="URL" value="Editor Settings.html">
+			<param name="ImageNumber" value="9">
+			</OBJECT>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Legal Aspect">
+		<param name="Local" value="Legal.html">
+		<param name="URL" value="Legal.html">
+		<param name="ImageNumber" value="9">
+		</OBJECT>
+</UL>
+</BODY></HTML>

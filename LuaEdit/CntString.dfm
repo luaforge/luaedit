@@ -1,0 +1,107 @@
+object frmCntString: TfrmCntString
+  Left = 487
+  Top = 383
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'Connection String'
+  ClientHeight = 161
+  ClientWidth = 443
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  Font.Style = []
+  Icon.Data = {
+    0000010001002020100000000000E80200001600000028000000200000004000
+    0000010004000000000080020000000000000000000000000000000000000000
+    0000000080000080000000808000800000008000800080800000C0C0C0008080
+    80000000FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF000000
+    8000000000000000000000800000000080000000000000000000008000000000
+    8000000000000000000000800000000080000000000000000000008800000000
+    8000000000000000000000080000000080000888888000000088070888800000
+    8000800000880000000000000088000080080000000880000788888888080000
+    80008000000080000F7777777808000080008000000080000F77777778080000
+    80008000000088000F7777777808000080008000000008800F77777778080000
+    80008000007880800F777777780800008000800000F780800F77777778080000
+    8800880000F780800F777777780800000800080000F780800FFFFFFFF7000007
+    0807088000F7808000000000000000000000008800F780800007080708000788
+    8888880800F780800000000000000F777777780800F780800000800080000F77
+    7777780800F780800000800080000F777777780800FFF0000000800080000F77
+    77777808000000000000800080000F7777777808000080000000800080000F77
+    77777808000080000000800080000F7777777808000088000000800080000FFF
+    FFFFF70000000888880800008000000000000000000000000080000080000000
+    0708000000000000000000008000000000000000000000000000000080000000
+    008000000000000000000000800000000080000000000000000000000000E7FF
+    FF9FE7FFFF9FE7FFFF9FE7FFFF8FE7FFFF0FE781FC01E700F800E67C7000E67E
+    7000E67E7000E67E3000E67C1000E6781000E6781000E2381000C0381001C018
+    180380081C0300081C4700081E6700081E6700083E67000C7E67000E7E67000E
+    7E67000E3E67001F00E7803F81E7F0FFFFE7F1FFFFE7F9FFFFE7F9FFFFEF}
+  OldCreateOrder = False
+  Position = poOwnerFormCenter
+  OnShow = FormShow
+  PixelsPerInch = 96
+  TextHeight = 13
+  object Panel1: TPanel
+    Left = 0
+    Top = 0
+    Width = 443
+    Height = 120
+    Align = alClient
+    BevelOuter = bvNone
+    TabOrder = 0
+    object Label1: TLabel
+      Left = 16
+      Top = 16
+      Width = 389
+      Height = 52
+      Caption = 
+        'The following string has been copied in your clipboard. Use it t' +
+        'o launch the remote debugger on the remote computer. To do so, u' +
+        'se a command window (Start Menu/Execute --> type cmd) move into ' +
+        'the folder where you previously copied "rdbg.exe" and paste the ' +
+        'line. Press Ok whenever you are ready...'
+      WordWrap = True
+    end
+    object memoCntString: TMemo
+      Left = 16
+      Top = 88
+      Width = 409
+      Height = 21
+      Color = clBtnFace
+      ReadOnly = True
+      TabOrder = 0
+      WordWrap = False
+    end
+  end
+  object Panel2: TPanel
+    Left = 0
+    Top = 120
+    Width = 443
+    Height = 41
+    Align = alBottom
+    BevelOuter = bvNone
+    TabOrder = 1
+    object btnCancel: TButton
+      Left = 360
+      Top = 8
+      Width = 75
+      Height = 25
+      Cancel = True
+      Caption = '&Cancel'
+      ModalResult = 2
+      TabOrder = 0
+      OnClick = btnCancelClick
+    end
+    object btnOK: TButton
+      Left = 280
+      Top = 8
+      Width = 75
+      Height = 25
+      Caption = '&OK'
+      Default = True
+      ModalResult = 1
+      TabOrder = 1
+    end
+  end
+end
