@@ -5095,7 +5095,7 @@ begin
 
       synTemp.Highlighter.Attribute[x].Style := TempStyle;
     end
-    else if synTemp.Highlighter.Attribute[x].Name = 'String' then
+    else if ((synTemp.Highlighter.Attribute[x].Name = 'String') or (synTemp.Highlighter.Attribute[x].Name = 'LuaMString')) then
     begin
       synTemp.Highlighter.Attribute[x].Background := StringtoColor(TEditorColors(lstColorSheme.Items[8]).Background);
       synTemp.Highlighter.Attribute[x].Foreground := StringToColor(TEditorColors(lstColorSheme.Items[8]).Foreground);
