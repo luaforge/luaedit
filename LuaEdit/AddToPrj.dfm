@@ -37,7 +37,7 @@ object frmAddToPrj: TfrmAddToPrj
       Anchors = [akRight, akBottom]
       Caption = '&Cancel'
       ModalResult = 2
-      TabOrder = 0
+      TabOrder = 1
     end
     object btnOK: TButton
       Left = 239
@@ -47,7 +47,7 @@ object frmAddToPrj: TfrmAddToPrj
       Anchors = [akRight, akBottom]
       Caption = '&OK'
       ModalResult = 1
-      TabOrder = 1
+      TabOrder = 0
       OnClick = btnOKClick
     end
   end
@@ -86,7 +86,7 @@ object frmAddToPrj: TfrmAddToPrj
       Height = 17
       Anchors = [akTop, akRight]
       Caption = '...'
-      TabOrder = 0
+      TabOrder = 2
       OnClick = btnBrowseClick
     end
     object txtExistingFile: TEdit
@@ -103,7 +103,7 @@ object frmAddToPrj: TfrmAddToPrj
       Width = 305
       Height = 17
       Caption = 'Existing Unit(s)'
-      TabOrder = 2
+      TabOrder = 0
       OnClick = chkExistingClick
     end
     object chkNew: TRadioButton

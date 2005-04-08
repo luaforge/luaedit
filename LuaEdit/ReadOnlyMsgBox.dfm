@@ -52,7 +52,7 @@ object frmReadOnlyMsgBox: TfrmReadOnlyMsgBox
       Height = 25
       Caption = 'Save &As...'
       ModalResult = 6
-      TabOrder = 0
+      TabOrder = 1
     end
     object Button2: TButton
       Left = 13
@@ -62,7 +62,7 @@ object frmReadOnlyMsgBox: TfrmReadOnlyMsgBox
       Caption = '&Overwrite'
       Default = True
       ModalResult = 1
-      TabOrder = 1
+      TabOrder = 0
     end
     object Button1: TButton
       Left = 197

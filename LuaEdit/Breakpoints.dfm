@@ -1,11 +1,11 @@
 object frmBreakpoints: TfrmBreakpoints
   Left = 329
   Top = 298
+  Width = 547
+  Height = 300
   BorderIcons = [biSystemMenu]
-  BorderStyle = bsSingle
+  BorderStyle = bsSizeToolWin
   Caption = 'Breakpoints'
-  ClientHeight = 266
-  ClientWidth = 539
   Color = clBtnFace
   DockSite = True
   DragKind = dkDock
@@ -688,6 +688,7 @@ object frmBreakpoints: TfrmBreakpoints
       000000000000}
   end
   object popmBreakpoints: TPopupMenu
+    OnPopup = popmBreakpointsPopup
     Left = 88
     Top = 80
     object RemoveBreakpoint1: TMenuItem

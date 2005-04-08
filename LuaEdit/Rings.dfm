@@ -3,6 +3,7 @@ object frmRings: TfrmRings
   Top = 294
   Width = 343
   Height = 271
+  BorderStyle = bsSizeToolWin
   Caption = 'Rings'
   Color = clBtnFace
   DockSite = True

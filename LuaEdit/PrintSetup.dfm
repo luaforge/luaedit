@@ -23,7 +23,7 @@ object frmPrintSetup: TfrmPrintSetup
     Height = 41
     Align = alBottom
     BevelOuter = bvNone
-    TabOrder = 0
+    TabOrder = 5
     DesignSize = (
       329
       41)
@@ -36,7 +36,7 @@ object frmPrintSetup: TfrmPrintSetup
       Cancel = True
       Caption = '&Cancel'
       ModalResult = 2
-      TabOrder = 0
+      TabOrder = 2
     end
     object btnOk: TButton
       Left = 169
@@ -56,7 +56,7 @@ object frmPrintSetup: TfrmPrintSetup
       Width = 75
       Height = 25
       Caption = 'Advanced...'
-      TabOrder = 2
+      TabOrder = 0
       OnClick = Button1Click
     end
   end
@@ -66,7 +66,7 @@ object frmPrintSetup: TfrmPrintSetup
     Width = 97
     Height = 17
     Caption = 'Use Colors'
-    TabOrder = 1
+    TabOrder = 0
   end
   object chkUseHighLight: TCheckBox
     Left = 16
@@ -74,7 +74,7 @@ object frmPrintSetup: TfrmPrintSetup
     Width = 121
     Height = 17
     Caption = 'Use Syntax Highlight'
-    TabOrder = 2
+    TabOrder = 1
   end
   object chkShowLineNumbers: TCheckBox
     Left = 160
@@ -90,7 +90,7 @@ object frmPrintSetup: TfrmPrintSetup
     Width = 97
     Height = 17
     Caption = 'Wrap Lines'
-    TabOrder = 4
+    TabOrder = 2
   end
   object chkLineNumbersInMargin: TCheckBox
     Left = 160
@@ -98,7 +98,7 @@ object frmPrintSetup: TfrmPrintSetup
     Width = 161
     Height = 17
     Caption = 'Print Line Numbers in Margin'
-    TabOrder = 5
+    TabOrder = 4
   end
   object psdlgPrinterSetup: TPrinterSetupDialog
     Left = 160

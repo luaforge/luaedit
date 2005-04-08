@@ -21,7 +21,7 @@ object frmExSaveExit: TfrmExSaveExit
     Height = 39
     Align = alBottom
     BevelOuter = bvNone
-    TabOrder = 0
+    TabOrder = 1
     DesignSize = (
       342
       39)
@@ -33,7 +33,7 @@ object frmExSaveExit: TfrmExSaveExit
       Anchors = [akRight, akBottom]
       Caption = '&Cancel'
       ModalResult = 2
-      TabOrder = 0
+      TabOrder = 2
     end
     object Button2: TButton
       Left = 180
@@ -53,7 +53,7 @@ object frmExSaveExit: TfrmExSaveExit
       Anchors = [akRight, akBottom]
       Caption = '&Yes'
       ModalResult = 6
-      TabOrder = 2
+      TabOrder = 0
     end
   end
   object Panel3: TPanel
@@ -63,7 +63,7 @@ object frmExSaveExit: TfrmExSaveExit
     Height = 41
     Align = alTop
     BevelOuter = bvNone
-    TabOrder = 1
+    TabOrder = 2
     object Label1: TLabel
       Left = 11
       Top = 16
@@ -82,6 +82,6 @@ object frmExSaveExit: TfrmExSaveExit
     Background.FillMode = bfmTile
     Background.Visible = False
     MultiSelect = True
-    TabOrder = 2
+    TabOrder = 0
   end
 end

@@ -31,6 +31,7 @@ object frmLuaOutput: TfrmLuaOutput
     Font.Name = 'Arial'
     Font.Style = []
     ParentFont = False
+    ReadOnly = True
     TabOrder = 0
   end
   object JvDockClient1: TJvDockClient

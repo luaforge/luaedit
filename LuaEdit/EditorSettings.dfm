@@ -119,7 +119,7 @@ object frmEditorSettings: TfrmEditorSettings
       Top = 0
       Width = 492
       Height = 375
-      ActivePage = stabGeneral
+      ActivePage = stabColors
       Align = alClient
       TabOrder = 0
       object stabGeneral: TTabSheet
@@ -282,7 +282,7 @@ object frmEditorSettings: TfrmEditorSettings
             Width = 161
             Height = 17
             Caption = 'Save Projects Incrementally'
-            TabOrder = 1
+            TabOrder = 3
           end
           object chkSaveUnitsInc: TCheckBox
             Left = 272
@@ -290,7 +290,7 @@ object frmEditorSettings: TfrmEditorSettings
             Width = 161
             Height = 17
             Caption = 'Save Units Incrementally'
-            TabOrder = 2
+            TabOrder = 4
           end
           object chkSaveBreakpoints: TCheckBox
             Left = 16
@@ -298,7 +298,7 @@ object frmEditorSettings: TfrmEditorSettings
             Width = 217
             Height = 17
             Caption = 'Save Breakpoints'
-            TabOrder = 3
+            TabOrder = 1
           end
           object chkShowExSaveDlg: TCheckBox
             Left = 16
@@ -306,7 +306,7 @@ object frmEditorSettings: TfrmEditorSettings
             Width = 217
             Height = 17
             Caption = 'Show Extended Save Dialog on Exit'
-            TabOrder = 4
+            TabOrder = 2
           end
         end
       end

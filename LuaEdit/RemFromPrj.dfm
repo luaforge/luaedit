@@ -4,7 +4,7 @@ object frmRemoveFile: TfrmRemoveFile
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Remove Unit'
-  ClientHeight = 120
+  ClientHeight = 98
   ClientWidth = 361
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -18,14 +18,14 @@ object frmRemoveFile: TfrmRemoveFile
   TextHeight = 13
   object Label1: TLabel
     Left = 24
-    Top = 24
+    Top = 16
     Width = 77
     Height = 13
     Caption = 'Unit to Remove:'
   end
   object btnCancel: TButton
     Left = 278
-    Top = 88
+    Top = 64
     Width = 75
     Height = 25
     Cancel = True
@@ -35,7 +35,7 @@ object frmRemoveFile: TfrmRemoveFile
   end
   object btnOk: TButton
     Left = 198
-    Top = 88
+    Top = 64
     Width = 75
     Height = 25
     Caption = '&OK'
@@ -45,7 +45,7 @@ object frmRemoveFile: TfrmRemoveFile
   end
   object cboUnit: TComboBox
     Left = 24
-    Top = 40
+    Top = 32
     Width = 313
     Height = 21
     Style = csDropDownList

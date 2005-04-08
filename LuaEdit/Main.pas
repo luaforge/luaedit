@@ -933,6 +933,7 @@ var
   bResult: Boolean;
   pMsgBox: TfrmReadOnlyMsgBox;
 begin
+  frmMain.jvchnNotifier.Active := False;
   Result := True;
 
   // Popup a open dialog according to parameters and the state of the file
@@ -1033,7 +1034,7 @@ begin
   // Write data for [Debug] section
   pFile.WriteString('Debug', 'Initializer', sInitializer);
 
-  // Wrtie data for [Files] section  
+  // Wrtie data for [Files] section
   for x := 0 to lstUnits.Count - 1 do
   begin
     // Write the file with a relative path
@@ -1052,6 +1053,7 @@ begin
 
   // Now we wrote on the disk we may retrieve the time it has been writen
   LastTimeModified := GetFileLastTimeModified(PChar(sPath));
+  frmMain.jvchnNotifier.Active := True;
 end;
 
 function TLuaProject.SaveProject(sPath: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
@@ -1060,6 +1062,7 @@ var
   x, iAnswer: integer;
   pMsgBox: TfrmReadOnlyMsgBox;
 begin
+  frmMain.jvchnNotifier.Active := False;
   Result := True;
 
   // Popup a open dialog according to parameters and the state of the file
@@ -1158,6 +1161,7 @@ begin
 
   // Now we wrote on the disk we may retrieve the time it has been writen
   LastTimeModified := GetFileLastTimeModified(PChar(sPath));
+  frmMain.jvchnNotifier.Active := True;
 end;
 
 procedure TLuaProject.RealoadProject();
@@ -1239,6 +1243,7 @@ var
   bResult: Boolean;
   pMsgBox: TfrmReadOnlyMsgBox;
 begin
+  frmMain.jvchnNotifier.Active := False;
   Result := True;
   
   // save only if the file is opened in the tab...
@@ -1343,6 +1348,8 @@ begin
     frmMain.stbMain.Refresh;
     synUnit.Refresh;
   end;
+
+  frmMain.jvchnNotifier.Active := True;
 end;
 
 function TLuaUnit.SaveUnit(sPath: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
@@ -1350,6 +1357,7 @@ var
   iAnswer: Integer;
   pMsgBox: TfrmReadOnlyMsgBox;
 begin
+  frmMain.jvchnNotifier.Active := False;
   Result := True;
   
   // save only if the file is opened in the tab...
@@ -1433,6 +1441,8 @@ begin
     frmMain.stbMain.Refresh;
     synUnit.Refresh;
   end;
+
+  frmMain.jvchnNotifier.Active := True;
 end;
 
 procedure TLuaUnit.SaveBreakpoints();
@@ -1636,7 +1646,7 @@ var
   pLuaUnit: TLuaUnit;
 begin
   pReg := TRegistry.Create;
-                                
+
   if pReg.OpenKey('\Software\LuaEdit', False) then
     odlgOpenUnit.InitialDir := pReg.ReadString('RecentPath');
 
@@ -1774,6 +1784,7 @@ var
   pLuaPrj: TLuaProject;
   x: Integer;
   bNeedPrjTreeRebuild: Boolean;
+  test: Double;
 begin
   try
     // Try to find wich file(s) has changed
@@ -1817,6 +1828,7 @@ begin
 
             if sFileName = pLuaPrj.sPrjPath then
             begin
+              test := GetFileLastTimeModified(PChar(sFileName));
               if ((pLuaPrj.LastTimeModified < GetFileLastTimeModified(PChar(sFileName))) or (pLuaPrj.IsReadOnly <> GetFileReadOnlyAttr(PChar(sFileName)))) then
               begin
                 if Application.MessageBox(PChar('The file '+sFileName+' has been modified outside of the LuaEdit environnement. Do you want to reaload the file now?'), 'LuaEdit', MB_YESNO+MB_ICONQUESTION) = IDYES then
@@ -1836,7 +1848,7 @@ begin
   finally
     // Do it once and only if we need it
     if bNeedPrjTreeRebuild then
-      frmProjectTree.BuildProjectTree;
+      frmProjectTree.BuildProjectTree(False);
 
     FindClose(srSearchRec);
   end;
@@ -2584,7 +2596,11 @@ var
   pNewPrj: TLuaProject;
   pLuaUnit: TLuaUnit;
   mnuSender: TMenuItem;
+  pReg: TRegistry;
+  BuildTreeNeeded: Boolean;
+  x: Integer;
 begin
+  BuildTreeNeeded := False;
   mnuSender := TMenuItem(Sender);
   
   if FileExists(mnuSender.Caption) then
@@ -2597,7 +2613,10 @@ begin
         pLuaUnit.IsLoaded := True;
         AddFileInTab(pLuaUnit);
         MonitorFile(mnuSender.Caption);
-      end;
+        BuildTreeNeeded := True;
+      end
+      else
+        Application.MessageBox(PChar('The project "'+mnuSender.Caption+')" is already opened by LuaEdit.'), 'LuaEdit', MB_OK+MB_ICONERROR);
     end
     else if ExtractFileExt(mnuSender.Caption) = '.lpr' then
     begin
@@ -2605,17 +2624,68 @@ begin
       begin
         pNewPrj := TLuaProject.Create(mnuSender.Caption);
         pNewPrj.GetProjectFromDisk(mnuSender.Caption);
+        BuildTreeNeeded := True;
+      end
+      else
+        Application.MessageBox(PChar('The project "'+mnuSender.Caption+')" is already opened by LuaEdit.'), 'LuaEdit', MB_OK+MB_ICONERROR);
+    end;
+  end
+  else
+  begin
+    Application.MessageBox(PChar('The file "'+mnuSender.Caption+'" is innexistant and will be removed from the list.'), 'LuaEdit', MB_OK+MB_ICONERROR);
+
+    // Remove entry from registry
+    pReg := TRegistry.Create;
+    if pReg.OpenKey('\Software\LuaEdit\RecentFiles', False) then
+    begin
+      if pReg.ValueExists(mnuSender.Caption) then
+        pReg.DeleteValue(mnuSender.Caption);
+    end;
+
+    // Remove ring button from the list
+    for x := 0 to frmRings.jvRings.Pages[JVPAGE_RING_FILES].Buttons.Count - 1 do
+    begin
+      if frmRings.jvRings.Pages[JVPAGE_RING_FILES].Buttons[x].Caption = mnuSender.Caption then
+      begin
+        frmRings.jvRings.Pages[JVPAGE_RING_FILES].Buttons.Delete(x);
+        Break;
+      end;
+    end;
+
+    // Remove menu from the other reopen menu
+    if mnuSender.Owner.ClassType <> TPopupMenu then
+    begin
+      for x := 0 to mnuReopen.Items.Count - 1 do
+      begin
+        if mnuReopen.Items[x].Caption = mnuSender.Caption then
+        begin
+          mnuReopen.Items.Delete(x);
+          Break;
+        end;
       end;
     end
     else
-      Application.MessageBox(PChar('The project "'+mnuSender.Caption+')" is already opened by LuaEdit.'), 'LuaEdit', MB_OK+MB_ICONERROR);
-  end
-  else
-    Application.MessageBox(PChar('The file "'+mnuSender.Caption+'" is innexistant.'), 'LuaEdit', MB_OK+MB_ICONERROR);
+    begin
+      for x := 0 to Reopen1.Count - 1 do
+      begin
+        if Reopen1.Items[x].Caption = mnuSender.Caption then
+        begin
+          Reopen1.Delete(x);
+          Break;
+        end;
+      end;
+    end;
+
+    // Remove itself from the list
+    mnuSender.Free;
+  end;
 
   // Rebuild tree view and initialize stuff
-  frmProjectTree.BuildProjectTree;
-  CheckButtons;
+  if BuildTreeNeeded then
+  begin
+    frmProjectTree.BuildProjectTree;
+    CheckButtons;
+  end;
 end;
 
 // Trigered when user clicks on a ring button of the "Files" slide bar
@@ -2624,7 +2694,11 @@ var
   pNewPrj: TLuaProject;
   pLuaUnit: TLuaUnit;
   btnSender: TJvOutlookBarButton;
+  pReg: TRegistry;
+  BuildTreeNeeded: Boolean;
+  x: Integer;
 begin
+  BuildTreeNeeded := False;
   btnSender := TJvOutlookBarButton(Sender);
 
   if FileExists(btnSender.Caption) then
@@ -2637,7 +2711,10 @@ begin
         pLuaUnit.IsLoaded := True;
         AddFileInTab(pLuaUnit);
         MonitorFile(btnSender.Caption);
-      end;
+        BuildTreeNeeded := True;
+      end
+      else
+        Application.MessageBox(PChar('The project "'+btnSender.Caption+')" is already opened by LuaEdit.'), 'LuaEdit', MB_OK+MB_ICONERROR);
     end
     else if ExtractFileExt(btnSender.Caption) = '.lpr' then
     begin
@@ -2645,17 +2722,53 @@ begin
       begin
         pNewPrj := TLuaProject.Create(btnSender.Caption);
         pNewPrj.GetProjectFromDisk(btnSender.Caption);
-      end;
-    end
-    else
-      Application.MessageBox(PChar('The project "'+btnSender.Caption+')" is already opened by LuaEdit.'), 'LuaEdit', MB_OK+MB_ICONERROR);
+        BuildTreeNeeded := True;
+      end
+      else
+        Application.MessageBox(PChar('The project "'+btnSender.Caption+')" is already opened by LuaEdit.'), 'LuaEdit', MB_OK+MB_ICONERROR);
+    end;
   end
   else
-    Application.MessageBox(PChar('The file "'+btnSender.Caption+'" is innexistant.'), 'LuaEdit', MB_OK+MB_ICONERROR);
+  begin
+    Application.MessageBox(PChar('The file "'+btnSender.Caption+'" is innexistant and will be removed from the list.'), 'LuaEdit', MB_OK+MB_ICONERROR);
+
+    // Remove entry from registry
+    pReg := TRegistry.Create;
+    if pReg.OpenKey('\Software\LuaEdit\RecentFiles', False) then
+    begin
+      if pReg.ValueExists(btnSender.Caption) then
+        pReg.DeleteValue(btnSender.Caption);
+    end;
+
+    // Remove menu from the two reopen menus
+    for x := 0 to mnuReopen.Items.Count - 1 do
+    begin
+      if mnuReopen.Items[x].Caption = btnSender.Caption then
+      begin
+        mnuReopen.Items.Delete(x);
+        Break;
+      end;
+    end;
+
+    for x := 0 to Reopen1.Count - 1 do
+    begin
+      if Reopen1.Items[x].Caption = btnSender.Caption then
+      begin
+        Reopen1.Delete(x);
+        Break;
+      end;
+    end;
+
+    // Remove itself from the list
+    btnSender.Free;
+  end;
 
   // Rebuild tree view and initialize stuff
-  frmProjectTree.BuildProjectTree;
-  CheckButtons;
+  if BuildTreeNeeded then
+  begin
+    frmProjectTree.BuildProjectTree;
+    CheckButtons;
+  end;
 end;
 
 procedure TfrmMain.btnXClipboardClick(Sender: TObject);
@@ -3290,7 +3403,11 @@ var
     NextLine: Integer;
     pLuaUnit: TLuaUnit;
   begin
-    NextFile := ExpandUNCFileName(StringReplace(AR.source, '@', '',[]));
+    if FileExists(StringReplace(AR.source, '@', '',[])) then
+      NextFile := ExpandUNCFileName(StringReplace(AR.source, '@', '',[]))
+    else
+      NextFile := StringReplace(AR.source, '@', '',[]);
+
     NextLine := AR.currentline;
 
     if (PrevFile <> NextFile) then
@@ -3316,9 +3433,26 @@ var
   end;
 
   procedure WaitReStart;
-  begin
+  var
+    sUnitName: String;
+  begin 
+    // Get current call level
     CurrentICI := AR.i_ci;
-    Pause := Pause or IsBreak(ExpandUNCFileName(StringReplace(AR.source, '@', '',[])), AR.currentline) or IsICI(CurrentICI);
+
+    // NOTE: this condition has been added because when the unit is new,
+    //       ExpandUNCFileName must not be used
+    if FileExists(StringReplace(AR.source, '@', '',[])) then
+      sUnitName := ExpandUNCFileName(StringReplace(AR.source, '@', '',[]))
+    else
+      sUnitName := StringReplace(AR.source, '@', '',[]);
+
+    // Get line break status
+    Pause := Pause or IsBreak(sUnitName, AR.currentline) or IsICI(CurrentICI);
+
+    {if Assigned(pLuaUnit) then
+      if ((Pause) and (pLuaUnit.pDebugInfos.iCurrentLineDebug = -1)) then
+        frmLuaEditMessages.memMessages.Lines.Add('[HINT]:  Break in document '+StrPas(AR.source)+' ('+IntToStr(AR.currentline)+') - '+DateTimeToStr(Now));}
+
     ReStart := not Pause;
 
     if (Pause) then
@@ -3327,7 +3461,6 @@ var
       PauseICI := 0;
       PauseLine := -1;
       PauseFile := '';
-      frmLuaEditMessages.memMessages.Lines.Add('[HINT]:  Break in document '+StrPas(AR.source)+' ('+IntToStr(AR.currentline)+') - '+DateTimeToStr(Now));
     end;
 
     frmMain.CheckButtons;
@@ -3418,11 +3551,19 @@ begin
   end;
 end;
 
+// Open the unit in the IDE if not already opened
 function TfrmMain.PopUpUnitToScreen(sFileName: String; iLine: Integer = -1; bCleanPrevUnit: Boolean = False): TLuaUnit;
 var
   pLuaUnit: TLuaUnit;
   x: Integer;
 begin
+  // if the current file is already the one selected then we exit this function
+  if TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).sUnitPath = sFileName then
+  begin
+    Result := TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data);
+    Exit;
+  end;
+
   if bCleanPrevUnit then
   begin
     if Assigned(frmMain.jvUnitBar.SelectedTab) then
@@ -3462,6 +3603,152 @@ begin
 
   if iLine <> -1 then
     pLuaUnit.synUnit.GotoLineAndCenter(iLine);
+end;
+
+// print the call stack
+procedure TfrmMain.PrintStack(L: Plua_State);
+begin
+  LuaStackToStrings(L, frmLuaStack.lstLuaStack.Items, PRINT_SIZE);
+end;
+
+// print local list and fill the list of locals
+procedure TfrmMain.PrintLocal(L: Plua_State; Level: Integer = 0);
+begin
+  LuaLocalToStrings(L, frmLuaLocals.lstLocals.Items, PRINT_SIZE, Level);
+  LuaLocalToStrings(L, lstLocals, PRINT_SIZE, Level);
+end;
+
+// print global list
+procedure TfrmMain.PrintGlobal(L: Plua_State; Foce: Boolean);
+begin
+  if (not Assigned(L)) then
+    Exit;
+  if not Foce then
+    Exit;
+
+  LuaTableToTreeView(L, LUA_GLOBALSINDEX, frmLuaGlobals.tvwLuaGlobals, PRINT_SIZE);
+  LuaGlobalsToStrings(L, lstGlobals, PRINT_SIZE);
+end;
+
+// print watches list
+procedure TfrmMain.PrintWatch(L: Plua_State);
+var
+  I: Integer;
+begin
+  for I := 1 to frmWatch.lvwWatch.RowCount - 1 do
+    if frmWatch.lvwWatch.Cells[0, I] <> '' then
+      frmWatch.lvwWatch.Cells[1, I] := GetValue(frmWatch.lvwWatch.Cells[0, I]);
+end;
+
+// check if current debug line is a break one
+function TfrmMain.IsBreak(sFileName: String; Line: Integer): Boolean;
+var
+  pLuaUnit: TLuaUnit;
+  pBreakpoint: TBreakpoint;
+  BreakCondition: String;
+begin
+  Result := False;
+  pLuaUnit := FindUnitInTabs(sFileName);
+
+  if Assigned(pLuaUnit) then
+  begin
+    if pLuaUnit.pDebugInfos.IsBreakPointLine(Line) then
+    begin
+      pBreakpoint := pLuaUnit.pDebugInfos.GetBreakpointAtLine(Line);
+
+      if pBreakpoint.iStatus = BKPT_ENABLED then
+      begin
+        BreakCondition := pBreakpoint.sCondition;
+        if BreakCondition <> '' then
+        begin
+          lua_dostring(LuaState, PChar('return ('+BreakCondition+')'));
+
+          if lua_toboolean(LuaState, -1) = 1 then
+          begin
+            // Breakpoint hit!!!
+            Result := True;
+          end;
+
+          lua_pop(LuaState, 1);
+        end
+        else
+        begin
+          // Breakpoint hit!!!
+          Result := True;
+        end;
+      end;
+
+      if Result then
+      begin
+        Inc(pBreakpoint.iHitCount);
+        frmBreakpoints.RefreshBreakpointList;
+      end;
+    end
+    else
+    begin
+      if Line = PauseLine then
+      begin
+        Result := True;
+      end;
+    end;
+  end;
+end;
+
+// check if it is the current call level
+function TfrmMain.IsICI(ICI: Integer): Boolean;
+begin
+  Result := (ICI <= PauseICI);
+end;
+
+// stdout function for lua_print override
+procedure DoLuaStdout(S: PChar; N: Integer);
+const
+  CR = #$0D;
+  LF = #$0A;
+  CRLF = CR + LF;
+begin
+  frmLuaOutput.Put(StringReplace(S, LF, CRLF, [rfReplaceAll]));
+end;
+
+// check if the given unit was modified
+function TfrmMain.IsEdited(pIgnoreUnit: TLuaUnit): Boolean;
+var
+  x: Integer;
+  pLuaUnit: TLuaUnit;
+begin
+  Result := False;
+
+  for x := 0 to jvUnitBar.Tabs.Count - 1 do
+  begin
+    pLuaUnit := TLuaUnit(jvUnitBar.Tabs[x].Data);
+    if (pLuaUnit <> pIgnoreUnit) then
+      Result := Result or pLuaUnit.HasChanged;
+  end;
+end;
+
+// add selected data to watch list
+procedure TfrmMain.actAddWatchExecute(Sender: TObject);
+var
+  sTemp: string;
+  I: Integer;
+begin
+  if Assigned(pCurrentSynEdit) then
+  begin
+    sTemp := pCurrentSynEdit.SelText;
+
+    with (frmWatch.lvwWatch) do
+    begin
+      I := 0;
+      while (Cells[0, I] <> '') do
+      begin
+        Inc(I);
+        if (I = RowCount) then
+          RowCount := RowCount + 1;
+      end;
+      Cells[0, I] := sTemp;
+      PrintWatch(LuaState);
+    end;
+  end;
 end;
 
 procedure TfrmMain.LuaHelp1Click(Sender: TObject);
@@ -3772,16 +4059,6 @@ end;
 
 procedure TfrmMain.actStepOverExecute(Sender: TObject);
 begin
-  {if TLuaUnit(jvUnitBar.SelectedTab.Data).pDebugInfos.iCurrentLineDebug = -1 then
-  begin
-    FirstLineStop := True;
-    actRunScriptExecute(nil);
-  end
-  else
-  begin
-    if not IsRunning then
-      StepOverPressed := True;
-  end;}
   if (Pause) then
     Exit;
   ExecuteCurrent(False, CurrentICI, '', -1);
@@ -6246,151 +6523,7 @@ begin
   end;
 end;
 
-// print the call stack
-procedure TfrmMain.PrintStack(L: Plua_State);
-begin
-  LuaStackToStrings(L, frmLuaStack.lstLuaStack.Items, PRINT_SIZE);
-end;
 
-// print local list and fill the list of locals
-procedure TfrmMain.PrintLocal(L: Plua_State; Level: Integer = 0);
-begin
-  LuaLocalToStrings(L, frmLuaLocals.lstLocals.Items, PRINT_SIZE, Level);
-  LuaLocalToStrings(L, lstLocals, PRINT_SIZE, Level);
-end;
-
-// print global list
-procedure TfrmMain.PrintGlobal(L: Plua_State; Foce: Boolean);
-begin
-  if (not Assigned(L)) then
-    Exit;
-  if not Foce then
-    Exit;
-
-  LuaTableToTreeView(L, LUA_GLOBALSINDEX, frmLuaGlobals.tvwLuaGlobals, PRINT_SIZE);
-  LuaGlobalsToStrings(L, lstGlobals, PRINT_SIZE);
-end;
-
-// print watches list
-procedure TfrmMain.PrintWatch(L: Plua_State);
-var
-  I: Integer;
-begin
-  for I := 1 to frmWatch.lvwWatch.RowCount - 1 do
-    if frmWatch.lvwWatch.Cells[0, I] <> '' then
-      frmWatch.lvwWatch.Cells[1, I] := GetValue(frmWatch.lvwWatch.Cells[0, I]);
-end;
-
-// check if current debug line is a break one
-function TfrmMain.IsBreak(sFileName: String; Line: Integer): Boolean;
-var
-  pLuaUnit: TLuaUnit;
-  pBreakpoint: TBreakpoint;
-  BreakCondition: String;
-begin
-  Result := False;
-  pLuaUnit := FindUnitInTabs(sFileName);
-
-  if Assigned(pLuaUnit) then
-  begin
-    if pLuaUnit.pDebugInfos.IsBreakPointLine(Line) then
-    begin
-      pBreakpoint := pLuaUnit.pDebugInfos.GetBreakpointAtLine(Line);
-
-      if pBreakpoint.iStatus = BKPT_ENABLED then
-      begin
-        BreakCondition := pBreakpoint.sCondition;
-        if BreakCondition <> '' then
-        begin
-          lua_dostring(LuaState, PChar('return ('+BreakCondition+')'));
-
-          if lua_toboolean(LuaState, -1) = 1 then
-          begin
-            // Breakpoint hit!!!
-            Result := True;
-          end;
-
-          lua_pop(LuaState, 1);
-        end
-        else
-        begin
-          // Breakpoint hit!!!
-          Result := True;
-        end;
-      end;
-
-      if Result then
-      begin
-        Inc(pBreakpoint.iHitCount);
-        frmBreakpoints.RefreshBreakpointList;
-      end;
-    end
-    else
-    begin
-      if Line = PauseLine then
-      begin
-        Result := True;
-      end;
-    end;
-  end;
-end;
-
-// check if it is the current call level
-function TfrmMain.IsICI(ICI: Integer): Boolean;
-begin
-  Result := (ICI <= PauseICI);
-end;
-
-// stdout function for lua_print override
-procedure DoLuaStdout(S: PChar; N: Integer);
-const
-  CR = #$0D;
-  LF = #$0A;
-  CRLF = CR + LF;
-begin
-  frmLuaOutput.Put(StringReplace(S, LF, CRLF, [rfReplaceAll]));
-end;
-
-// check if the given unit was modified
-function TfrmMain.IsEdited(pIgnoreUnit: TLuaUnit): Boolean;
-var
-  x: Integer;
-  pLuaUnit: TLuaUnit;
-begin
-  Result := False;
-
-  for x := 0 to jvUnitBar.Tabs.Count - 1 do
-  begin
-    pLuaUnit := TLuaUnit(jvUnitBar.Tabs[x].Data);
-    if (pLuaUnit <> pIgnoreUnit) then
-      Result := Result or pLuaUnit.HasChanged;
-  end;
-end;
-
-// add selected data to watch list
-procedure TfrmMain.actAddWatchExecute(Sender: TObject);
-var
-  sTemp: string;
-  I: Integer;
-begin
-  if Assigned(pCurrentSynEdit) then
-  begin
-    sTemp := pCurrentSynEdit.SelText;
-
-    with (frmWatch.lvwWatch) do
-    begin
-      I := 0;
-      while (Cells[0, I] <> '') do
-      begin
-        Inc(I);
-        if (I = RowCount) then
-          RowCount := RowCount + 1;
-      end;
-      Cells[0, I] := sTemp;
-      PrintWatch(LuaState);
-    end;
-  end;
-end;
 
 // check the syntax of the currently opened unit
 procedure TfrmMain.actCheckSyntaxExecute(Sender: TObject);

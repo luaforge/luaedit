@@ -36,7 +36,7 @@ object frmAddBreakpoint: TfrmAddBreakpoint
       Cancel = True
       Caption = '&Cancel'
       ModalResult = 2
-      TabOrder = 0
+      TabOrder = 1
     end
     object Button2: TButton
       Left = 208
@@ -47,7 +47,7 @@ object frmAddBreakpoint: TfrmAddBreakpoint
       Caption = '&OK'
       Default = True
       ModalResult = 1
-      TabOrder = 1
+      TabOrder = 0
       OnClick = Button2Click
     end
   end

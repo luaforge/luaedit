@@ -22,18 +22,16 @@ type
     RemoveUnitFromProject1: TMenuItem;
     Options1: TMenuItem;
     procedure trvProjectTreeDblClick(Sender: TObject);
-    procedure trvProjectTreeMouseDown(Sender: TObject;
-      Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure trvProjectTreeMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure trvProjectTreeAdvancedCustomDrawItem(Sender: TCustomTreeView;
-      Node: TTreeNode; State: TCustomDrawState; Stage: TCustomDrawStage;
-      var PaintImages, DefaultDraw: Boolean);
+      Node: TTreeNode; State: TCustomDrawState; Stage: TCustomDrawStage; var PaintImages, DefaultDraw: Boolean);
     procedure UnloadFileProject1Click(Sender: TObject);
     procedure ppmProjectTreePopup(Sender: TObject);
   private
     { Private declarations }
   public
     { Public declarations }
-    procedure BuildProjectTree;
+    procedure BuildProjectTree(HandleNotifier: Boolean = True);
   end;
 
 var
@@ -76,7 +74,7 @@ begin
   frmMain.CheckButtons;
 end;
 
-procedure TfrmProjectTree.BuildProjectTree;
+procedure TfrmProjectTree.BuildProjectTree(HandleNotifier: Boolean);
 var
   pTempPrj: TLuaProject;
   pNewPrjNode, pNewNode: TTreeNode;
@@ -84,8 +82,13 @@ var
 begin
   pNewPrjNode := nil;
   pNewNode := nil;
-  frmMain.jvchnNotifier.Active := False;
-  frmMain.jvchnNotifier.Notifications.Clear;
+
+  if HandleNotifier then
+  begin
+    frmMain.jvchnNotifier.Active := False;
+    frmMain.jvchnNotifier.Notifications.Clear;
+  end;
+
   frmProjectTree.trvProjectTree.Items.BeginUpdate;
   frmProjectTree.trvProjectTree.Items.Clear;
 
@@ -102,7 +105,7 @@ begin
       pNewPrjNode.SelectedIndex := 0;
 
       // Adding project root to change notifier...
-      if not pTempPrj.IsNew then
+      if ((not pTempPrj.IsNew) and HandleNotifier) then
         frmMain.AddToNotifier(ExtractFileDir(pTempPrj.sPrjPath));
     end;
 
@@ -123,7 +126,7 @@ begin
       pNewNode.Data := TLuaUnit(pTempPrj.lstUnits.Items[y]);
 
       // Adding unit root to change notifier...
-      if not TLuaUnit(pTempPrj.lstUnits.Items[y]).IsNew then
+      if ((not TLuaUnit(pTempPrj.lstUnits.Items[y]).IsNew) and HandleNotifier) then
         frmMain.AddToNotifier(ExtractFileDir(TLuaUnit(pTempPrj.lstUnits.Items[y]).sUnitPath));
     end;
 
@@ -132,7 +135,7 @@ begin
   end;
 
   frmProjectTree.trvProjectTree.Items.EndUpdate;
-  if frmMain.jvchnNotifier.Notifications.Count > 0 then
+  if ((frmMain.jvchnNotifier.Notifications.Count > 0) and HandleNotifier) then
     frmMain.jvchnNotifier.Active := True;
 end;
 

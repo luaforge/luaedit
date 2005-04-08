@@ -3723,7 +3723,6 @@ object frmMain: TfrmMain
   object jvchnNotifier: TJvChangeNotify
     Notifications = <>
     CheckInterval = 1000
-    FreeOnTerminate = False
     OnChangeNotify = jvchnNotifierChangeNotify
     Left = 144
     Top = 342

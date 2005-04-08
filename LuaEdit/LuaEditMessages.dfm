@@ -3,6 +3,7 @@ object frmLuaEditMessages: TfrmLuaEditMessages
   Top = 342
   Width = 468
   Height = 203
+  BorderStyle = bsSizeToolWin
   Caption = 'Messages'
   Color = clBtnFace
   DockSite = True

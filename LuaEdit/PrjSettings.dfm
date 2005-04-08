@@ -45,7 +45,7 @@ object frmPrjOptions: TfrmPrjOptions
       Cancel = True
       Caption = '&Cancel'
       ModalResult = 2
-      TabOrder = 0
+      TabOrder = 1
     end
     object btnOk: TButton
       Left = 275
@@ -56,7 +56,7 @@ object frmPrjOptions: TfrmPrjOptions
       Caption = '&OK'
       Default = True
       ModalResult = 1
-      TabOrder = 1
+      TabOrder = 0
       OnClick = btnOkClick
     end
   end

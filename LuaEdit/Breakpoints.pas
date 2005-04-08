@@ -44,6 +44,7 @@ type
       Change: TItemChange; var AllowChange: Boolean);
     procedure FormCreate(Sender: TObject);
     procedure tbtnAddClick(Sender: TObject);
+    procedure popmBreakpointsPopup(Sender: TObject);
   private
     { Private declarations }
   public
@@ -308,6 +309,13 @@ procedure TfrmBreakpoints.tbtnAddClick(Sender: TObject);
 begin
   if frmAddBreakpoint.ShowModal = mrOk then
     RefreshBreakpointList;
+end;
+
+procedure TfrmBreakpoints.popmBreakpointsPopup(Sender: TObject);
+begin
+  RemoveBreakpoint1.Enabled := (lvwBreakpoints.Items.Count = 0);
+  Goto1.Enabled := (lvwBreakpoints.Items.Count = 0);
+  Condition1.Enabled := (lvwBreakpoints.Items.Count = 0);
 end;
 
 end.
