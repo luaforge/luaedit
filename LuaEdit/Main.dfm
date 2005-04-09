@@ -222,7 +222,7 @@ object frmMain: TfrmMain
     object tlbBaseFile: TToolBar
       Left = 11
       Top = 2
-      Width = 283
+      Width = 296
       Height = 22
       Align = alLeft
       AutoSize = True
@@ -3723,6 +3723,7 @@ object frmMain: TfrmMain
   object jvchnNotifier: TJvChangeNotify
     Notifications = <>
     CheckInterval = 1000
+    FreeOnTerminate = False
     OnChangeNotify = jvchnNotifierChangeNotify
     Left = 144
     Top = 342

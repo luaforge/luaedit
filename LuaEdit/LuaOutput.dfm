@@ -32,7 +32,9 @@ object frmLuaOutput: TfrmLuaOutput
     Font.Style = []
     ParentFont = False
     ReadOnly = True
+    ScrollBars = ssBoth
     TabOrder = 0
+    WantTabs = True
   end
   object JvDockClient1: TJvDockClient
     LRDockWidth = 100

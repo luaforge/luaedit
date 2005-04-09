@@ -1662,6 +1662,15 @@ begin
           pLuaUnit.IsLoaded := True;
           AddFileInTab(pLuaUnit);
           MonitorFile(odlgOpenUnit.Files.Strings[z]);
+          
+          // Add opened file to recent opens
+          pReg.OpenKey('\Software\LuaEdit', True);
+          pReg.WriteString('RecentPath', ExtractFilePath(odlgOpenUnit.Files.Strings[z]));
+        end
+        else
+        begin
+          Application.MessageBox(PChar('The project "'+odlgOpenUnit.Files.Strings[z]+')" is already opened by LuaEdit.'), 'LuaEdit', MB_OK+MB_ICONERROR);
+          Exit;
         end;
       end
       else if ExtractFileExt(odlgOpenUnit.Files.Strings[z]) = '.lpr' then
@@ -1670,14 +1679,16 @@ begin
         begin
           pNewPrj := TLuaProject.Create(odlgOpenUnit.Files.Strings[z]);
           pNewPrj.GetProjectFromDisk(odlgOpenUnit.Files.Strings[z]);
+          // Add opened file to recent opens
+          pReg.OpenKey('\Software\LuaEdit', True);
+          pReg.WriteString('RecentPath', ExtractFilePath(odlgOpenUnit.Files.Strings[z]));
+        end
+        else
+        begin
+          Application.MessageBox(PChar('The project "'+odlgOpenUnit.Files.Strings[z]+')" is already opened by LuaEdit.'), 'LuaEdit', MB_OK+MB_ICONERROR);
+          Exit;
         end;
-      end
-      else
-        Application.MessageBox(PChar('The project "'+odlgOpenUnit.Files.Strings[z]+')" is already opened by LuaEdit.'), 'LuaEdit', MB_OK+MB_ICONERROR);
-
-      // Add opened file to recent opens
-      pReg.OpenKey('\Software\LuaEdit', True);
-      pReg.WriteString('RecentPath', ExtractFilePath(odlgOpenUnit.Files.Strings[z]));
+      end;
     end;
   end;
 
@@ -1908,7 +1919,7 @@ end;
 
 procedure TfrmMain.actExitExecute(Sender: TObject);
 begin
-  Application.Terminate;
+  Application.MainForm.Close;
 end;
 
 procedure TfrmMain.actSaveExecute(Sender: TObject);
@@ -3112,6 +3123,7 @@ begin
   frmAbout.ShowModal;
 end;
 
+// This function manage debug actions in general and handle initialization of debug session
 procedure TfrmMain.CustomExecute(Pause: Boolean; PauseICI: Integer; PauseFile: string; PauseLine: Integer; FuncName: string; const Args: array of string; Results: TStrings);
 var
   L: Plua_State;
@@ -3258,6 +3270,7 @@ begin
 
     Running := True;
     LuaRegister(L, 'print', lua_print);
+    OnLuaStdout := DoLuaStdout;
     lua_sethook(L, HookCaller, HOOK_MASK, 0);
     CurrentICI := 1;
     frmMain.CheckButtons;
@@ -3932,7 +3945,7 @@ begin
       begin
         pLuaUnit := TLuaUnit(pLuaProject.lstUnits.Items[y]);
 
-        if ((not bProjectAdded) and (pLuaProject.sPrjName <> '[@@SingleUnits@@]')) then
+        if ((not bProjectAdded) and (pLuaProject.sPrjName <> '[@@SingleUnits@@]') and ((pLuaProject.HasChanged) or (pLuaProject.IsNew))) then
         begin
           frmExSaveExit.lstFiles.AddItem(pLuaProject.sPrjName, pLuaProject);
           bProjectAdded := True;
@@ -6418,26 +6431,66 @@ end;
 
 procedure TfrmMain.OpenFileatCursor1Click(Sender: TObject);
 var
+  pLuaUnit: TLuaUnit;
   WordAtCursor: String;
+  x: Integer;
 begin
- { if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelAvail then
-    WordAtCursor := TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelText
-  else
-    WordAtCursor := TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.FileAtCursor;
+  if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelAvail then
+    WordAtCursor := ExpandUNCFileName(TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelText);
 
-  if not FileExists(WordAtCursor) then
+  if FileExists(WordAtCursor) then
   begin
-    // It Could be a file reference in current dir
-    WordAtCursor := '.\' + WordAtCursor;
-
-    if not FileExists(WordAtCursor) then
+    if ExtractFileExt(WordAtCursor) = '.lua' then
     begin
-      Application.MessageBox(PChar('Cannot open file "'+WordAtCursor+'"'), 'LuaEdit', MB_OK+MB_ICONERROR);
-      Exit;
-    end;
-  end;
+      if not FileIsInTree(WordAtCursor) then
+      begin
+        // Creates the file
+        pLuaUnit := AddFileInProject(WordAtCursor, False, LuaSingleUnits);
+        pLuaUnit.IsLoaded := True;
+        AddFileInTab(pLuaUnit);
+        MonitorFile(pLuaUnit.sUnitPath);
+      end
+      else
+      begin
+        // Finding unit in the tree
+        for x := 0 to frmProjectTree.trvProjectTree.Items.Count - 1 do
+        begin
+          pLuaUnit := TLuaUnit(frmProjectTree.trvProjectTree.Items[x].Data);
 
-  ShellExecute(Self.Handle, 'open', PChar(WordAtCursor), nil, nil,  SW_SHOWNORMAL);}
+          // Check if unit is found
+          if pLuaUnit.sUnitPath = WordAtCursor then
+          begin
+            // Add file in tab bar
+            if LuaOpenedUnits.IndexOf(pLuaUnit) = -1 then
+            begin
+              frmMain.AddFileInTab(pLuaUnit);
+            end
+            else
+            begin
+              frmMain.GetAssociatedTab(pLuaUnit).Selected := True;
+
+              if pLuaUnit.HasChanged then
+                frmMain.stbMain.Panels[2].Text := 'Modified'
+              else
+                frmMain.stbMain.Panels[2].Text := '';
+
+              frmMain.synEditClick(pLuaUnit.synUnit);
+            end;
+            
+            Break;
+          end;
+        end;
+      end;
+
+      // Reinitialize stuff...
+      frmProjectTree.BuildProjectTree();
+      CheckButtons();
+    end
+    else
+      ShellExecute(Self.Handle, 'open', PChar(WordAtCursor), nil, nil,  SW_SHOWNORMAL);
+  end
+  else
+    Application.MessageBox(PChar('Cannot open file "'+WordAtCursor+'"'), 'LuaEdit', MB_OK+MB_ICONERROR);
 end;
 
 function LocalOutput(L: PLua_State): Integer; cdecl;
@@ -6449,10 +6502,16 @@ end;
 
 procedure TfrmMain.ppmEditorPopup(Sender: TObject);
 begin
-{  if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelAvail then
-    OpenFileatCursor1.Caption := 'Open Document "'+TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelText+'"'
+  if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelAvail then
+  begin
+    OpenFileatCursor1.Enabled := True;
+    OpenFileatCursor1.Caption := 'Open Document "'+TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelText+'"';
+  end
   else
-    OpenFileatCursor1.Caption := 'Open Document "'+TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.FileAtCursor+'"';}
+  begin
+    OpenFileatCursor1.Caption := 'Open Document ""';
+    OpenFileatCursor1.Enabled := False;
+  end;
 end;
 
 function TfrmMain.GetAssociatedTab(pLuaUnit: TLuaUnit): TJvTabBarItem;
