@@ -54,7 +54,7 @@ begin
 
       frmStack.lstCallStack.Items.EndUpdate;
       lstCallStack.Selected.ImageIndex := 1;
-      frmMain.PopUpUnitToScreen(pBreakInfo.FileName, pBreakInfo.Line).pDebugInfos.iStackMarker := pBreakInfo.Line;
+      frmMain.PopUpUnitToScreen(pBreakInfo.FileName, pBreakInfo.Line).pDebugInfos.iStackMarker := pBreakInfo.Line+1;
       pCurrentSynEdit.Refresh;
     end;
   end;

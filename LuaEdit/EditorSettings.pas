@@ -586,6 +586,7 @@ begin
   chkFileAssociate.Checked := AssociateFiles;
   chkSaveProjectsInc.Checked := SaveProjectsInc;
   chkSaveUnitsInc.Checked := SaveUnitsInc;
+  chkShowExSaveDlg.Checked := ShowExSaveDlg;
 
   txtUndoLimit.Text := IntToStr(Main.UndoLimit);
   txtTabWidth.Text := IntToStr(Main.TabWidth);

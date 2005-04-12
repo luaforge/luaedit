@@ -3198,6 +3198,7 @@ var
     if (not Pause) then
     begin
       pLuaUnit.pDebugInfos.iCurrentLineDebug := -1;
+      pLuaUnit.pDebugInfos.iStackMarker := -1;
 
       if Assigned(pCurrentSynEdit) then
         pCurrentSynEdit.Refresh;
@@ -3514,7 +3515,7 @@ begin
       begin
         // Adding to CallStack...
         pBreakInfo := TBreakInfo.Create;
-        pBreakInfo.FileName := pLuaUnit.sName;
+        pBreakInfo.FileName := pLuaUnit.sUnitPath;
 
         if AR.what <> 'C' then
         begin
@@ -3926,6 +3927,10 @@ begin
     end;
   end;
 
+  // Initialize stuff...
+  frmExSaveExit := nil;
+
+  // Determines closing method...
   if ShowExSaveDlg then
   begin
     // Create form

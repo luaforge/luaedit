@@ -119,7 +119,7 @@ object frmEditorSettings: TfrmEditorSettings
       Top = 0
       Width = 492
       Height = 375
-      ActivePage = stabColors
+      ActivePage = stabGeneral
       Align = alClient
       TabOrder = 0
       object stabGeneral: TTabSheet
