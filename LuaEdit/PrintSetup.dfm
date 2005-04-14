@@ -12,6 +12,7 @@ object frmPrintSetup: TfrmPrintSetup
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   Font.Style = []
+  FormStyle = fsStayOnTop
   OldCreateOrder = False
   OnShow = FormShow
   PixelsPerInch = 96

@@ -16,6 +16,7 @@ object frmWatch: TfrmWatch
   Font.Style = []
   FormStyle = fsStayOnTop
   OldCreateOrder = False
+  Position = poOwnerFormCenter
   OnResize = FormResize
   OnShow = FormShow
   PixelsPerInch = 96

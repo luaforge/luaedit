@@ -1,6 +1,6 @@
 object frmGotoLine: TfrmGotoLine
-  Left = 249
-  Top = 113
+  Left = 461
+  Top = 268
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Go to Line'
@@ -12,6 +12,7 @@ object frmGotoLine: TfrmGotoLine
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   Font.Style = []
+  FormStyle = fsStayOnTop
   OldCreateOrder = False
   Position = poOwnerFormCenter
   OnCreate = FormCreate

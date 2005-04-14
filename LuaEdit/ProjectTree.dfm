@@ -16,6 +16,7 @@ object frmProjectTree: TfrmProjectTree
   Font.Style = []
   FormStyle = fsStayOnTop
   OldCreateOrder = False
+  Position = poOwnerFormCenter
   PixelsPerInch = 96
   TextHeight = 13
   object Panel1: TPanel

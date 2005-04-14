@@ -16,6 +16,7 @@ object frmStack: TfrmStack
   Font.Style = []
   FormStyle = fsStayOnTop
   OldCreateOrder = False
+  Position = poOwnerFormCenter
   PixelsPerInch = 96
   TextHeight = 13
   object lstCallStack: TJvDotNetListView
