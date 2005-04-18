@@ -6651,6 +6651,8 @@ begin
 end;
 
 procedure TfrmMain.jvUnitBarTabClosing(Sender: TObject; Item: TJvTabBarItem; var AllowClose: Boolean);
+var
+  x: Integer;
 begin
   if Assigned(Item) then
   begin
@@ -6664,6 +6666,18 @@ begin
         CheckButtons;
         frmProjectTree.BuildProjectTree;
         frmBreakpoints.RefreshBreakpointList;
+
+        if Assigned(jvUnitBar.SelectedTab) then
+        begin
+          if jvUnitBar.Tabs.Count = 1 then
+          begin
+            // Free previously created TFctInfo objects...
+            for x := 0 to frmFunctionList.lvwFunctions.Items.Count - 1 do
+              TFctInfo(frmFunctionList.lvwFunctions.Items[x].Data).Free;
+
+            frmFunctionList.lvwFunctions.Clear;
+          end;
+        end;
       end;
     end;
   end;
