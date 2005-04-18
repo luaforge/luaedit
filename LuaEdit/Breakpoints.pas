@@ -313,9 +313,9 @@ end;
 
 procedure TfrmBreakpoints.popmBreakpointsPopup(Sender: TObject);
 begin
-  RemoveBreakpoint1.Enabled := (lvwBreakpoints.Items.Count = 0);
-  Goto1.Enabled := (lvwBreakpoints.Items.Count = 0);
-  Condition1.Enabled := (lvwBreakpoints.Items.Count = 0);
+  RemoveBreakpoint1.Enabled := (lvwBreakpoints.Items.Count > 0);
+  Goto1.Enabled := (lvwBreakpoints.Items.Count > 0);
+  Condition1.Enabled := (lvwBreakpoints.Items.Count > 0);
 end;
 
 end.

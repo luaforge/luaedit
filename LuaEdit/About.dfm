@@ -615,14 +615,14 @@ object frmAbout: TfrmAbout
     end
     object Label10: TLabel
       Left = 32
-      Top = 80
+      Top = 78
       Width = 40
       Height = 13
       Caption = 'Support:'
     end
     object Label1: TLabel
       Left = 98
-      Top = 80
+      Top = 78
       Width = 114
       Height = 13
       Cursor = crHandPoint

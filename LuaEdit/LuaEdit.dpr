@@ -65,7 +65,6 @@ begin
   Application.CreateForm(TfrmReplace, frmReplace);
   Application.CreateForm(TfrmReplaceQuerry, frmReplaceQuerry);
   Application.CreateForm(TfrmSearch, frmSearch);
-  Application.CreateForm(TfrmFunctionList, frmFunctionList);
   Application.CreateForm(TfrmAddToPrj, frmAddToPrj);
   Application.CreateForm(TfrmRemoveFile, frmRemoveFile);
   Application.CreateForm(TfrmErrorLookup, frmErrorLookup);

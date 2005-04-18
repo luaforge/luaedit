@@ -53,9 +53,17 @@ type
     constructor Create;
   end;
 
+  TFctInfo = class(TObject)
+    FctDef:   String;
+    Params:   String;
+    Line:     Integer;
+  public
+    constructor Create;
+  end;
+
   TBreakInfo = class(TObject)
     FileName: String;
-    Line: Integer;
+    Line:     Integer;
   public
     constructor Create;
   end;
@@ -399,6 +407,8 @@ type
     xmpMenuPainter: TXPMenu;
     actShowRings: TAction;
     ClipboardRing1: TMenuItem;
+    actShowFunctionList: TAction;
+    FunctionList1: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure synEditKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure actOpenFileExecute(Sender: TObject);
@@ -481,6 +491,7 @@ type
     procedure actShowLuaLocalsExecute(Sender: TObject);
     procedure actShowRingsExecute(Sender: TObject);
     procedure actCheckSyntaxExecute(Sender: TObject);
+    procedure actShowFunctionListExecute(Sender: TObject);
   private
     { Private declarations }
   public
@@ -641,7 +652,7 @@ uses
   PrjSettings, RemFromPrj, ErrorLookup, LuaStack, PrintSetup, CntString,
   Connecting, Math, Contributors, LuaOutput, Breakpoints, LuaGlobals,
   LuaLocals, LuaEditMessages, ExSaveExit, AsciiTable, ReadOnlyMsgBox,
-  Rings, JvOutlookBar, SynEditTextBuffer;
+  Rings, JvOutlookBar, SynEditTextBuffer, FunctionList;
 
 {$R *.dfm}
 
@@ -655,6 +666,16 @@ begin
   IsUnderline := False;
   Foreground := 'clBlack';
   Background := 'clBlack';
+end;
+
+///////////////////////////////////////////////////////////////////
+//TFctInfo
+///////////////////////////////////////////////////////////////////
+constructor TFctInfo.Create;
+begin
+  FctDef := '';
+  Params := '';
+  Line := -1;
 end;
 
 ///////////////////////////////////////////////////////////////////
@@ -1600,7 +1621,6 @@ begin
   IsRunning := False;
   IsCompiledComplete := True;
   CurrentICI := 1;
-  FillLookUpList;
 
   // Create dockable forms...
   frmProjectTree := TfrmProjectTree.Create(nil);
@@ -1613,6 +1633,7 @@ begin
   frmLuaEditMessages := TfrmLuaEditMessages.Create(nil);
   frmBreakpoints := TfrmBreakpoints.Create(nil);
   frmRings := TfrmRings.Create(nil);
+  frmFunctionList := TfrmFunctionList.Create(nil);
 
   // Assign dockable forms icons...
   imlDock.GetIcon(0, frmWatch.Icon);
@@ -1625,9 +1646,11 @@ begin
   imlDock.GetIcon(4, frmProjectTree.Icon);
   imlDock.GetIcon(6, frmBreakpoints.Icon);
   imlDock.GetIcon(10, frmRings.Icon);
+  imlDock.GetIcon(11, frmFunctionList.Icon);
 
   // Paint some non overriden components
   xmpMenuPainter.InitComponent(frmBreakpoints.tlbBreakpoints);
+  xmpMenuPainter.InitComponent(frmFunctionList.tblFunctionList);
 
   // Build the reopen menus and ring
   BuildReopenMenu;
@@ -1737,6 +1760,7 @@ begin
   pLuaUnit.synUnit := synEdit;
   pLuaUnit.synCompletion := GetBaseCompletionProposal();
   pLuaUnit.synParams := GetBaseParamsProposal();
+  pLuaUnit.synParams.TriggerChars := '(';
   pLuaUnit.synParams.Editor := pLuaUnit.synUnit;
   pLuaUnit.synCompletion.Editor := pLuaUnit.synUnit;
   LuaOpenedUnits.Add(pLuaUnit);
@@ -2600,6 +2624,17 @@ begin
     ShowDockForm(frmRings)
   else
     HideDockForm(frmRings);
+end;
+
+procedure TfrmMain.actShowFunctionListExecute(Sender: TObject);
+begin
+  actShowFunctionList.Checked := not actShowFunctionList.Checked;
+  frmFunctionList.Visible := actShowFunctionList.Checked;
+
+  if actShowFunctionList.Checked then
+    ShowDockForm(frmFunctionList)
+  else
+    HideDockForm(frmFunctionList);
 end;
 
 procedure TfrmMain.mnuXReopenClick(Sender: TObject);
@@ -4388,262 +4423,243 @@ end;
 procedure TfrmMain.synCompletionExecute(Kind: SynCompletionType; Sender: TObject; var CurrentInput: String; var x, y: Integer; var CanExecute: Boolean);
 var
   pLuaUnit: TLuaUnit;
+  pFctInfo: TFctInfo;
+  sTemp: String;
+  sFunctionName: String;
+  lstLocalTable: TStringList;
+  i, Index: Integer;
 begin
   pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
   pLuaUnit.synCompletion.ItemList.Clear;
   pLuaUnit.synCompletion.ClearList;
   pLuaUnit.synCompletion.InsertList.Clear;
 
-  if Pos('coroutine.', pLuaUnit.synUnit.LineText) <> 0 then
+  if Copy(pLuaUnit.synUnit.LineText, pLuaUnit.synUnit.CaretX - Length('coroutine.'), Length('coroutine.')) = 'coroutine.' then
   begin
-    if Pos('coroutine.', pLuaUnit.synUnit.LineText) + Length('coroutine.') + Length(pLuaUnit.synUnit.WordAtCursor) = pLuaUnit.synUnit.CaretX then
-    begin
-      //Coroutines functions
-      pLuaUnit.synCompletion.InsertList.Add('create');
-      pLuaUnit.synCompletion.InsertList.Add('resume');
-      pLuaUnit.synCompletion.InsertList.Add('status');
-      pLuaUnit.synCompletion.InsertList.Add('wrap');
-      pLuaUnit.synCompletion.InsertList.Add('yield');
+    //Coroutines functions
+    pLuaUnit.synCompletion.InsertList.Add('create');
+    pLuaUnit.synCompletion.InsertList.Add('resume');
+    pLuaUnit.synCompletion.InsertList.Add('status');
+    pLuaUnit.synCompletion.InsertList.Add('wrap');
+    pLuaUnit.synCompletion.InsertList.Add('yield');
 
-      //Coroutines functions
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}create\style{-B}(f)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}resume\style{-B}(co, val1, ...)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}status\style{-B}(co)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}wrap\style{-B}(f)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}yield\style{-B}(val1, ...)');
-    end;
+    //Coroutines functions
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}create\style{-B}(f)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}resume\style{-B}(co, val1, ...)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}status\style{-B}(co)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}wrap\style{-B}(f)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}yield\style{-B}(val1, ...)');
   end;
 
-  if Pos('string.', pLuaUnit.synUnit.LineText) <> 0 then
+  if Copy(pLuaUnit.synUnit.LineText, pLuaUnit.synUnit.CaretX - Length('string.'), Length('string.')) = 'string.' then
   begin
-    if Pos('string.', pLuaUnit.synUnit.LineText) + Length('string.') + Length(pLuaUnit.synUnit.WordAtCursor) = pLuaUnit.synUnit.CaretX then
-    begin
-      //Strings functions
-      pLuaUnit.synCompletion.InsertList.Add('byte');
-      pLuaUnit.synCompletion.InsertList.Add('char');
-      pLuaUnit.synCompletion.InsertList.Add('dump');
-      pLuaUnit.synCompletion.InsertList.Add('find');
-      pLuaUnit.synCompletion.InsertList.Add('len');
-      pLuaUnit.synCompletion.InsertList.Add('lower');
-      pLuaUnit.synCompletion.InsertList.Add('rep');
-      pLuaUnit.synCompletion.InsertList.Add('sub');
-      pLuaUnit.synCompletion.InsertList.Add('upper');
-      pLuaUnit.synCompletion.InsertList.Add('format');
-      pLuaUnit.synCompletion.InsertList.Add('gfind');
-      pLuaUnit.synCompletion.InsertList.Add('gsub');
+    //Strings functions
+    pLuaUnit.synCompletion.InsertList.Add('byte');
+    pLuaUnit.synCompletion.InsertList.Add('char');
+    pLuaUnit.synCompletion.InsertList.Add('dump');
+    pLuaUnit.synCompletion.InsertList.Add('find');
+    pLuaUnit.synCompletion.InsertList.Add('len');
+    pLuaUnit.synCompletion.InsertList.Add('lower');
+    pLuaUnit.synCompletion.InsertList.Add('rep');
+    pLuaUnit.synCompletion.InsertList.Add('sub');
+    pLuaUnit.synCompletion.InsertList.Add('upper');
+    pLuaUnit.synCompletion.InsertList.Add('format');
+    pLuaUnit.synCompletion.InsertList.Add('gfind');
+    pLuaUnit.synCompletion.InsertList.Add('gsub');
 
-      //Strings functions
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}byte\style{-B}(s, [, i])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}char\style{-B}(i1, i2, ...)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}dump\style{-B}(function)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}find\style{-B}(s, pattern [, init [, plain]])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}len\style{-B}(s)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}lower\style{-B}(s)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}rep\style{-B}(s, n)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}sub\style{-B}(s, i [, j])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}upper\style{-B}(s)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}format\style{-B}(formatstring, e1, e2, ...)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}gfind\style{-B}(s, pat)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}gsub\style{-B}(s, pat, rep1 [, n])');
-    end;
+    //Strings functions
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}byte\style{-B}(s, [, i])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}char\style{-B}(i1, i2, ...)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}dump\style{-B}(function)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}find\style{-B}(s, pattern [, init [, plain]])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}len\style{-B}(s)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}lower\style{-B}(s)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}rep\style{-B}(s, n)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}sub\style{-B}(s, i [, j])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}upper\style{-B}(s)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}format\style{-B}(formatstring, e1, e2, ...)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}gfind\style{-B}(s, pat)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}gsub\style{-B}(s, pat, rep1 [, n])');
   end;
 
-  if Pos('table.', pLuaUnit.synUnit.LineText) <> 0 then
+  if Copy(pLuaUnit.synUnit.LineText, pLuaUnit.synUnit.CaretX - Length('table.'), Length('table.')) = 'table.' then
   begin
-    if Pos('table.', pLuaUnit.synUnit.LineText) + Length('table.') + Length(pLuaUnit.synUnit.WordAtCursor) = pLuaUnit.synUnit.CaretX then
-    begin
-      //table functions
-      pLuaUnit.synCompletion.InsertList.Add('concat');
-      pLuaUnit.synCompletion.InsertList.Add('foreach');
-      pLuaUnit.synCompletion.InsertList.Add('foreachi');
-      pLuaUnit.synCompletion.InsertList.Add('getn');
-      pLuaUnit.synCompletion.InsertList.Add('sort');
-      pLuaUnit.synCompletion.InsertList.Add('insert');
-      pLuaUnit.synCompletion.InsertList.Add('remove');
-      pLuaUnit.synCompletion.InsertList.Add('setn');
+    //table functions
+    pLuaUnit.synCompletion.InsertList.Add('concat');
+    pLuaUnit.synCompletion.InsertList.Add('foreach');
+    pLuaUnit.synCompletion.InsertList.Add('foreachi');
+    pLuaUnit.synCompletion.InsertList.Add('getn');
+    pLuaUnit.synCompletion.InsertList.Add('sort');
+    pLuaUnit.synCompletion.InsertList.Add('insert');
+    pLuaUnit.synCompletion.InsertList.Add('remove');
+    pLuaUnit.synCompletion.InsertList.Add('setn');
 
-      //table functions
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}concat\style{-B}(table [, sep [, i [, j]]])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}foreach\style{-B}(table, f)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}foreachi\style{-B}(table, f)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}getn\style{-B}(table)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}sort\style{-B}(table [, comp])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}insert\style{-B}(table, [pos,] value)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}remove\style{-B}(table [, pos])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}setn\style{-B}(table, n)');
-    end;
+    //table functions
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}concat\style{-B}(table [, sep [, i [, j]]])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}foreach\style{-B}(table, f)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}foreachi\style{-B}(table, f)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}getn\style{-B}(table)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}sort\style{-B}(table [, comp])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}insert\style{-B}(table, [pos,] value)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}remove\style{-B}(table [, pos])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}setn\style{-B}(table, n)');
   end;
 
-  if Pos('math.', pLuaUnit.synUnit.LineText) <> 0 then
+  if Copy(pLuaUnit.synUnit.LineText, pLuaUnit.synUnit.CaretX - Length('math.'), Length('math.')) = 'math.' then
   begin
-    if Pos('math.', pLuaUnit.synUnit.LineText) + Length('math.') + Length(pLuaUnit.synUnit.WordAtCursor) = pLuaUnit.synUnit.CaretX then
-    begin
-      //math functions
-      pLuaUnit.synCompletion.InsertList.Add('abs');
-      pLuaUnit.synCompletion.InsertList.Add('acos');
-      pLuaUnit.synCompletion.InsertList.Add('asin');
-      pLuaUnit.synCompletion.InsertList.Add('atan');
-      pLuaUnit.synCompletion.InsertList.Add('atan2');
-      pLuaUnit.synCompletion.InsertList.Add('ceil');
-      pLuaUnit.synCompletion.InsertList.Add('cos');
-      pLuaUnit.synCompletion.InsertList.Add('deg');
-      pLuaUnit.synCompletion.InsertList.Add('exp');
-      pLuaUnit.synCompletion.InsertList.Add('floor');
-      pLuaUnit.synCompletion.InsertList.Add('log');
-      pLuaUnit.synCompletion.InsertList.Add('log10');
-      pLuaUnit.synCompletion.InsertList.Add('max');
-      pLuaUnit.synCompletion.InsertList.Add('min');
-      pLuaUnit.synCompletion.InsertList.Add('mod');
-      pLuaUnit.synCompletion.InsertList.Add('pow');
-      pLuaUnit.synCompletion.InsertList.Add('rad');
-      pLuaUnit.synCompletion.InsertList.Add('sin');
-      pLuaUnit.synCompletion.InsertList.Add('sqrt');
-      pLuaUnit.synCompletion.InsertList.Add('tan');
-      pLuaUnit.synCompletion.InsertList.Add('frexp');
-      pLuaUnit.synCompletion.InsertList.Add('ldexp');
-      pLuaUnit.synCompletion.InsertList.Add('random');
-      pLuaUnit.synCompletion.InsertList.Add('randomseed');
-      pLuaUnit.synCompletion.InsertList.Add('pi');
+    //math functions
+    pLuaUnit.synCompletion.InsertList.Add('abs');
+    pLuaUnit.synCompletion.InsertList.Add('acos');
+    pLuaUnit.synCompletion.InsertList.Add('asin');
+    pLuaUnit.synCompletion.InsertList.Add('atan');
+    pLuaUnit.synCompletion.InsertList.Add('atan2');
+    pLuaUnit.synCompletion.InsertList.Add('ceil');
+    pLuaUnit.synCompletion.InsertList.Add('cos');
+    pLuaUnit.synCompletion.InsertList.Add('deg');
+    pLuaUnit.synCompletion.InsertList.Add('exp');
+    pLuaUnit.synCompletion.InsertList.Add('floor');
+    pLuaUnit.synCompletion.InsertList.Add('log');
+    pLuaUnit.synCompletion.InsertList.Add('log10');
+    pLuaUnit.synCompletion.InsertList.Add('max');
+    pLuaUnit.synCompletion.InsertList.Add('min');
+    pLuaUnit.synCompletion.InsertList.Add('mod');
+    pLuaUnit.synCompletion.InsertList.Add('pow');
+    pLuaUnit.synCompletion.InsertList.Add('rad');
+    pLuaUnit.synCompletion.InsertList.Add('sin');
+    pLuaUnit.synCompletion.InsertList.Add('sqrt');
+    pLuaUnit.synCompletion.InsertList.Add('tan');
+    pLuaUnit.synCompletion.InsertList.Add('frexp');
+    pLuaUnit.synCompletion.InsertList.Add('ldexp');
+    pLuaUnit.synCompletion.InsertList.Add('random');
+    pLuaUnit.synCompletion.InsertList.Add('randomseed');
+    pLuaUnit.synCompletion.InsertList.Add('pi');
 
-      //table functions
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}abs\style{-B}(n)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}acos\style{-B}(n)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}asin\style{-B}(n)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}atan\style{-B}(n)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}atan2\style{-B}(n1, n2)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}ceil\style{-B}(n)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}cos\style{-B}(n)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}deg\style{-B}(n)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}exp\style{-B}(n)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}floor\style{-B}(n)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}log\style{-B}(n)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}log10\style{-B}(n)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}max\style{-B}(n1 [, ...])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}min\style{-B}(n1 [, ...)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}mod\style{-B}(n1, n2)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}pow\style{-B}(n1, n2)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}rad\style{-B}(n)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}sin\style{-B}(n)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}sqrt\style{-B}(n)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}tan\style{-B}(n)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}frexp\style{-B}(n, exp)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}ldexp\style{-B}(n, exp)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}random\style{-B}([rangemin [, rangemax]])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}randomseed\style{-B}(seed)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clMaroon}var\color{clBlack}           \column{}\style{+B}pi\style{-B}');
-    end;
+    //table functions
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}abs\style{-B}(n)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}acos\style{-B}(n)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}asin\style{-B}(n)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}atan\style{-B}(n)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}atan2\style{-B}(n1, n2)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}ceil\style{-B}(n)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}cos\style{-B}(n)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}deg\style{-B}(n)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}exp\style{-B}(n)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}floor\style{-B}(n)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}log\style{-B}(n)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}log10\style{-B}(n)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}max\style{-B}(n1 [, ...])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}min\style{-B}(n1 [, ...)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}mod\style{-B}(n1, n2)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}pow\style{-B}(n1, n2)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}rad\style{-B}(n)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}sin\style{-B}(n)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}sqrt\style{-B}(n)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}tan\style{-B}(n)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}frexp\style{-B}(n, exp)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}ldexp\style{-B}(n, exp)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}random\style{-B}([rangemin [, rangemax]])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}randomseed\style{-B}(seed)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clMaroon}var\color{clBlack}           \column{}\style{+B}pi\style{-B}');
   end;
 
-  if Pos('io.', pLuaUnit.synUnit.LineText) <> 0 then
+  if Copy(pLuaUnit.synUnit.LineText, pLuaUnit.synUnit.CaretX - Length('io.'), Length('io.')) = 'io.' then
   begin
-    if Pos('io.', pLuaUnit.synUnit.LineText) + Length('io.') + Length(pLuaUnit.synUnit.WordAtCursor) = pLuaUnit.synUnit.CaretX then
-    begin
-      //io functions
-      pLuaUnit.synCompletion.InsertList.Add('close');
-      pLuaUnit.synCompletion.InsertList.Add('flush');
-      pLuaUnit.synCompletion.InsertList.Add('input');
-      pLuaUnit.synCompletion.InsertList.Add('lines');
-      pLuaUnit.synCompletion.InsertList.Add('open');
-      pLuaUnit.synCompletion.InsertList.Add('output');
-      pLuaUnit.synCompletion.InsertList.Add('read');
-      pLuaUnit.synCompletion.InsertList.Add('tmpfile');
-      pLuaUnit.synCompletion.InsertList.Add('type');
-      pLuaUnit.synCompletion.InsertList.Add('write');
+    //io functions
+    pLuaUnit.synCompletion.InsertList.Add('close');
+    pLuaUnit.synCompletion.InsertList.Add('flush');
+    pLuaUnit.synCompletion.InsertList.Add('input');
+    pLuaUnit.synCompletion.InsertList.Add('lines');
+    pLuaUnit.synCompletion.InsertList.Add('open');
+    pLuaUnit.synCompletion.InsertList.Add('output');
+    pLuaUnit.synCompletion.InsertList.Add('read');
+    pLuaUnit.synCompletion.InsertList.Add('tmpfile');
+    pLuaUnit.synCompletion.InsertList.Add('type');
+    pLuaUnit.synCompletion.InsertList.Add('write');
 
-      //io functions
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}close\style{-B}([file])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}flush\style{-B}()');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}input\style{-B}([file])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}lines\style{-B}([filename])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}open\style{-B}(filename [, mode])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}output\style{-B}([file])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}read\style{-B}(format1, ...)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}tmpfile\style{-B}()');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}type\style{-B}(obj)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}write\style{-B}(value1, ...)');
-    end;
+    //io functions
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}close\style{-B}([file])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}flush\style{-B}()');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}input\style{-B}([file])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}lines\style{-B}([filename])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}open\style{-B}(filename [, mode])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}output\style{-B}([file])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}read\style{-B}(format1, ...)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}tmpfile\style{-B}()');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}type\style{-B}(obj)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}write\style{-B}(value1, ...)');
   end;
 
-  if Pos(':', pLuaUnit.synUnit.LineText) <> 0 then
+  if Copy(pLuaUnit.synUnit.LineText, pLuaUnit.synUnit.CaretX - Length(':'), Length(':')) = ':' then
   begin
-    if Pos(':', pLuaUnit.synUnit.LineText) + Length(':') = pLuaUnit.synUnit.CaretX then
-    begin
-      //following of io functions
-      pLuaUnit.synCompletion.InsertList.Add('close');
-      pLuaUnit.synCompletion.InsertList.Add('flush');
-      pLuaUnit.synCompletion.InsertList.Add('lines');
-      pLuaUnit.synCompletion.InsertList.Add('read');
-      pLuaUnit.synCompletion.InsertList.Add('seek');
-      pLuaUnit.synCompletion.InsertList.Add('write');
+    //following of io functions
+    pLuaUnit.synCompletion.InsertList.Add('close');
+    pLuaUnit.synCompletion.InsertList.Add('flush');
+    pLuaUnit.synCompletion.InsertList.Add('lines');
+    pLuaUnit.synCompletion.InsertList.Add('read');
+    pLuaUnit.synCompletion.InsertList.Add('seek');
+    pLuaUnit.synCompletion.InsertList.Add('write');
 
-      //following of io functions
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}close\style{-B}()');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}flush\style{-B}()');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}lines\style{-B}()');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}read\style{-B}(format1, ...)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}seek\style{-B}([whence] [, offset])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}write\style{-B}(value1, ...)');
-    end;
+    //following of io functions
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}close\style{-B}()');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}flush\style{-B}()');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}lines\style{-B}()');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}read\style{-B}(format1, ...)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}seek\style{-B}([whence] [, offset])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}write\style{-B}(value1, ...)');
   end;
 
-  if Pos('os.', pLuaUnit.synUnit.LineText) <> 0 then
+  if Copy(pLuaUnit.synUnit.LineText, pLuaUnit.synUnit.CaretX - Length('os.'), Length('os.')) = 'os.' then
   begin
-    if Pos('os.', pLuaUnit.synUnit.LineText) + Length('os.') = pLuaUnit.synUnit.CaretX then
-    begin
-      //os functions
-      pLuaUnit.synCompletion.InsertList.Add('clock');
-      pLuaUnit.synCompletion.InsertList.Add('date');
-      pLuaUnit.synCompletion.InsertList.Add('difftime');
-      pLuaUnit.synCompletion.InsertList.Add('execute');
-      pLuaUnit.synCompletion.InsertList.Add('exit');
-      pLuaUnit.synCompletion.InsertList.Add('getenv');
-      pLuaUnit.synCompletion.InsertList.Add('remove');
-      pLuaUnit.synCompletion.InsertList.Add('rename');
-      pLuaUnit.synCompletion.InsertList.Add('setlocale');
-      pLuaUnit.synCompletion.InsertList.Add('time');
-      pLuaUnit.synCompletion.InsertList.Add('tmpname');
+    //os functions
+    pLuaUnit.synCompletion.InsertList.Add('clock');
+    pLuaUnit.synCompletion.InsertList.Add('date');
+    pLuaUnit.synCompletion.InsertList.Add('difftime');
+    pLuaUnit.synCompletion.InsertList.Add('execute');
+    pLuaUnit.synCompletion.InsertList.Add('exit');
+    pLuaUnit.synCompletion.InsertList.Add('getenv');
+    pLuaUnit.synCompletion.InsertList.Add('remove');
+    pLuaUnit.synCompletion.InsertList.Add('rename');
+    pLuaUnit.synCompletion.InsertList.Add('setlocale');
+    pLuaUnit.synCompletion.InsertList.Add('time');
+    pLuaUnit.synCompletion.InsertList.Add('tmpname');
 
-      //os functions
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}clock\style{-B}()');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}date\style{-B}([format [, time]])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}difftime\style{-B}(t2, t1)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}execute\style{-B}(command)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}exit\style{-B}([code])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}getenv\style{-B}(varname)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}remove\style{-B}(filename)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}rename\style{-B}(oldname, newname)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}setlocale\style{-B}(locale [, category])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}time\style{-B}([table])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}tmpname\style{-B}()');
-    end;
+    //os functions
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}clock\style{-B}()');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}date\style{-B}([format [, time]])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}difftime\style{-B}(t2, t1)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}execute\style{-B}(command)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}exit\style{-B}([code])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}getenv\style{-B}(varname)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}remove\style{-B}(filename)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}rename\style{-B}(oldname, newname)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}setlocale\style{-B}(locale [, category])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}time\style{-B}([table])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}tmpname\style{-B}()');
   end;
 
-  if Pos('debug.', pLuaUnit.synUnit.LineText) <> 0 then
+  if Copy(pLuaUnit.synUnit.LineText, pLuaUnit.synUnit.CaretX - Length('debug.'), Length('debug.')) = 'debug.' then
   begin
-    if Pos('debug.', pLuaUnit.synUnit.LineText) + Length('debug.') = pLuaUnit.synUnit.CaretX then
-    begin
-      //debug functions
-      pLuaUnit.synCompletion.InsertList.Add('debug');
-      pLuaUnit.synCompletion.InsertList.Add('gethook');
-      pLuaUnit.synCompletion.InsertList.Add('getinfo');
-      pLuaUnit.synCompletion.InsertList.Add('getlocal');
-      pLuaUnit.synCompletion.InsertList.Add('getupvalue');
-      pLuaUnit.synCompletion.InsertList.Add('setlocal');
-      pLuaUnit.synCompletion.InsertList.Add('setupvalue');
-      pLuaUnit.synCompletion.InsertList.Add('sethook');
-      pLuaUnit.synCompletion.InsertList.Add('traceback');
+    //debug functions
+    pLuaUnit.synCompletion.InsertList.Add('debug');
+    pLuaUnit.synCompletion.InsertList.Add('gethook');
+    pLuaUnit.synCompletion.InsertList.Add('getinfo');
+    pLuaUnit.synCompletion.InsertList.Add('getlocal');
+    pLuaUnit.synCompletion.InsertList.Add('getupvalue');
+    pLuaUnit.synCompletion.InsertList.Add('setlocal');
+    pLuaUnit.synCompletion.InsertList.Add('setupvalue');
+    pLuaUnit.synCompletion.InsertList.Add('sethook');
+    pLuaUnit.synCompletion.InsertList.Add('traceback');
 
-      //debug functions
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}debug\style{-B}()');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}gethook\style{-B}()');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}getinfo\style{-B}(function [, what])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}getlocal\style{-B}(level, local)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}getupvalue\style{-B}(func, up)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}setlocal\style{-B}(level, local, value)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}setupvalue\style{-B}(func, up, value)');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}sethook\style{-B}(hook, mask [, count])');
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}traceback\style{-B}([message])');
-    end;
+    //debug functions
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}debug\style{-B}()');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}gethook\style{-B}()');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}getinfo\style{-B}(function [, what])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}getlocal\style{-B}(level, local)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}getupvalue\style{-B}(func, up)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}setlocal\style{-B}(level, local, value)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}setupvalue\style{-B}(func, up, value)');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}sethook\style{-B}(hook, mask [, count])');
+    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}traceback\style{-B}([message])');
   end;
   
   //standard functions
@@ -4716,6 +4732,47 @@ begin
   pLuaUnit.synCompletion.ItemList.Add('\color{clGreen}library\color{clBlack}       \column{}\style{+B}math\style{-B}');
   pLuaUnit.synCompletion.ItemList.Add('\color{clGreen}library\color{clBlack}       \column{}\style{+B}io\style{-B}');
 
+  // Local definitions
+  frmFunctionList.RefreshList(pLuaUnit.sUnitPath);
+  lstLocalTable := TStringList.Create;
+
+  for i := 0 to frmFunctionList.lvwFunctions.Items.Count - 1 do
+  begin
+    pFctInfo := TFctInfo(frmFunctionList.lvwFunctions.Items[i].Data);
+    sFunctionName := '';
+
+    // look if it is member of a table
+    if Pos('.', pFctInfo.FctDef) <> 0 then
+    begin
+      sTemp := Copy(pFctInfo.FctDef, 1, Pos('.', pFctInfo.FctDef));
+      lstLocalTable.Sort;
+      if not lstLocalTable.Find(sTemp, Index) then
+        lstLocalTable.Add(sTemp);
+
+
+      if Copy(pLuaUnit.synUnit.LineText, pLuaUnit.synUnit.CaretX - Length(sTemp), Length(sTemp)) = sTemp then
+      begin
+        sFunctionName := StringReplace(Copy(pFctInfo.FctDef, 1, Pos('(', pFctInfo.FctDef) - 1), sTemp, '', [rfReplaceAll, rfIgnoreCase]);
+      end;
+    end
+    else
+      sFunctionName := Copy(pFctInfo.FctDef, 1, Pos('(', pFctInfo.FctDef) - 1);
+
+    if sFunctionName <> '' then
+    begin
+      pLuaUnit.synCompletion.InsertList.Add(sFunctionName);
+      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}' + sFunctionName + '\style{-B}(' + pFctInfo.Params + ')');
+    end;
+  end;
+
+  for i := 0 to lstLocalTable.Count - 1 do
+  begin
+    pLuaUnit.synCompletion.InsertList.Add(Copy(lstLocalTable.Strings[i], 1, Length(lstLocalTable.Strings[i]) - 1));
+    pLuaUnit.synCompletion.ItemList.Add('\color{clGreen}library\color{clBlack}       \column{}\style{+B}' + Copy(lstLocalTable.Strings[i], 1, Length(lstLocalTable.Strings[i]) - 1) + '\style{-B}');
+  end;
+
+  lstLocalTable.Free;
+
   //change title
   pLuaUnit.synCompletion.Title := 'Lua 5.0 Library';
   pLuaUnit.synCompletion.ResetAssignedList;
@@ -4723,22 +4780,14 @@ end;
 
 procedure TfrmMain.synParamsExecute(Kind: SynCompletionType; Sender: TObject; var AString: String; var x, y: Integer; var CanExecute: Boolean);
 var
-  locline, lookup: String;
-  TmpX, savepos, StartX, ParenCounter, TmpLocation: Integer;
+  locline, lookup, sFunctionName, sProposition: String;
+  TmpX, savepos, StartX, ParenCounter: Integer;
+  TmpLocation, i: Integer;
   FoundMatch: Boolean;
+  pFctInfo: TFctInfo;
 begin
-  //Param Completion is different than Code Completion.  We can't just use
-  //the string passed to us we have to figure out what they are looking for,
-  //which is language dependant For this demo, I assume that it has to be on the
-  //*same* line, then do some paren checking.  For the sake of the demo, the
-  //function will be the word directly before the paren.  In other languages you
-  //would want to do something like grab everything before the last end of
-  //statement char (like in ObjectPascal it's the ';' char).  It *does* support
-  //embedded functions (Hense the paren checking).  In this case, commas are the
-  //delimiter so they are incremented accordingly.
-
-  //Also everything is hard coded in.  You will want to have some kind of
-  //structure that you are using instead of hard coding the parameters in
+  // Refill the lookup list for lastest changes
+  FillLookUpList;
 
   with TSynCompletionProposal(Sender).Editor do
   begin
@@ -5118,13 +5167,38 @@ begin
       begin
         TSynCompletionProposal(Sender).ItemList.Add('"[message]"');
       end;
+
+      // looking for local definitions
+      for i := 0 to frmFunctionList.lvwFunctions.Items.Count - 1 do
+      begin
+        pFctInfo := TFctInfo(frmFunctionList.lvwFunctions.Items[i].Data);
+        sFunctionName := Copy(pFctInfo.FctDef, 1, Pos('(', pFctInfo.FctDef) - 1);
+
+        // if current function call is equal to any of these
+        if Lookup = UpperCase(sFunctionName) then
+        begin
+          // Format the string to be compatible with the proposition engine
+          if pFctInfo.Params = '' then
+            sProposition := '* No Parameters Expected *'
+          else
+            sProposition := StringReplace(pFctInfo.Params, ',', '", ", ', [rfReplaceAll, rfIgnoreCase]);
+
+          sProposition := '"' + sProposition + '"';
+          TSynCompletionProposal(Sender).ItemList.Add(sProposition);
+        end;
+      end;
     end;
   end else TSynCompletionProposal(Sender).ItemList.Clear;
 end;
 
 //Is called when form create
 procedure TfrmMain.FillLookUpList;
+var
+  pFctInfo: TFctInfo;
+  x: Integer;
 begin
+  LookupList.Clear;
+  
   //base lib
   LookupList.Add('assert');
   LookupList.Add('collectgarbage');
@@ -5247,6 +5321,13 @@ begin
   LookupList.Add('math.random');
   LookupList.Add('math.randomseed');
   LookupList.Add('math.pi');
+
+  // Add local definitions
+  for x := 0 to frmFunctionList.lvwFunctions.Items.Count - 1 do
+  begin
+    pFctInfo := TFctInfo(frmFunctionList.lvwFunctions.Items[x].Data);
+    LookupList.Add(Copy(pFctInfo.FctDef, 1, Pos('(', pFctInfo.FctDef) - 1));
+  end;
 end;
 
 procedure TfrmMain.actEditorSettingsExecute(Sender: TObject);
@@ -6563,6 +6644,7 @@ begin
         stbMain.Panels[3].Text := '';
 
       synEditClick(pLuaUnit.synUnit);
+      frmFunctionList.RefreshList(pLuaUnit.sUnitPath);
       CheckButtons;
     end;
   end;
@@ -6586,8 +6668,6 @@ begin
     end;
   end;
 end;
-
-
 
 // check the syntax of the currently opened unit
 procedure TfrmMain.actCheckSyntaxExecute(Sender: TObject);

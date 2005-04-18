@@ -50,6 +50,20 @@ var
 begin
   ModalResult := mrNone;
 
+  if cboUnits.ItemIndex = -1 then
+  begin
+    Application.MessageBox('Please choose a unit where to add the breakpoint.', 'LuaEdit', MB_OK+MB_ICONERROR);
+    cboUnits.SetFocus;
+    Exit;
+  end;
+
+  if txtLine.Text = '' then
+  begin
+    Application.MessageBox('Please choose a line where to add the breakpoint.', 'LuaEdit', MB_OK+MB_ICONERROR);
+    txtLine.SetFocus;
+    Exit;
+  end;
+
   if TLuaUnit(cboUnits.Items.Objects[cboUnits.ItemIndex]).pDebugInfos.GetBreakpointAtLine(StrToInt(txtLine.Text)) <> nil then
   begin
     Application.MessageBox(PChar('There is already a breakpoint set at line number '+txtLine.Text+'!'), 'LuaEdit', MB_OK+MB_ICONERROR);

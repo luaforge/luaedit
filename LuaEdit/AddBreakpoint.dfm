@@ -3,7 +3,7 @@ object frmAddBreakpoint: TfrmAddBreakpoint
   Top = 249
   BorderStyle = bsDialog
   Caption = 'Add Breakpoint'
-  ClientHeight = 201
+  ClientHeight = 176
   ClientWidth = 369
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -11,6 +11,7 @@ object frmAddBreakpoint: TfrmAddBreakpoint
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   Font.Style = []
+  FormStyle = fsStayOnTop
   OldCreateOrder = False
   Position = poOwnerFormCenter
   OnShow = FormShow
@@ -18,7 +19,7 @@ object frmAddBreakpoint: TfrmAddBreakpoint
   TextHeight = 13
   object Panel1: TPanel
     Left = 0
-    Top = 160
+    Top = 135
     Width = 369
     Height = 41
     Align = alBottom
@@ -55,7 +56,7 @@ object frmAddBreakpoint: TfrmAddBreakpoint
     Left = 0
     Top = 0
     Width = 369
-    Height = 160
+    Height = 135
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
@@ -68,14 +69,14 @@ object frmAddBreakpoint: TfrmAddBreakpoint
     end
     object Label2: TLabel
       Left = 16
-      Top = 64
+      Top = 56
       Width = 47
       Height = 13
       Caption = 'Condition:'
     end
     object Label3: TLabel
       Left = 16
-      Top = 112
+      Top = 96
       Width = 23
       Height = 13
       Caption = 'Line:'
@@ -91,14 +92,14 @@ object frmAddBreakpoint: TfrmAddBreakpoint
     end
     object txtCondition: TEdit
       Left = 16
-      Top = 80
+      Top = 72
       Width = 337
       Height = 21
       TabOrder = 1
     end
     object txtLine: TEdit
       Left = 16
-      Top = 128
+      Top = 112
       Width = 89
       Height = 21
       MaxLength = 6
