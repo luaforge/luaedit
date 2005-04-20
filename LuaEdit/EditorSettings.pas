@@ -290,9 +290,9 @@ begin
     Options := Options - [eoHideShowScrollbars];
 
   if chkTrailBlanks.Checked then
-    Options := Options + [eoTrimTrailingSpaces]
+    Options := Options - [eoTrimTrailingSpaces]
   else
-    Options := Options - [eoTrimTrailingSpaces];
+    Options := Options + [eoTrimTrailingSpaces];
 
   if chkTabIndent.Checked then
     Options := Options + [eoTabIndent]

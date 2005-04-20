@@ -222,7 +222,7 @@ object frmMain: TfrmMain
     object tlbBaseFile: TToolBar
       Left = 11
       Top = 2
-      Width = 283
+      Width = 296
       Height = 22
       Align = alLeft
       AutoSize = True

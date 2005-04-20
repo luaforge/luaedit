@@ -2494,6 +2494,7 @@ begin
   actShowLuaGlobals.Checked := frmLuaGlobals.Visible;
   actShowLuaLocals.Checked := frmLuaLocals.Visible;
   actShowRings.Checked := frmRings.Visible;
+  actShowFunctionList.Checked := frmFunctionList.Visible;
 end;
 
 procedure TfrmMain.actMainMenuProjectExecute(Sender: TObject);
