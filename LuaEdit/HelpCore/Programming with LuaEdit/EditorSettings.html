@@ -1,0 +1,207 @@
+<html>	
+	<head>
+		  <title>
+		  		 Editor Settings
+		  </title>
+	</head>
+
+	<body bgcolor="#FFFFFF" vlink="silver" alink="navy" link="navy">
+		 <table width="100%" border="0" cellpadding="0" cellspacing="0" summary="">
+				<tr> 
+					<td valign="bottom">													  
+						<div align="left">
+							<b><font face="Tahoma" size="3" color="navy">Editor Settings</font></b>
+							<br>
+							<font face="Tahoma" size="2">		
+							<a href="TopicGroup_PWL.html">Topic Groups</a>
+							</font>
+						</div>	
+					</td> 
+					<td>
+						<font face="Tahoma" size="1" color="silver">  
+						<div align="right" valign="top">
+							 <a href="http://www.lua.org">Lua homepage</a>
+						</div>	
+						</font>
+					</td>
+				</tr>
+				<tr valign="top">
+					<td colspan="2">
+						  <hr size="1" color="#000000" align="top">
+						  <br>
+						  <br>
+						  <font face="Tahoma" size="2">
+						  <p style="text-align: justify">
+						  	 Just like other IDEs, LuaEdit allows customization of its own environment. This section will explain
+							 the different modifications available through the "Editor Settings Window". This window, available
+							 via the menu "Tools/Editor Settings...", is divisied in three major categories: "General", "Display" 
+							 and "Colors".
+							 <br>
+							 <br>
+							 <b>The General Tab (Picture 1.1)</b><br>
+							 This tab featrues miscellaneous options for the code editor and the IDE.
+							 <br>
+							 <ul type="square">
+							     <img width="490" height="386" src="../Medias/GeneralTab.jpg" alt="Picture 1.1" align="right" hspace="15" vspace="15">
+							 	 <li style="text-align: justify"><b>"Associate LuaEdit with Common Lua File"</b><br>
+								 	 Check this option to associate the common *.lua and *.lpr files with LuaEdit in Windows. When checked,
+							 		 LuaEdit will ask for a system reboot in order for those changes to take effect. Once done, it is
+									 now possible to simply double-click on *.lua or *.lpr files and LuaEdit will handle automatic opening. 
+								 </li>
+								 <li style="text-align: justify"><b>"Save Breakpoints"</b><br>
+							 	 	 Check this option in order to allow LuaEdit saving the breakpoints information such as their conditions 
+									 and positions while saving a file. Next time you will reopen this file, the breakpoints should be reinitialized.
+								 </li>
+								 <li style="text-align: justify"><b>"Show Extended Save Dialog on Exit"</b><br>
+								 	 Check this option in order to display a window wich groups all new or modified files opened that might need
+									 to be saved when exiting LuaEdit. Without this option, LuaEdit will popup a message box for every file that
+									 required a save on after the other.
+								 </li>
+								 <li style="text-align: justify"><b>"Save Projects Incrementally"</b><br>
+								 	 Check this option in order to save *.lpr files in an incremental way. This means that if this option is checked
+									 and you opened a file called "Project5.lpr", it will automatically save the file as "Project6.lpr" next time
+									 you will save it. Just like "Project.lpr" will result into "Project1.lpr". This can be a good, safe and quick 
+									 way to backup files everytime you save it. (3D studio max has the same kind of feature)
+								 </li>
+								 <li style="text-align: justify"><b>"Save Units Incrementally"</b><br>
+								 	 Check this option in order to save *.lua files in an incremental way. This means that if this option is checked
+									 and you opened a file called "Unit9.lua", it will automatically save the file as "Unit10.lpr" next time
+									 you will save it. Just like "Unit.lpr" will result into "Unit1.lpr". This can be a good, safe and quick 
+									 way to backup files everytime you save it. (3D studio max has the same kind of feature)
+								 </li>
+								 <li style="text-align: justify"><b>"Auto Indent"</b><br>
+								 	 This option will make the code editor indenting the caret on new lines with the same amount of leading white spaces
+									 or tabs as the preceding line.
+								 </li>
+								 <li style="text-align: justify"><b>"Group Undo"</b><br>
+								     This will make undo/redo actions to handle all continous changes of the same kind in one call instead undoing/redoing
+									 each changes separately on after the other.
+								 </li>
+								 <li style="text-align: justify"><b>"Use Tab Indent"</b><br>
+								     Check this option in order to simulate the indent/unindent actions on the current selection by pressing the [Tab] 
+									 and [Shift+Tab].
+								 </li>
+								 <li style="text-align: justify"><b>"Use Smart Tabs"</b><br>
+								     Check this option in order to send the cursor to the next non-white space character of the previous line when pressing
+									 the [Tab] key.
+								 </li>
+								 <li style="text-align: justify"><b>"Move Caret on Right Click"</b><br>
+								     Check this option in order to move the caret position when right clicking on the code editor. (This will still popup
+									 the code editor popup menu)
+								 </li>
+								 <li style="text-align: justify"><b>"Use Enhance Home Key"</b><br>
+								     Check this option in order to send the cursor to the first non-white space character of the current line instead of the
+									 very begining of the current line. (If checked, press twice to do so)									 
+								 </li>
+								 <li style="text-align: justify"><b>"Convert Tabs to Spaces"</b><br>
+								     Check this option in order to converts tab characters into the specified number of space characters for a tab.
+								 </li>
+								 <li style="text-align: justify"><b>"Hide Scroll Bars When Useless"</b><br>
+								     Check this option in order to hide the scroll bars whenever they are disabled because they can't scroll.
+								 </li>
+								 <li style="text-align: justify"><b>"Scroll Past EOF"</b><br>
+								     Check this option in order to allow scrolling even though the End Of File is reached.
+								 </li>
+								 <li style="text-align: justify"><b>"Scroll Past EOL"</b><br>
+								     Check this option in order to allow scrolling even though the End Of Line is reached.
+								 </li>
+								 <li style="text-align: justify"><b>"Save Breakpoints"</b><br>
+								     Check this option in order to keep the X position of the caret when moving through lines 
+									 (Takes effects only if "Scoll Past EOL" is NOT check)
+								 </li>
+								 <li style="text-align: justify"><b>"Keep Trailing Blanks"</b><br>
+								     If this option is checked, spaces at the End Of Lines will be trimmed and not saved.
+								 </li>
+								 <li style="text-align: justify"><b>"Undo Limits"</b><br>
+								 	 Set in this field the number of undo allowed to LuaEdit. The higher this will be, the more memory LuaEdit might
+									 take for Undo/Redo actions only.
+								 </li>
+								 <li style="text-align: justify"><b>"Tab Width"</b><br>
+								     Set in this field the width of a tab character in spaces. For example, if this setting is set to 4, a tab character
+									 will have the equivalent of 4 white spaces.
+								 </li>
+							 </ul> 
+							 <br>
+							 <br>
+							 <b>The Display Tab (Picture 1.2)</b><br>
+							 This tab features display options for the gutter and the code editor.
+							 <br> 
+							 <ul type="square">
+							 	 <img width="490" height="389" src="../Medias/DisplayTab.jpg" alt="Picture 1.2" align="right" hspace="15" vspace="15">
+							 	 <li style="text-align: justify"><b>"Show Gutter"</b><br>
+								     Check/uncheck this option in order to display/hide the gutter on the code editor.
+								 </li>
+								 <li style="text-align: justify"><b>"Show Line Numbers"</b><br>
+								     Check/uncheck this option in order to display/hide the line numbers in the gutter.
+								 </li>
+								 <li style="text-align: justify"><b>"Leading Zeros"</b><br>
+								     Check/uncheck this option in order to display/hide leading zeros for the line numbers in the gutter. 
+									 (Works only if the "Show Line Numbers" option is check)
+								 </li>
+								 <li style="text-align: justify"><b>"Gutter Width"</b><br>
+								     Set in this field the total width of the gutter in pixels. (excluding the line numbers because
+									 they make the gutter's width beeing recalculated every time they display or hide)
+								 </li>
+								 <li style="text-align: justify"><b>"Gutter Color"</b><br>
+								     Choose the color you want for the gutter to be painted with. (The colors proposed in the list and
+									 the colors you can choose on the light spectrum may vary according to your Operating System and its Display Settings)
+								 </li>
+								 <li style="text-align: justify"><b>"Font"</b><br>
+								     Choose the type of font that will be used to display the code in the code editor. (The fonts proposed in the list
+									 may vary according to your Operating System)
+								 </li>
+								 <li style="text-align: justify"><b>"Size"</b><br>
+								 	 Set in this field the size of the font in points to be used to display the code in the code editor.
+								 </li>
+							 </ul>
+							 <br>
+							 <br>
+							 <b>The Colors Tab (Picture 1.3)</b><br>
+							 This tab features color options for the the code editor only.
+							 <br>
+							 <ul type="square">
+							 	 <img width="489" height="388" src="../Medias/ColorsTab.jpg" alt="Picture 1.3" align="right" hspace="15" vspace="15">
+							 	 <li style="text-align: justify"><b>"Elements"</b><br>
+								 	 The item selected in this list will be afected by all other options in this tab. This list groups
+									 all kind of tokens in Lua scripts such as strings and numbers.
+								 </li>
+								 <li style="text-align: justify"><b>"Bold"</b><br>
+								 	 Check this option in order to make the selected token being bold in the code editor.
+								 </li>
+								 <li style="text-align: justify"><b>"Italic"</b><br>
+								 	 Check this option in order to make the selected token being italic in the code editor.
+								 </li>
+								 <li style="text-align: justify"><b>"Underline"</b><br>
+								 	 Check this option in order to make the selected token being underline in the code editor.
+								 </li>
+								 <li style="text-align: justify"><b>"Foreground"</b><br>
+								 	 Choose the color you want for the selected token's foreground to be painted with. (The colors proposed in the list and
+									 the colors you can choose on the light spectrum may vary according to your Operating System and its Display Settings)
+								 </li>
+								 <li style="text-align: justify"><b>"Background"</b><br>
+								 	 Choose the color you want for the selected token's background to be painted with. (The colors proposed in the list and
+									 the colors you can choose on the light spectrum may vary according to your Operating System and its Display Settings)
+								 </li>
+							 </ul>
+						  </p> 
+						  <br> 
+						  </font>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<font face="Tahoma" size="1" color="silver">
+						<hr size="1" color="#000000">
+							<div align="right">			  
+								<a href="http://luaedit.luaforge.net">http://luaedit.luaforge.net</a>
+								<br>
+								© Copyright 2004-2005 LuaEdit
+								<br>
+								LuaEdit v 2.0 for Lua 5.0
+							</div>
+						</font>
+					</td>
+				</tr>
+		  </table>
+	</body>
+</html>

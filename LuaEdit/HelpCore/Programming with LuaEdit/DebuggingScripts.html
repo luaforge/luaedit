@@ -1,0 +1,109 @@
+<html>	
+	<head>
+		  <title>
+		  		 Debugging Scripts
+		  </title>
+	</head>
+
+	<body bgcolor="#FFFFFF" vlink="silver" alink="navy" link="navy">
+		 <table width="100%" border="0" cellpadding="0" cellspacing="0" summary="">
+				<tr> 
+					<td valign="bottom">													  
+						<div align="left">
+							<b><font face="Tahoma" size="3" color="navy">Debugging Scripts</font></b>
+							<br>
+							<font face="Tahoma" size="2">		
+							<a href="TopicGroup_PWL.html">Topic Groups</a>
+							</font>
+						</div>	
+					</td> 
+					<td>
+						<font face="Tahoma" size="1" color="silver">  
+						<div align="right" valign="top">
+							 <a href="http://www.lua.org">Lua homepage</a>
+						</div>	
+						</font>
+					</td>
+				</tr>
+				<tr valign="top">
+					<td colspan="2">
+						  <hr size="1" color="#000000" align="top">
+						  <br>
+						  <br>
+						  <font face="Tahoma" size="2">
+						  <p style="text-align: justify">																									   
+						  	 <img width="227" height="57" src="../Medias/DebugToolBar.jpg" align="right" alt="Picture 1.1" hspace="15">
+						  	 Debugging is long and difficult task to do. It is also a crucial state in programming project because
+							 this task have to be well done in order to bring a project successful. LuaEdit provides servaral tools
+							 to get this *painful* task done as easy as possible. This section will explain the basic actions to debug
+							 scripts with LuaEdit.
+							 <br>
+							 <br>
+							 <b>Basics</b><br>
+							 First of all, you must press the "Run" (F5) button on the "Debug Toolbar" (Picture 1.1) or by using the menu "Run/Run Script" 
+							 in order to get into a debug session. This will load the script into a "Lua State" (See Lua 5.0 documentation
+							 available through the menu "?/Lua Help") and execute each valid line of you script until it reaches the end or a
+							 valid breakpoint (See documentation below for more informations about breakpoints). If an error happened while running 
+							 the script, LuaEdit will display the message through a message box and through the "Messages Window" (Picture 1.2).
+							 Several debugging informations are available, once the script execution breaks on a line. Local and Global variables
+							 values are available through the "Local Variables Window" and the "Global Variables Window". Also, the "Lua Stack Window"
+							 shows all Lua's stacked variables values at the moment of the current execution and the "Call Stack Window" shows the
+							 history of all function calls made from the current script. This call stack may be useful to trace back the values of the
+							 local and global variables in previous calls.
+							 <br>
+							 <br>
+							 <b>Step by Step</b><br>					  
+							 <img width="320" height="120" src="../Medias/LuaEditMessages.jpg" align="right" alt="Picture 1.2" hspace="15">
+							 A few choices are available to pursue the execution of the script. The "Step Over" (F10) and "Step Into" (F11) buttons allows
+							 to jump the function call of the current debugging line if any. If "Step into" is pressed and no function call is made on the
+							 current debugging line, the debugger will simulate the "Step Over" feature wich simply jump to the next executed line. The
+							 "Run Script to Cursor" (Ctrl+F10) button will run the script until it reaches the line where cursor is currently positioned
+							 or until the end of the script. The "Run" (F5) button will pursue the execution of the scipt if already started.
+							 <br>
+							 <br>
+							 <b>Manipulating Breakpoints</b><br> 
+							 Breakpoins are very useful	when debugging. To insert a breakpoint at the line where the cursor is, press the "Toggle Breakpoint"
+							 (F9) button from the debug toolbar (Picture 1.2). When debugging a script, the execution should break on a line where a breakpoint			
+							 <img width="363" height="128" src="../Medias/Breakpoints.jpg" align="right" hspace="15" vspace="15">
+							 has been detected. Advanced manipulation and features for breakpoint are available through the "Breakpoints Window" (Picture 1.3)
+							 such as disabling/enabling breakpoints. A disabled breakpoint won't break the execution of the script but will leave the breakpoint marker 
+							 (maroon/grayed) on the code editor. To disable/enable a breakpoint, simply check/uncheck the checkbox on the left of the breakpoint name
+							 in the "Breakpoints Window". You can also set a condition on a breakpoint wich will be evaluated when the scipt is runnning
+							 to determine whether or not it will break on this breakpoint. The evaluation of the condition should always return "true" or "false".
+							 You can also remove, add and goto breakpoints through the "Breakpoints Window".
+							 <br>
+							 <br>
+							 <b>Using the Initializer</b><br>
+							 LuaEdit offer the possibility to bind the code to a Dynamic-Link Library (DLL) before the execution of the script. This can be very useful
+							 if any function call in the scripts refer to some C++ functions defined in such a file. By using the initializer, you will prevent error
+							 raised by Lua 5.0 because it can't find the reference of the function call. To set the initializer, just popup the "Project Options Window"
+							 by clicking on the "Project/Options..." menu. Once the windowis displayed, select the "Debug" tab and enter the full path of the DLL or simply
+							 click on the browse button and open the DLL from the browse dialog. In order to make this feature working your DLL must export a function of
+							 one of these prototype according to the right language it has been built from:
+							 <ul type="square"> 
+							 	  <li>Delphi: <b style="color: navy">&nbsp;LuaDebug_Initializer(L: PLua_State): Integer; cdecl;&nbsp;</b></li>
+								  <li>C/C++: <b style="color: navy">&nbsp;int LuaDebug_Initializer(lua_State *L);&nbsp;</b></li>
+							 </ul>
+							 <b>NOTE:</b> The initializer property is only available when the unit is part of a project. 
+						  </p> 
+						  <br> 
+						  </font>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<font face="Tahoma" size="1" color="silver">
+						<hr size="1" color="#000000">
+							<div align="right">			  
+								<a href="http://luaedit.luaforge.net">http://luaedit.luaforge.net</a>
+								<br>
+								© Copyright 2004-2005 LuaEdit
+								<br>
+								LuaEdit v 2.0 for Lua 5.0
+							</div>
+						</font>
+					</td>
+				</tr>
+		  </table>
+	</body>
+</html>
