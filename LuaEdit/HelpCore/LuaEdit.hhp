@@ -5,7 +5,7 @@ Contents file=Table of Contents.hhc
 Default Window=BaseWindow
 Default topic=Welcome.html
 Display compile progress=Yes
-Error log file=c:\Prog\Delphi\LuaEditor\HelpCore\Compile.log
+Error log file=..\..\LuaEditor\HelpCore\Compile.log
 Full-text search=Yes
 Index file=Index.hhk
 Language=0x1009 English (Canada)
@@ -16,21 +16,35 @@ BaseWindow="LuaEdit Application Help","Table of Contents.hhc","Index.hhk","Welco
 
 
 [FILES]
-Welcome.html
-Editor Settings.html
-Getting Started.html
-Minimum Requirements.html
-Project Settings.html
-LuaEdit Settings.html
 Legal.html
+MinimumRequirements.html
+New.html
+Welcome.html
+Programming with LuaEdit\Basics.html
+Programming with LuaEdit\DebuggingScripts.html
+Programming with LuaEdit\EditingCode.html
+Programming with LuaEdit\EditorSettings.html
+Programming with LuaEdit\IDE.html
+Programming with LuaEdit\ProgrammingWithLuaEdit.html
+Programming with LuaEdit\TopicGroup_PWL.html
+Programming with LuaEdit\WorkingWithProjects.html
+LuaManual\Manual.html
+LuaManual\ManualIndex.html
 
 [ALIAS]
-EdtSettings=Editor Settings.html
 Legal=Legal.html
-LuaEditSettings=LuaEdit Settings.html
-MainWindow=Getting Started.html
-MinRequirements=Minimum Requirements.html
-PrjSettings=Project Settings.html
+LM_Manual=LuaManual\Manual.html
+LM_ManualIndex=LuaManual\ManualIndex.html
+MinReq=MinimumRequirements.html
+New=New.html
+PWL_Basics=Programming with LuaEdit\Basics.html
+PWL_DebugScripts=Programming with LuaEdit\DebuggingScripts.html
+PWL_EditingCode=Programming with LuaEdit\EditingCode.html
+PWL_EditorSettings=Programming with LuaEdit\EditorSettings.html
+PWL_IDE=Programming with LuaEdit\IDE.html
+PWL_PWL=Programming with LuaEdit\ProgrammingWithLuaEdit.html
+PWL_TopicGroup_PWL=Programming with LuaEdit\TopicGroup_PWL.html
+PWL_WorkingWithPrj=Programming with LuaEdit\WorkingWithProjects.html
 Welcome=Welcome.html
 
 [MAP]

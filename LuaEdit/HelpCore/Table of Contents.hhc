@@ -5,54 +5,83 @@
 <!-- Sitemap 1.0 -->
 </HEAD><BODY>
 <OBJECT type="text/site properties">
-	<param name="ImageType" value="Folder">
+	<param name="Window Styles" value="0x800025">
 </OBJECT>
 <UL>
 	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Welcome">
+		<param name="Name" value="LuaEdit References">
 		<param name="Local" value="Welcome.html">
 		<param name="URL" value="Welcome.html">
-		<param name="ImageNumber" value="2">
+		<param name="ImageNumber" value="1">
 		</OBJECT>
 	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="What's New?">
+			<param name="Local" value="New.html">
+			<param name="URL" value="New.html">
+			<param name="ImageNumber" value="9">
+			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Minimum Requirements">
-			<param name="Local" value="Minimum Requirements.html">
-			<param name="URL" value="Minimum Requirements.html">
-			<param name="ImageNumber" value="9">
+			<param name="Local" value="MinimumRequirements.html">
+			<param name="URL" value="MinimumRequirements.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="Getting Started">
-			<param name="Local" value="Getting Started.html">
-			<param name="URL" value="Getting Started.html">
-			<param name="ImageNumber" value="9">
+			<param name="Name" value="Legal Aspect">
+			<param name="Local" value="Legal.html">
+			<param name="URL" value="Legal.html">
 			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Programming With LuaEdit">
+			<param name="Local" value="Programming with LuaEdit\ProgrammingWithLuaEdit.html">
+			<param name="URL" value="Programming with LuaEdit\ProgrammingWithLuaEdit.html">
+			<param name="ImageNumber" value="1">
+			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Integrated Development Environement">
+				<param name="Local" value="Programming with LuaEdit\IDE.html">
+				<param name="URL" value="Programming with LuaEdit\IDE.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Working With Projects">
+				<param name="Local" value="Programming with LuaEdit\WorkingWithProjects.html">
+				<param name="URL" value="Programming with LuaEdit\WorkingWithProjects.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Basics">
+				<param name="Local" value="Programming with LuaEdit\Basics.html">
+				<param name="URL" value="Programming with LuaEdit\Basics.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Editor Settings">
+				<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
+				<param name="URL" value="Programming with LuaEdit\EditorSettings.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Editing Code">
+				<param name="Local" value="Programming with LuaEdit\EditingCode.html">
+				<param name="URL" value="Programming with LuaEdit\EditingCode.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Debugging Scripts">
+				<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
+				<param name="URL" value="Programming with LuaEdit\DebuggingScripts.html">
+				</OBJECT>
+		</UL>
 	</UL>
 	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="LuaEdit Settings">
-		<param name="Local" value="LuaEdit Settings.html">
-		<param name="URL" value="LuaEdit Settings.html">
-		<param name="ImageNumber" value="2">
+		<param name="Name" value="Lua 5.0 References">
+		<param name="Local" value="LuaManual\ManualIndex.html">
+		<param name="URL" value="LuaManual\ManualIndex.html">
+		<param name="ImageNumber" value="1">
 		</OBJECT>
 	<UL>
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="Project Settings">
-			<param name="Local" value="Project Settings.html">
-			<param name="URL" value="Project Settings.html">
-			<param name="ImageNumber" value="9">
-			</OBJECT>
-		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="Editor Settings">
-			<param name="Local" value="Editor Settings.html">
-			<param name="URL" value="Editor Settings.html">
-			<param name="ImageNumber" value="9">
+			<param name="Name" value="Lua 5.0 Manual">
+			<param name="Local" value="LuaManual\Manual.html">
+			<param name="URL" value="LuaManual\Manual.html">
 			</OBJECT>
 	</UL>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Legal Aspect">
-		<param name="Local" value="Legal.html">
-		<param name="URL" value="Legal.html">
-		<param name="ImageNumber" value="9">
-		</OBJECT>
 </UL>
 </BODY></HTML>
