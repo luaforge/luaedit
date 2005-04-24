@@ -94,7 +94,7 @@ OutputDir=.\bin
 UnitOutputDir=
 PackageDLLOutputDir=
 PackageDCPOutputDir=
-SearchPath=.\Syntax
+SearchPath=.\Syntax;.\LuaCore
 Packages=vcl;rtl;vclx;indy;inet;xmlrtl;vclie;inetdbbde;inetdbxpress;dbrtl;dsnap;dsnapcon;vcldb;soaprtl;VclSmp;dbexpress;dbxcds;inetdb;bdertl;vcldbx;webdsnap;websnap;adortl;ibxpress;teeui;teedb;tee;dss;visualclx;visualdbclx;vclactnband;vclshlctrls;IntrawebDB_50_70;Intraweb_50_70;Rave50CLX;Rave50VCL;dclOfficeXP;DJcl;JvStdCtrlsD7R;JvAppFrmD7R;JvCoreD7R;JvBandsD7R;JvDockingD7R;JvDotNetCtrlsD7R;JvEDID7R;qrpt;JvGlobusD7R;JvHMID7R;JvInspectorD7R;JvInterpreterD7R;JvJansD7R;JvManagedThreadsD7R;JvCmpD7R;JvMMD7R;JvNetD7R;JvPageCompsD7R;JvPluginD7R;JvPrintPreviewD7R;JvCtrlsD7R;JvSystemD7R;JvTimeFrameworkD7R;JvUIBD7R;JvValidatorsD7R;JvWizardD7R;JvXPCtrlsD7R;JvCryptD7R;JvCustomD7R;JvBDED7R;JvDBD7R;JvDlgsD7R
 Conditionals=
 DebugSourceDirs=
@@ -115,7 +115,7 @@ AutoIncBuild=1
 MajorVer=2
 MinorVer=0
 Release=1
-Build=625
+Build=626
 Debug=0
 PreRelease=0
 Special=0
@@ -126,7 +126,7 @@ CodePage=1252
 [Version Info Keys]
 CompanyName=Open Source
 FileDescription=IDE for Lua 5.0.2
-FileVersion=2.0.1.625
+FileVersion=2.0.1.626
 InternalName=LuaEdit
 LegalCopyright=LuaEdit Copyright 2004-2005 ©
 LegalTrademarks=
@@ -134,3 +134,12 @@ OriginalFilename=LuaEdit.exe
 ProductName=LuaEdit for Lua 5.0
 ProductVersion=2.0.1.0
 Comments=This project was originally created by Jean-Francois Goulet
+[HistoryLists\hlUnitAliases]
+Count=1
+Item0=WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;
+[HistoryLists\hlSearchPath]
+Count=1
+Item0=.\Syntax;.\LuaCore
+[HistoryLists\hlOutputDirectorry]
+Count=1
+Item0=.\bin

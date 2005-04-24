@@ -19,8 +19,12 @@ type
     Label6: TLabel;
     Label7: TLabel;
     Label8: TLabel;
+    GroupBox3: TGroupBox;
+    Label9: TLabel;
+    Label10: TLabel;
+    Label11: TLabel;
+    Label12: TLabel;
     procedure Label2Click(Sender: TObject);
-    procedure Label6Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -41,11 +45,6 @@ begin
 end;
 
 procedure TfrmContributors.Label2Click(Sender: TObject);
-begin
-  SendEMail(TLabel(Sender).Caption);
-end;
-
-procedure TfrmContributors.Label6Click(Sender: TObject);
 begin
   SendEMail(TLabel(Sender).Caption);
 end;
