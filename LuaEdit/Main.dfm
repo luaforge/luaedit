@@ -810,6 +810,10 @@ object frmMain: TfrmMain
       ImageIndex = 55
       OnExecute = actShowFunctionListExecute
     end
+    object actFunctionHeader: TAction
+      Category = 'Code Manipulation'
+      Caption = 'Function Header...'
+    end
   end
   object imlActions: TImageList
     Left = 48

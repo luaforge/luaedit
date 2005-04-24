@@ -96,7 +96,7 @@ begin
 
   if ParamCount > 0 then
   begin
-    for x := 1 to ParamCount - 1 do
+    for x := 1 to ParamCount do
     begin
       FileName := ParamStr(x);
 

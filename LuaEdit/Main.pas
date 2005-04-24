@@ -409,6 +409,7 @@ type
     ClipboardRing1: TMenuItem;
     actShowFunctionList: TAction;
     FunctionList1: TMenuItem;
+    actFunctionHeader: TAction;
     procedure FormCreate(Sender: TObject);
     procedure synEditKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure actOpenFileExecute(Sender: TObject);
@@ -492,6 +493,7 @@ type
     procedure actShowRingsExecute(Sender: TObject);
     procedure actCheckSyntaxExecute(Sender: TObject);
     procedure actShowFunctionListExecute(Sender: TObject);
+    //procedure actFunctionHeaderExecute(Sender: TObject);
   private
     { Private declarations }
   public
@@ -643,6 +645,8 @@ procedure HookCaller(L: Plua_State; AR: Plua_Debug); cdecl;
 function GetFileLastTimeModified(const sFileName: PChar): TDateTime; cdecl; external 'LuaEditSys.dll';
 function GetFileReadOnlyAttr(const sFileName: PChar): Boolean; cdecl; external 'LuaEditSys.dll';
 procedure ToggleFileReadOnlyAttr(const sFileName: PChar); cdecl; external 'LuaEditSys.dll';
+
+function FunctionHeaderBuilder(sLine: PChar): PChar; cdecl; external 'HdrBld.dll';
 
 implementation
 
@@ -1978,64 +1982,37 @@ end;
 
 procedure TfrmMain.CheckButtons;
 begin
-  if LuaOpenedUnits.Count = 0 then
-  begin
-    actSave.Enabled := False;
-    actSaveAs.Enabled := False;
-    actSaveProjectAs.Enabled := False;
-    actSaveAll.Enabled := False;
-    actSearch.Enabled := False;
-    actSearchAgain.Enabled := False;
-    actSearchReplace.Enabled := False;
-    actSelectAll.Enabled := False;
-    actGoToLine.Enabled := False;
-    actCut.Enabled := False;
-    actCopy.Enabled := False;
-    actPaste.Enabled := False;
-    actUndo.Enabled := False;
-    actRedo.Enabled := False;
-    actRunScript.Enabled := False;
-    actPause.Enabled := False;
-    actStop.Enabled := False;
-    actCheckSyntax.Enabled := False;
-    actStepInto.Enabled := False;
-    actStepOver.Enabled := False;
-    actRunToCursor.Enabled := False;
-    actAddBreakpoint.Enabled := False;
-    actPrint.Enabled := False;
-    actBlockIndent.Enabled := False;
-    actBlockUnindent.Enabled := False;
-    PrintSetup1.Enabled := False;
-  end
-  else
-  begin
-    actSave.Enabled := True;
-    actSaveAs.Enabled := True;
-    actSaveProjectAs.Enabled := True;
-    actSaveAll.Enabled := True;
-    actSearch.Enabled := True;
-    actSearchAgain.Enabled := True;
-    actSearchReplace.Enabled := True;
-    actSelectAll.Enabled := True;
-    actGotoLine.Enabled := True;
-    actCut.Enabled := True;
-    actCopy.Enabled := True;
-    actPaste.Enabled := True;
-    actUndo.Enabled := True;
-    actRedo.Enabled := True;
-    actRunScript.Enabled := True;
-    actPause.Enabled := True;
-    actStop.Enabled := True;
-    actCheckSyntax.Enabled := True;
-    actStepInto.Enabled := True;
-    actStepOver.Enabled := True;
-    actRunToCursor.Enabled := True;
-    actAddBreakpoint.Enabled := True;
-    actPrint.Enabled := True;
-    actBlockIndent.Enabled := True;
-    actBlockUnindent.Enabled := True;
-    PrintSetup1.Enabled := True;
+  actClose.Enabled := not (LuaOpenedUnits.Count = 0);
+  actSave.Enabled := not (LuaOpenedUnits.Count = 0);
+  actSaveAs.Enabled := not (LuaOpenedUnits.Count = 0);
+  actSaveProjectAs.Enabled := not (LuaOpenedUnits.Count = 0);
+  actSaveAll.Enabled := not (LuaOpenedUnits.Count = 0);
+  actSearch.Enabled := not (LuaOpenedUnits.Count = 0);
+  actSearchAgain.Enabled := not (LuaOpenedUnits.Count = 0);
+  actSearchReplace.Enabled := not (LuaOpenedUnits.Count = 0);
+  actSelectAll.Enabled := not (LuaOpenedUnits.Count = 0);
+  actGoToLine.Enabled := not (LuaOpenedUnits.Count = 0);
+  actCut.Enabled := not (LuaOpenedUnits.Count = 0);
+  actCopy.Enabled := not (LuaOpenedUnits.Count = 0);
+  actPaste.Enabled := not (LuaOpenedUnits.Count = 0);
+  actUndo.Enabled := not (LuaOpenedUnits.Count = 0);
+  actRedo.Enabled := not (LuaOpenedUnits.Count = 0);
+  actRunScript.Enabled := not (LuaOpenedUnits.Count = 0);
+  actPause.Enabled := not (LuaOpenedUnits.Count = 0);
+  actStop.Enabled := not (LuaOpenedUnits.Count = 0);
+  actCheckSyntax.Enabled := not (LuaOpenedUnits.Count = 0);
+  actStepInto.Enabled := not (LuaOpenedUnits.Count = 0);
+  actStepOver.Enabled := not (LuaOpenedUnits.Count = 0);
+  actRunToCursor.Enabled := not (LuaOpenedUnits.Count = 0);
+  actAddBreakpoint.Enabled := not (LuaOpenedUnits.Count = 0);
+  actPrint.Enabled := not (LuaOpenedUnits.Count = 0);
+  actBlockIndent.Enabled := not (LuaOpenedUnits.Count = 0);
+  actBlockUnindent.Enabled := not (LuaOpenedUnits.Count = 0);
+  PrintSetup1.Enabled := not (LuaOpenedUnits.Count = 0);
+  //HeaderBuilder1.Enabled := not (LuaOpenedUnits.Count = 0);
 
+  if LuaOpenedUnits.Count > 0 then
+  begin
     if Assigned(jvUnitBar.SelectedTab) then
     begin
       if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.UndoList.ItemCount = 0 then
@@ -2053,15 +2030,6 @@ begin
       actUndo.Enabled := False;
       actRedo.Enabled := False;
     end;
-  end;
-
-  if LuaOpenedUnits.Count = 0 then
-  begin
-    actClose.Enabled := False;
-  end
-  else
-  begin
-    actClose.Enabled := True;
   end;
 
   if Assigned(frmProjectTree.trvProjectTree.Selected) then
@@ -6774,5 +6742,21 @@ begin
   SaveAs2.Enabled := (jvUnitBar.Tabs.Count <> 0);
   Close2.Enabled := (jvUnitBar.Tabs.Count <> 0);
 end;
+
+{
+procedure TfrmMain.actFunctionHeaderExecute(Sender: TObject);
+var
+  sLine: String;
+begin
+  if Assigned(jvUnitBar.SelectedTab) then
+  begin
+    if Assigned(jvUnitBar.SelectedTab.Data) then
+    begin
+      sLine := TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Lines[TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.CaretY - 1];
+      FunctionHeaderBuilder(PChar(sLine));
+    end;
+  end;
+end;
+}
 
 end.
