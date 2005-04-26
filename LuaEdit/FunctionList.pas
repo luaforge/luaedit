@@ -57,9 +57,9 @@ begin
   lvwFunctions.Items.BeginUpdate;
 
   // Build executable and its parameters strings
-  CTagAppPath := ExtractFilePath(Application.ExeName) + '\ctags.exe';
+  CTagAppPath := '"' + ExtractFilePath(Application.ExeName) + 'ctags.exe"';
   TagFile := ChangeFileExt(sFileName, '.tag');
-  CTagParams := '-f' + TagFile + ' --fields=+n+S+K ' + sFileName;
+  CTagParams := '"-f' + TagFile + '" "--fields=+n+S+K" "' + sFileName + '"';
 
   // Initialize createprocess variables for call
   FillChar(si, sizeof(si), 0);
