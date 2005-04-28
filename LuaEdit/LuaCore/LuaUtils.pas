@@ -1,7 +1,7 @@
 //******************************************************************************
 //***                     LUA SCRIPT DELPHI UTILITIES                        ***
 //***                                                                        ***
-//***        (c) 2005 Jean-François Goulet, T. Kuma, Massimo Magnano         ***
+//***        (c) 2005 Jean-François Goulet,  Massimo Magnano                 ***
 //***                                                                        ***
 //***                                                                        ***
 //******************************************************************************
@@ -15,7 +15,7 @@
 //MaxM Adds :
 //             LuaPushVariant
 //             LuaToVariant
-//             LuaGetTableInteger
+//             LuaGetTableInteger, LuaGet\SetTableTMethod
 //             LuaLoadBufferFromFile
 //     Solved Bugs : Stack problem in LuaProcessTableName
 //                   LuaToInteger why Round?, Trunc is better
@@ -58,6 +58,7 @@ function LuaGetTableInteger(L: Plua_State; TableIndex: Integer; const Key: strin
 function LuaGetTableString(L: Plua_State; TableIndex: Integer; const Key: string): string;
 function LuaGetTableFunction(L: Plua_State; TableIndex: Integer; const Key: string): lua_CFunction;
 function LuaGetTableLightUserData(L: Plua_State; TableIndex: Integer; const Key: string): Pointer;
+function LuaGetTableTMethod(L: Plua_State; TableIndex: Integer; const Key: string): TMethod;
 procedure LuaRawGetTable(L: Plua_State; TableIndex: Integer; const Key: string);
 function LuaRawGetTableBoolean(L: Plua_State; TableIndex: Integer; const Key: string): Boolean;
 function LuaRawGetTableNumber(L: Plua_State; TableIndex: Integer; const Key: string): Double;
@@ -71,6 +72,7 @@ procedure LuaSetTableNumber(L: Plua_State; TableIndex: Integer; const Key: strin
 procedure LuaSetTableString(L: Plua_State; TableIndex: Integer; const Key: string; S: string);
 procedure LuaSetTableFunction(L: Plua_State; TableIndex: Integer; const Key: string; F: lua_CFunction);
 procedure LuaSetTableLightUserData(L: Plua_State; TableIndex: Integer; const Key: string; P: Pointer);
+procedure LuaSetTableTMethod(L: Plua_State; TableIndex: Integer; const Key: string; M: TMethod);
 procedure LuaSetTableClear(L: Plua_State; TableIndex: Integer);
 procedure LuaRawSetTableValue(L: PLua_State; TableIndex: Integer; const Key: string; ValueIndex: Integer);
 procedure LuaRawSetTableNil(L: Plua_State; TableIndex: Integer; const Key: string);
@@ -373,6 +375,12 @@ begin
   lua_pop(L, 1);
 end;
 
+function LuaGetTableTMethod(L: Plua_State; TableIndex: Integer; const Key: string): TMethod;
+begin
+     Result.Code :=LuaGetTableLightUserData(L, TableIndex, Key+'_Code'); //Code is the Method Pointer
+     Result.Data :=LuaGetTableLightUserData(L, TableIndex, Key+'_Data'); //Data is the object Pointer
+end;
+
 procedure LuaRawGetTable(L: Plua_State; TableIndex: Integer; const Key: string);
 begin
   LuaPushKeyString(L, TableIndex, Key);
@@ -463,6 +471,12 @@ begin
   LuaPushKeyString(L, TableIndex, Key);
   lua_pushlightuserdata(L, P);
   lua_settable(L, TableIndex);
+end;
+
+procedure LuaSetTableTMethod(L: Plua_State; TableIndex: Integer; const Key: string; M: TMethod);
+begin
+     LuaSetTableLightUserData(L, TableIndex, Key+'_Code', M.Code);
+     LuaSetTableLightUserData(L, TableIndex, Key+'_Data', M.Data);
 end;
 
 procedure LuaSetTableClear(L: Plua_State; TableIndex: Integer);

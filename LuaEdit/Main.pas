@@ -1,6 +1,7 @@
 unit Main;
 
 interface
+{$define RTASSERT}
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
@@ -13,7 +14,9 @@ uses
   JvChangeNotify, JvClipboardMonitor, JvMenus, JvExComCtrls, JvToolBar,
   JvInspector, XPStyleActnCtrls, ActnMan, ActnCtrls, CustomizeDlg,
   ActnMenus, ActnColorMaps, StdStyleActnCtrls, XPMenu, Clipbrd, JvLookOut,
-  JvExControls;
+  JvExControls
+{$ifdef RTASSERT}  , RTDebug  {$endif}
+  ;
 
 const
   otLuaProject  = 1;
@@ -2164,12 +2167,13 @@ procedure TfrmMain.FormDestroy(Sender: TObject);
 var
   pReg: TRegistry;
 begin
+{$ifdef RTASSERT} RTAssert(0, true, ' TfrmMain.FormDestroy', '', 0); {$endif}
   // Write last windows settings
   pReg := TRegistry.Create;
   pReg.OpenKey('\Software\LuaEdit', True);
-  pReg.WriteBool('WasMaxed', (frmMain.WindowState = wsMaximized));
-  pReg.WriteInteger('Width', frmMain.Width);
-  pReg.WriteInteger('Height', frmMain.Height);
+  pReg.WriteBool('WasMaxed', (Self.WindowState = wsMaximized));
+  pReg.WriteInteger('Width', Self.Width);
+  pReg.WriteInteger('Height', Self.Height);
   pReg.Free;
 
   // Free previously created objects
@@ -2184,6 +2188,7 @@ begin
   lstGlobals.Free;
   EditorColors.Free;
   LookupList.Free;
+{$ifdef RTASSERT} RTAssert(0, true, ' TfrmMain.FormDestroy Done', '', 0); {$endif}
 end;
 
 procedure TfrmMain.actSaveProjectAsExecute(Sender: TObject);
@@ -3134,6 +3139,7 @@ var
   FileName: string;
   x, NArgs: Integer;
   pLuaUnit: TLuaUnit;
+  iDoLuaOpen :Boolean;
 
   procedure OpenLibs(L: PLua_State);
   begin
@@ -3263,7 +3269,10 @@ begin
     end;
 
     actCheckSyntaxExecute(nil);
-    LuaState := lua_open;
+    iDoLuaOpen := (LuaState=Nil);
+    if iDoLuaOpen
+    then LuaState := lua_open;
+
     L := LuaState;
     OpenLibs(L);
 
@@ -3329,9 +3338,11 @@ begin
           lua_setglobal(L, ArgIdent);
         end;
 
+{$ifdef RTASSERT} RTAssert(0, true, ' Begin Script', '', 0); {$endif}
         frmLuaEditMessages.memMessages.Lines.Add('[HINT]:  Begin of Script - '+DateTimeToStr(Now));
         LuaPCall(L, NArgs, LUA_MULTRET, 0);
         frmLuaEditMessages.memMessages.Lines.Add('[HINT]:  End of Script - '+DateTimeToStr(Now));
+{$ifdef RTASSERT} RTAssert(0, true, ' End Script', '', 0);   {$endif}
       
         if (Assigned(Results)) then
         begin
@@ -3345,8 +3356,11 @@ begin
         PrintWatch(L);
       finally
         UninitializeUnits;
-        lua_close(L);
-        LuaState := nil;
+        if iDoLuaOpen
+        then begin
+                  lua_close(L);
+                  LuaState := nil;
+             end;
         Running := False;
         Self.Pause := False;
         Self.PauseICI := 0;
@@ -3900,6 +3914,7 @@ var
   bProjectAdded: Boolean;
   frmExSaveExit: TfrmExSaveExit;
 begin
+{$ifdef RTASSERT} RTAssert(0, true, ' TfrmMain.FormCloseQuery', '', 0); {$endif}
   // Here we check if the user is currently debugging a unit
   // If that is the case, we aware the user that he is currently debugging a file
   // and that is going to stop the debugger.
@@ -3916,7 +3931,7 @@ begin
       begin
         actStopExecute(nil);
 
-        while  WaitForSingleObject(hMutex, 100) = WAIT_TIMEOUT	do
+        while  WaitForSingleObject(hMutex, 100) = WAIT_TIMEOUT   do
         begin
           Sleep(20);
           Application.ProcessMessages;
@@ -4077,6 +4092,7 @@ begin
     jvchnNotifier.Active := False;  // "Turn off" the changes notifier
     SaveDockTreeToFile(ExtractFilePath(Application.ExeName) + 'LuaEdit.dck');  // saves the dockable forms positions
   end;
+{$ifdef RTASSERT} RTAssert(0, true, ' TfrmMain.FormCloseQuery Done', '', 0); {$endif}
 end;
 
 procedure TfrmMain.actStepOverExecute(Sender: TObject);
