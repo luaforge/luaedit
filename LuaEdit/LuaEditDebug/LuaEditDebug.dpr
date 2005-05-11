@@ -1,3 +1,5 @@
+//TO-DO : Get the LuaEditApplication Path from registy, Application.ExeName is the Host
+
 library LuaEditDebug;
 
 uses
@@ -9,6 +11,10 @@ uses
   lua,
   LuaUtils,
   RTDebug,
+  Themes,
+  UxTheme,
+  JvDockGlobals,
+  JvDockControlForm,
   About in '..\About.pas' {frmAbout},
   GoToLine in '..\GoToLine.pas' {frmGotoLine},
   Main in '..\Main.pas' {frmMain},
@@ -49,6 +55,13 @@ begin
   RTAssert(0, true, 'LuaEditDebug Application='+IntToHex(Integer(Application), 8), '', 0);
   RTAssert(0, true, 'Creating...', '', 0);
   
+  // leave those important lines here...
+  // There is a bug with the themes and forms placed in dll
+  // The dll don't have the time to free the theme handle and the when it does it,
+  // the host application already did it so... Runtime Error 216
+  ThemeServices.ApplyThemeChange;
+  InitThemeLibrary;
+
   Application.CreateForm(TfrmMain, frmMain);
   Application.CreateForm(TfrmAbout, frmAbout);
   Application.CreateForm(TfrmGotoLine, frmGotoLine);
@@ -66,48 +79,49 @@ begin
   Application.CreateForm(TfrmAddBreakpoint, frmAddBreakpoint);
   Application.CreateForm(TfrmEditorSettings, frmEditorSettings);
   Application.CreateForm(TfrmAsciiTable, frmAsciiTable);
-  
-  RTAssert(0, true, 'Creating done', '', 0);
+
+  if (Application.MainForm=Nil)
+  then RTAssert(0, true, 'Creating done Nil', '', 0)
+  else RTAssert(0, (frmMain=Application.MainForm), 'Creating done frmMain', 'Creating done '+Application.MainForm.Name, 0);
   frmMain.CheckButtons;
   frmMain.LoadEditorSettings;
-   //LoadDockTreeFromFile(ExtractFilePath(Application.ExeName) + 'LuaEdit.dck');
+  LoadDockTreeFromFile(ExtractFilePath(Application.ExeName) + 'LuaEdit.dck');
   Result :=frmMain;
 end;
 
 procedure UnInitForms;
 Var
    MainFormHandle :HWnd;
+   i              :Integer;
 
 begin
 try
-  frmAbout.Close; frmAbout :=Nil;
-  frmGotoLine.Close; frmGotoLine :=Nil;
-  frmReplace.Close; frmReplace :=Nil;
-  frmReplaceQuerry.Close; frmReplaceQuerry :=Nil;
-  frmSearch.Close; frmSearch  :=Nil;
-  frmAddToPrj.Close; frmAddToPrj :=Nil;
-  frmRemoveFile.Close; frmRemoveFile :=Nil;
-  frmErrorLookup.Close; frmErrorLookup :=Nil;
-  frmPrintSetup.Close; frmPrintSetup :=Nil;
-  frmPrjOptions.Close; frmPrjOptions :=Nil;
-  frmCntString.Close; frmCntString :=Nil;
-  frmConnecting.Close; frmConnecting :=Nil;
-  frmContributors.Close; frmContributors :=Nil;
-  frmAddBreakpoint.Close; frmAddBreakpoint :=Nil;
-  frmEditorSettings.Close; frmEditorSettings :=Nil;
-  frmAsciiTable.Close; frmAsciiTable :=Nil;
-RTAssert(0, true, ' frmMain.Close', '', 0);
+RTAssert(0, true, 'Freeing', '', 0);
   MainFormHandle :=frmMain.Handle;
-  frmMain.Close;
+  for i :=0 to Screen.CustomFormCount-1 do
+   if (Screen.CustomForms[0]<>Nil) then
+   begin
+        RTAssert(0, true, ' '+Screen.CustomForms[0].Name+'('+Screen.CustomForms[0].ClassName+') Free (screen)', '', 0);
+        Screen.CustomForms[0].Free;
+   end;
+
   repeat
-     Sleep(200);
-  Until IsWindow(MainFormHandle);
-  Sleep(200);
-RTAssert(0, true, ' frmMain.Close Done', '', 0);
+     Sleep(100);
+  Until not(IsWindow(MainFormHandle));
+
+RTAssert(0, true, 'Free Done', '', 0);
 
 except
+   RTAssert(0, true, 'Free exception', '', 0);
 
 end;
+
+  // leave those important lines here...
+  // There is a bug with the themes and forms placed in dll
+  // The dll don't have the time to free the theme handle and the when it does it,
+  // the host application already did it so... Runtime Error 216
+  ThemeServices.ApplyThemeChange;
+  FreeThemeLibrary;
 end;
 
 
@@ -131,13 +145,10 @@ begin
      if (MainForm<>Nil)
      then with MainForm do
           begin
-
                MainForm.Visible :=True;
-               MainForm.Show;
                repeat
-                     Sleep(200);
+                     Sleep(100);
                Until IsWindowVisible(MainForm.Handle);
-               Sleep(200);
 
                RTAssert(0, true, ' AddFileInProject', '', 0);
                pLuaUnit := AddFileInProject(FileName, False, LuaSingleUnits);
