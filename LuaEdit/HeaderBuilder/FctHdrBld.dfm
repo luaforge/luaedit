@@ -11,7 +11,6 @@ object frmFctHdrBld: TfrmFctHdrBld
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   Font.Style = []
-  FormStyle = fsStayOnTop
   OldCreateOrder = False
   Position = poScreenCenter
   OnShow = FormShow
@@ -49,32 +48,32 @@ object frmFctHdrBld: TfrmFctHdrBld
   end
   object Panel2: TPanel
     Left = 0
-    Top = 32
+    Top = 30
     Width = 376
-    Height = 356
+    Height = 358
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
     object Label2: TLabel
       Left = 16
       Top = 144
-      Width = 56
+      Width = 129
       Height = 13
-      Caption = 'Parameters:'
+      Caption = '<Parameters/> Parameters:'
     end
     object Label1: TLabel
       Left = 16
       Top = 8
-      Width = 75
+      Width = 136
       Height = 13
-      Caption = 'Function Name:'
+      Caption = '<Function/> Function Name:'
     end
     object Label3: TLabel
       Left = 16
       Top = 56
-      Width = 47
+      Width = 111
       Height = 13
-      Caption = 'Comment:'
+      Caption = '<Comment/> Comment:'
     end
     object lblCallSample: TLabel
       Left = 16
@@ -86,9 +85,9 @@ object frmFctHdrBld: TfrmFctHdrBld
     object Label5: TLabel
       Left = 16
       Top = 264
-      Width = 65
+      Width = 117
       Height = 13
-      Caption = 'Return Value:'
+      Caption = '<Return/> Return Value:'
     end
     object txtFunctionName: TEdit
       Left = 16
@@ -130,6 +129,7 @@ object frmFctHdrBld: TfrmFctHdrBld
       RowSelect = True
       TabOrder = 3
       ViewStyle = vsReport
+      OnDblClick = lvwParamsDblClick
     end
     object txtReturn: TEdit
       Left = 16
@@ -143,8 +143,11 @@ object frmFctHdrBld: TfrmFctHdrBld
     Left = 0
     Top = 0
     Width = 376
+    Height = 30
     AutoSize = True
     BorderWidth = 2
+    EdgeInner = esNone
+    EdgeOuter = esNone
     Flat = True
     Images = imlToolbar
     TabOrder = 2
@@ -248,7 +251,7 @@ object frmFctHdrBld: TfrmFctHdrBld
     Left = 272
     Top = 5
     Bitmap = {
-      494C010108000900040010001000FFFFFFFFFF00FFFFFFFFFFFFFFFF424D3600
+      494C010108000900040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -648,7 +651,8 @@ object frmFctHdrBld: TfrmFctHdrBld
       00088FE1000F8000000107C3000F800000030387000F80000003810F000F8000
       0003C01F000F80000003E03F000F00000003F03F000F00000007F00F000E8000
       000FE00700040000000FC00300000001000F8303000081FF001F07C7F80024FF
-      003F0FFFFC0066FF007F1FFFFE04E7FF}
+      003F0FFFFC0066FF007F1FFFFE04E7FF00000000000000000000000000000000
+      000000000000}
   end
   object xmpMenuPainter: TXPMenu
     DimLevel = 30

@@ -11,7 +11,6 @@ object frmEditParam: TfrmEditParam
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   Font.Style = []
-  FormStyle = fsStayOnTop
   OldCreateOrder = False
   Position = poScreenCenter
   DesignSize = (

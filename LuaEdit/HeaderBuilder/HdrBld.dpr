@@ -16,7 +16,8 @@ uses
   FctHdrBld in 'FctHdrBld.pas' {frmFctHdrBld},
   HdrBldMain in 'HdrBldMain.pas',
   EditParam in 'EditParam.pas' {frmEditParam},
-  Settings in 'Settings.pas' {frmSettings};
+  Settings in 'Settings.pas' {frmSettings},
+  EditTag in 'EditTag.pas' {frmEditTag};
 
 {$R *.res}
 

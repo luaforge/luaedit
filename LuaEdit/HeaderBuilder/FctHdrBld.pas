@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, ExtCtrls, XPMenu, ImgList, ComCtrls, ToolWin, Grids,
-  ValEdit, XPMan, Registry;
+  ValEdit, XPMan, Registry, System;
 
 type
   TfrmFctHdrBld = class(TForm)
@@ -45,6 +45,7 @@ type
     procedure btnOKClick(Sender: TObject);
     procedure tbtnCallSampleClick(Sender: TObject);
     procedure tbtnSettingsClick(Sender: TObject);
+    procedure lvwParamsDblClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -173,29 +174,64 @@ end;
 function TfrmFctHdrBld.GetHeader: String;
 var
   pReg: TRegistry;
-  sTemplate, sToday, sInitialRealese: String;
-  sCopyright, sDevelopperName: String;
+  TagNotFound: Boolean;
+  x, TagO, TagC, TagIndex: Integer;
+  sTemplatePath, sToday, sInitialRealese: String;
+  sCopyright, sDevelopperName, sTemp, sTag: String;
+  strTemplate, strTags: TStringList;
 begin
+  Result := '';
   pReg := TRegistry.Create;
   sToday := DateTimeToStr(Now);
 
-  if pReg.OpenKey('\Software\LuaEdit\HdrBld', False) then
+  // Get template path and start parsing the template
+  if pReg.OpenKey('\Software\LuaEdit\HdrBld\FunctionsHdr', False) then
   begin
-    sDevelopperName := pReg.ReadString('DevelopperName');
-    sInitialRealese := pReg.ReadString('InitialRelease');
-    sCopyright := pReg.ReadString('Copyright');
+    sTemplatePath := pReg.ReadString('Template');
 
-    if pReg.OpenKey('\Software\LuaEdit\HdrBld\FctHdr', False) then
+    if not FileExists(sTemplatePath) then
     begin
-      sTemplate := pReg.ReadString('Template');
-
-      if not FileExists(sTemplate) then
+      Windows.MessageBox(Self.Handle, Pchar('The template ' + sTemplatePath + ' is innexistant! No header was generated.'), 'Header Builder', MB_OK+MB_ICONERROR);
+    end
+    else
+    begin
+      // Get tags from registry and parse the template to replace tags by their assigned value
+      if pReg.OpenKey('\Software\LuaEdit\HdrBld\Tags', False) then
       begin
-        Windows.MessageBox(Self.Handle, Pchar('The template ' + sTemplate + ' is innexistant! No header was generated.'), 'Header Builder', MB_OK+MB_ICONERROR);
-      end
-      else
-      begin
+        pReg.GetValueNames(strTags);
+        strTemplate := TStringList.Create;
+        strTemplate.LoadFromFile(sTemplatePath);
+        strTags.Add('Function');
+        strTags.Sort;
+        sTemp := strTemplate.Text;
 
+        // parsing template
+        repeat
+          // look for possible tag opening
+          if ((TagO := Pos('<', sTemp)) <> 0) then
+          begin
+            if ((TagC := Pos('>', sTemp)) <> 0) then
+            begin
+              // Extract current tag
+              sTag := Copy(sTemp, TagO + 1, (TagC - 1) - (TagO + 1));
+              TagNotFound := False;
+
+              case UpperCase(sTag) of
+                'FUNCTION':
+                begin
+                  
+                end;
+              else
+              end;
+            end;
+          end;
+        until TagO <> 0;
+
+        for x := 0 to strTags.Count - 1 do
+          strTemplate.Text := StringReplace(strTemplate.Text, '<@' + strTags.Strings[x] + '/>', pReg.ReadString(strTags.Strings[x]), [rfReplaceAll, rfIgnoreCase]);
+
+        Result := strTemplate.Text;
+        strTemplate.Free;
       end;
     end;
   end;
@@ -219,10 +255,16 @@ begin
 end;
 
 procedure TfrmFctHdrBld.tbtnRemoveParamClick(Sender: TObject);
+var
+  x: Integer;
 begin
   if Assigned(lvwParams.Selected) then
   begin
     lvwParams.Items.Delete(lvwParams.Selected.Index);
+
+    if lvwParams.Items.Count > 0 then
+      lvwParams.Selected := lvwParams.Items[0];
+      
     CheckButtons;
   end;
 end;
@@ -280,6 +322,11 @@ begin
   frmSettings := TfrmSettings.Create(nil);
   frmSettings.ShowModal;
   FreeAndNil(frmSettings);
+end;
+
+procedure TfrmFctHdrBld.lvwParamsDblClick(Sender: TObject);
+begin
+  tbtnEdit.Click;
 end;
 
 end.

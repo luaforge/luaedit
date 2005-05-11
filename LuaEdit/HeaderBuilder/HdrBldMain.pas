@@ -3,16 +3,16 @@ unit HdrBldMain;
 interface
 
 uses
-  Windows, Messages, SysUtils, Themes, UxTheme;
+  Windows, Messages, SysUtils, Controls, Forms, Themes, UxTheme;
 
-function FunctionHeaderBuilder(sLine: PChar): PChar;
+function FunctionHeaderBuilder(OwnerAppHandle: HWND; sLine: PChar): PChar; stdcall;
 
 implementation
 
 uses
   FctHdrBld;
 
-function FunctionHeaderBuilder(sLine: PChar): PChar;
+function FunctionHeaderBuilder(OwnerAppHandle: HWND; sLine: PChar): PChar; stdcall;
 begin
   // leave those important lines here...
   // There is a bug with the themes and forms placed in dll
@@ -22,6 +22,7 @@ begin
   InitThemeLibrary;
 
   // Create the form first
+  Application.Handle := OwnerAppHandle;
   frmFctHdrBld := TfrmFctHdrBld.Create(nil);
 
   if sLine <> '' then
