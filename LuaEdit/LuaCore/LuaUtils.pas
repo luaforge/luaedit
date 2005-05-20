@@ -12,7 +12,12 @@
 //******************************************************************************
 //** See Copyright Notice in lua.h
 
-//MaxM Adds :
+//Revision 1.1
+//     MaxM Adds :
+//             LuaPCallFunction
+//
+//Revision 1.0
+//     MaxM Adds :
 //             LuaPushVariant
 //             LuaToVariant
 //             LuaGetTableInteger, LuaGet\SetTableTMethod
@@ -37,6 +42,9 @@ type
     Msg: string;
     constructor Create(Title: string; Line: Integer; Msg: string);
   end;
+
+  TVariantArray =array of Variant;
+  PVariantArray =^TVariantArray;
 
 function lua_print(L: Plua_State): Integer; cdecl;
 function lua_io_write(L: Plua_State): Integer; cdecl;
@@ -100,6 +108,11 @@ procedure LuaSetIdentValue(L: Plua_State; Ident, Value: string; MaxTable: Intege
 procedure LuaLoadBuffer(L: Plua_State; const Code: string; const Name: string);
 procedure LuaLoadBufferFromFile(L: Plua_State; const Filename: string; const Name: string);
 procedure LuaPCall(L: Plua_State; NArgs, NResults, ErrFunc: Integer);
+function LuaPCallFunction(L: Plua_State; FunctionName :String;
+                          const Args: array of Variant;
+                          Results : PVariantArray;
+                          ErrFunc: Integer=0;
+                          NResults :Integer=LUA_MULTRET):Integer;
 procedure LuaError(L: Plua_State; const Msg: string);
 procedure LuaErrorFmt(L: Plua_State; const Fmt: string; const Args: array of Const);
 function LuaDataStrToStrings(const TableStr: string; Strings: TStrings): string;
@@ -1043,6 +1056,41 @@ begin
   LuaProcessErrorMessage(Dequote(LuaStackToStr(L, -1, -1)),
     Title, Line, Msg);
   raise ELuaException.Create(Title, Line, Msg);
+end;
+
+function LuaPCallFunction(L: Plua_State; FunctionName :String;
+                          const Args: array of Variant;
+                          Results : PVariantArray;
+                          ErrFunc: Integer=0;
+                          NResults :Integer=LUA_MULTRET):Integer;
+var
+   NArgs,
+   i        :Integer;
+   auxVar   :Variant;
+
+begin
+     //Put Function To Call on the Stack
+     luaPushString(L, FunctionName);
+     lua_gettable(L, LUA_GLOBALSINDEX);
+
+     //Put Parameters on the Stack
+     NArgs := High(Args)+1;
+     for i:=0 to (NArgs-1) do
+       LuaPushVariant(L, Args[i]);
+
+     //Call the Function
+     LuaPcall(L, NArgs, NResults, ErrFunc);
+     Result :=lua_gettop(L);   //Get Number of Results
+
+     if (Results<>Nil)
+     then begin 
+               //Get Results in the right order
+               SetLength(Results^, Result);
+               for i:=0 to Result-1 do
+               begin
+                    Results^[Result-(i+1)] :=LuaToVariant(L, -(i+1));
+               end;
+          end;
 end;
 
 procedure LuaError(L: Plua_State; const Msg: string);
