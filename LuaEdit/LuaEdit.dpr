@@ -44,7 +44,8 @@ uses
   ExSaveExit in 'ExSaveExit.pas' {frmExSaveExit},
   AsciiTable in 'AsciiTable.pas' {frmAsciiTable},
   ReadOnlyMsgBox in 'ReadOnlyMsgBox.pas' {frmReadOnlyMsgBox},
-  Rings in 'Rings.pas' {frmRings};
+  Rings in 'Rings.pas' {frmRings},
+  SearchPath in 'SearchPath.pas' {frmSearchPath};
 
 {$R *.res}
 

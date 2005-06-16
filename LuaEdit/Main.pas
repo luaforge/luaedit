@@ -1,7 +1,7 @@
 unit Main;
 
 interface
-{$define RTASSERT}
+//{$define RTASSERT}
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
@@ -14,9 +14,9 @@ uses
   JvChangeNotify, JvClipboardMonitor, JvMenus, JvExComCtrls, JvToolBar,
   JvInspector, XPStyleActnCtrls, ActnMan, ActnCtrls, CustomizeDlg,
   ActnMenus, ActnColorMaps, StdStyleActnCtrls, XPMenu, Clipbrd, JvLookOut,
-  JvExControls
-{$ifdef RTASSERT}  , RTDebug  {$endif}
-  ;
+  JvExControls, FileCtrl
+  {$ifdef RTASSERT}  , RTDebug  {$endif}
+  , JvDragDrop, JvAppEvent;
 
 const
   otLuaProject  = 1;
@@ -66,7 +66,9 @@ type
 
   TBreakInfo = class(TObject)
     FileName: String;
-    Line:     Integer;
+    Call:     String;
+    LineOut:  String;   // Line number to display
+    Line:     Integer;  // Actual line definition in script
   public
     constructor Create;
   end;
@@ -113,6 +115,7 @@ type
     HasChanged:       Boolean;
     IsLoaded:         Boolean;
     synUnit:          TSynEdit;
+    LastEditedLine:   Integer;
     PrevLineNumber:   Integer;
     pPrjOwner:        TLuaProject;
     lstFunctions:     TStringList;
@@ -413,10 +416,26 @@ type
     actShowFunctionList: TAction;
     FunctionList1: TMenuItem;
     actFunctionHeader: TAction;
+    N23: TMenuItem;
+    HeaderBuilder1: TMenuItem;
+    Functions1: TMenuItem;
+    actGotoLastEdited: TAction;
+    GotoLastEdited1: TMenuItem;
+    N24: TMenuItem;
+    GotoLastEdited2: TMenuItem;
+    GotoLine2: TMenuItem;
+    actBlockComment: TAction;
+    actBlockUncomment: TAction;
+    CommentSelection1: TMenuItem;
+    UncommentSelection1: TMenuItem;
+    CommentSelection2: TMenuItem;
+    UncommentSelection2: TMenuItem;
+    ToolButton24: TToolButton;
+    ToolButton25: TToolButton;
+    jvAppDrop: TJvDragDrop;
     procedure FormCreate(Sender: TObject);
     procedure synEditKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure actOpenFileExecute(Sender: TObject);
-    procedure synEditClick(Sender: TObject);
     procedure actOpenProjectExecute(Sender: TObject);
     procedure actExitExecute(Sender: TObject);
     procedure actSaveExecute(Sender: TObject);
@@ -496,6 +515,11 @@ type
     procedure actShowRingsExecute(Sender: TObject);
     procedure actCheckSyntaxExecute(Sender: TObject);
     procedure actShowFunctionListExecute(Sender: TObject);
+    procedure actFunctionHeaderExecute(Sender: TObject);
+    procedure actGotoLastEditedExecute(Sender: TObject);
+    procedure actBlockCommentExecute(Sender: TObject);
+    procedure actBlockUncommentExecute(Sender: TObject);
+    procedure jvAppDropDrop(Sender: TObject; Pos: TPoint; Value: TStrings);
     //procedure actFunctionHeaderExecute(Sender: TObject);
   private
     { Private declarations }
@@ -545,6 +569,9 @@ type
     procedure synEditGutterClick(Sender: TObject; Button: TMouseButton; X, Y, Line: Integer; Mark: TSynEditMark);
     procedure synEditMouseCursor(Sender: TObject; const aLineCharPos: TBufferCoord; var aCursor: TCursor);
     procedure synEditChange(Sender: TObject);
+    procedure synEditClick(Sender: TObject);
+    procedure synEditDblClick(Sender: TObject);
+    procedure synEditMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure synCompletionExecute(Kind: SynCompletionType; Sender: TObject; var CurrentInput: String; var x, y: Integer; var CanExecute: Boolean);
     function GetBaseCompletionProposal: TSynCompletionProposal;
     function GetBaseParamsProposal: TSynCompletionProposal;
@@ -560,7 +587,8 @@ type
     procedure LuaGlobalsToStrings(L: PLua_State; Lines: TStrings; MaxTable: Integer = -1);
     function GetAssociatedTab(pLuaUnit: TLuaUnit): TJvTabBarItem;
     function FindUnitInTabs(sFileName: String): TLuaUnit;
-    procedure PrintStack(L: Plua_State);
+    procedure PrintLuaStack(L: Plua_State);
+    procedure PrintStack;
     procedure PrintLocal(L: Plua_State; Level: Integer = 0);
     procedure PrintGlobal(L: Plua_State; Foce: Boolean = False);
     procedure PrintWatch(L: Plua_State);
@@ -583,6 +611,7 @@ var
   DraggedTab: Integer;
   LookupList: TStringList;
   pCurrentSynEdit: TSynEdit;
+  CallStack: TList;
 
   //Settings variables
   EditorOptions: TSynEditorOptions;
@@ -606,9 +635,11 @@ var
   SaveUnitsInc: Boolean;
   SaveBreakpoints: Boolean;
   ShowExSaveDlg: Boolean;
+  LibrariesSearchPaths: TStringList;
 
   //Debugger variables
   LDebug: Plua_State;
+  FirstClickPos: TBufferCoord;
   lstLocals: TStringList;
   lstGlobals: TStringList;
   ThreadDebugHandle: THandle;
@@ -649,7 +680,7 @@ function GetFileLastTimeModified(const sFileName: PChar): TDateTime; cdecl; exte
 function GetFileReadOnlyAttr(const sFileName: PChar): Boolean; cdecl; external 'LuaEditSys.dll';
 procedure ToggleFileReadOnlyAttr(const sFileName: PChar); cdecl; external 'LuaEditSys.dll';
 
-function FunctionHeaderBuilder(sLine: PChar): PChar; cdecl; external 'HdrBld.dll';
+function FunctionHeaderBuilder(OwnerAppHandle: HWND; sLine: PChar): PChar; cdecl; external 'HdrBld.dll';
 
 implementation
 
@@ -691,6 +722,8 @@ end;
 constructor TBreakInfo.Create;
 begin
   FileName := '';
+  Call := '';
+  LineOut := '';
   Line := -1;
 end;
 
@@ -1360,7 +1393,6 @@ begin
     HasChanged := False;  // The has no more changes
     synUnit.Modified := False;  // The actual editor must not notice any changes now
     pDebugInfos.iLineError := -1;  // Do not display anymore the current line error
-    frmMain.stbMain.Panels[2].Text := '';  // Do not display anymore the quick debug messages
     LastTimeModified := GetFileLastTimeModified(PChar(sPath));  // Now we wrote on the disk we may retrieve the time it has been writen
 
     // Save breakpoints if feature is enabled
@@ -1371,8 +1403,7 @@ begin
     frmMain.RefreshOpenedUnits;
     LastMessage := '';
     frmProjectTree.BuildProjectTree;
-    frmMain.stbMain.Panels[2].Text := '';
-    frmMain.stbMain.Panels[4].Text := '';
+    frmMain.stbMain.Panels[5].Text := '';
     frmMain.stbMain.Refresh;
     synUnit.Refresh;
   end;
@@ -1453,7 +1484,6 @@ begin
     HasChanged := False;  // The file does't have anymore changes
     synUnit.Modified := False;  // The actual editor must not notice any changes now
     pDebugInfos.iLineError := -1;  // Do not display anymore the current line error
-    frmMain.stbMain.Panels[2].Text := '';  // Do not display anumore the quick debug message
     LastTimeModified := GetFileLastTimeModified(PChar(sPath));  // Now we wrote on the disk we may retrieve the time it has been writen
 
     // Save breakpoints if feature is enabled
@@ -1464,8 +1494,7 @@ begin
     frmMain.RefreshOpenedUnits;
     LastMessage := '';
     frmProjectTree.BuildProjectTree;
-    frmMain.stbMain.Panels[2].Text := '';
-    frmMain.stbMain.Panels[4].Text := '';
+    frmMain.stbMain.Panels[5].Text := '';
     frmMain.stbMain.Refresh;
     synUnit.Refresh;
   end;
@@ -1614,6 +1643,7 @@ begin
   hMutex := CreateMutex(nil, False, nil);
   LookupList := TStringList.Create;
   EditorColors := TList.Create;
+  CallStack := TList.Create;
   lstLocals := TStringList.Create;
   lstGlobals := TStringList.Create;
   lstStack := TStringList.Create;
@@ -1622,6 +1652,7 @@ begin
   LuaOpenedUnits := TList.Create;
   SearchedText := TStringList.Create;
   ReplacedText := TStringList.Create;
+  LibrariesSearchPaths := TStringList.Create;
   LuaSingleUnits := TLuaProject.Create('');
   LuaSingleUnits.sPrjName := '[@@SingleUnits@@]';
   LuaProjects.Add(LuaSingleUnits);
@@ -1749,6 +1780,8 @@ begin
   synEdit.PopupMenu := ppmEditor;
 
   synEdit.OnChange := synEditChange;
+  synEdit.OnDblClick := synEditDblClick;
+  synEdit.OnMouseMove := synEditMouseMove;
   synEdit.OnMouseCursor := synEditMouseCursor;
   synEdit.OnReplaceText := SynEditReplaceText;
   synEdit.OnKeyUp := synEditKeyUp;
@@ -1901,13 +1934,20 @@ var
   synEditTemp: TSynEdit;
 begin
   synEditTemp := TSynEdit(Sender);
+  FirstClickPos := synEditTemp.CaretXY;
+  stbMain.Panels[0].Text := 'Ln:'+IntToStr(synEditTemp.CaretY)+', Col:'+IntToStr(synEditTemp.CaretX);
 
-  stbMain.Panels[0].Text := '  Ln:'+IntToStr(synEditTemp.CaretY)+', Col:'+IntToStr(synEditTemp.CaretX);
-  
+  // Set caret mode adviser on status bar
   if synEditTemp.InsertMode then
     stbMain.Panels[1].Text := 'Insert'
   else
     stbMain.Panels[1].Text := 'Overwrite';
+
+  // Set caps lock adviser on status bar
+  if GetKeyState(VK_CAPITAL) = 1 then
+    stbMain.Panels[2].Text := 'CAPS'
+  else
+    stbMain.Panels[2].Text := '';
 end;
 
 procedure TfrmMain.actOpenProjectExecute(Sender: TObject);
@@ -1995,6 +2035,7 @@ begin
   actSearchReplace.Enabled := not (LuaOpenedUnits.Count = 0);
   actSelectAll.Enabled := not (LuaOpenedUnits.Count = 0);
   actGoToLine.Enabled := not (LuaOpenedUnits.Count = 0);
+  actGotoLastEdited.Enabled := not (LuaOpenedUnits.Count = 0);
   actCut.Enabled := not (LuaOpenedUnits.Count = 0);
   actCopy.Enabled := not (LuaOpenedUnits.Count = 0);
   actPaste.Enabled := not (LuaOpenedUnits.Count = 0);
@@ -2011,6 +2052,8 @@ begin
   actPrint.Enabled := not (LuaOpenedUnits.Count = 0);
   actBlockIndent.Enabled := not (LuaOpenedUnits.Count = 0);
   actBlockUnindent.Enabled := not (LuaOpenedUnits.Count = 0);
+  actBlockComment.Enabled := not (LuaOpenedUnits.Count = 0);
+  actBlockUncomment.Enabled := not (LuaOpenedUnits.Count = 0);
   PrintSetup1.Enabled := not (LuaOpenedUnits.Count = 0);
   //HeaderBuilder1.Enabled := not (LuaOpenedUnits.Count = 0);
 
@@ -2180,6 +2223,7 @@ begin
   LuaProjects.Free;
   LuaSingleUnits.Free;
   LuaOpenedUnits.Free;
+  LibrariesSearchPaths.Free;
   ReplacedText.Free;
   SearchedText.Free;
   lstStack.Free;
@@ -2188,6 +2232,7 @@ begin
   lstGlobals.Free;
   EditorColors.Free;
   LookupList.Free;
+  CallStack.Free;
 {$ifdef RTASSERT} RTAssert(0, true, ' TfrmMain.FormDestroy Done', '', 0); {$endif}
 end;
 
@@ -3127,6 +3172,11 @@ begin
     TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.GotoLineAndCenter(frmGotoLine.LineNumber);
 end;
 
+procedure TfrmMain.actGotoLastEditedExecute(Sender: TObject);
+begin
+  TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.GotoLineAndCenter(TLuaUnit(jvUnitBar.SelectedTab.Data).LastEditedLine);
+end;
+
 procedure TfrmMain.AboutLuaEdit1Click(Sender: TObject);
 begin
   frmAbout.ShowModal;
@@ -3305,11 +3355,8 @@ begin
       try
         frmLuaOutput.memLuaOutput.Clear;
         frmLuaEditMessages.memMessages.Clear;
-      
-        for x := 0 to frmStack.lstCallStack.Items.Count -1 do
-          TBreakInfo(frmStack.lstCallStack.Items[x].Data).Free;
-
-        frmStack.lstCallStack.Clear;
+        CallStack.Clear;
+        PrintStack;
 
         if (pCurrentSynEdit.Text = '') then
           Exit;
@@ -3351,7 +3398,7 @@ begin
             Results.Add(LuaStackToStr(L, x));
         end;
 
-        PrintStack(L);
+        PrintLuaStack(L);
         PrintGlobal(L, True);
         PrintWatch(L);
       finally
@@ -3427,7 +3474,6 @@ procedure TfrmMain.CallHookFunc(L: Plua_State; AR: Plua_Debug);
 var
   pBreakInfo: TBreakInfo;
   pLuaUnit: TLuaUnit;
-  pSubItem: TListItem;
 
   procedure Update;
   var
@@ -3458,7 +3504,8 @@ var
     pLuaUnit.synUnit.EnsureCursorPosVisibleEx(True);
     pCurrentSynEdit.Refresh;
 
-    PrintStack(L);
+    PrintLuaStack(L);
+    PrintStack;
     PrintLocal(L);
     PrintGlobal(L, True);
     PrintWatch(L);
@@ -3472,7 +3519,8 @@ var
     CurrentICI := AR.i_ci;
 
     // NOTE: this condition has been added because when the unit is new,
-    //       ExpandUNCFileName must not be used
+    //       ExpandUNCFileName must not be used to avoid bugging
+    //       Bug fixed the 02/06/2005 by Jean-Francois Goulet
     if FileExists(StringReplace(AR.source, '@', '',[])) then
       sUnitName := ExpandUNCFileName(StringReplace(AR.source, '@', '',[]))
     else
@@ -3480,13 +3528,9 @@ var
 
     // Get line break status
     Pause := Pause or IsBreak(sUnitName, AR.currentline) or IsICI(CurrentICI);
-
-    {if Assigned(pLuaUnit) then
-      if ((Pause) and (pLuaUnit.pDebugInfos.iCurrentLineDebug = -1)) then
-        frmLuaEditMessages.memMessages.Lines.Add('[HINT]:  Break in document '+StrPas(AR.source)+' ('+IntToStr(AR.currentline)+') - '+DateTimeToStr(Now));}
-
     ReStart := not Pause;
 
+    // Reset a few variables if we are going to break
     if (Pause) then
     begin
       Pause := False;
@@ -3498,19 +3542,27 @@ var
     frmMain.CheckButtons;
     PrevLine := AR.currentline - 1;
 
-    if not ReStart then
+    // Update debug informations only if we are going to break
+    if not Restart then
       Update;
 
     repeat
-      Application.ProcessMessages;
-      Sleep(20);
+      // Only slow down processor if we really have to wait
+      // if we don't we have major poor performances
+      // Bug fixed the 02/06/2005 by Jean-Francois Goulet
+      if not ReStart then
+      begin
+        Application.ProcessMessages;
+        Sleep(20);
+      end;
 
+      // Quit loop if user pressed stop/run
       if (not Running) then
       begin
         lua_pushstring(L, 'STOP');
         lua_error(L);
       end;
-    until (ReStart);
+    until ReStart;
   end;
 begin
   if Assigned(frmMain.jvUnitBar.SelectedTab) then
@@ -3533,45 +3585,33 @@ begin
       begin
         // Adding to CallStack...
         pBreakInfo := TBreakInfo.Create;
-        pBreakInfo.FileName := pLuaUnit.sUnitPath;
-
+        pBreakInfo.LineOut := IntToStr(PrevLine + 1);
+        
         if AR.what <> 'C' then
         begin
+          pBreakInfo.FileName := pLuaUnit.sUnitPath;
           pBreakInfo.Line := PrevLine;
-          pSubItem := frmStack.lstCallStack.Items.Insert(0);
-          pSubItem.Caption := pLuaUnit.sName;
-          pSubItem.SubItems.Add(pLuaUnit.synUnit.Lines[PrevLine]);
-          pSubItem.SubItems.Add(IntToStr(PrevLine + 1));
+          pBreakInfo.Call := pLuaUnit.synUnit.Lines[PrevLine];
         end
         else
         begin
-          pBreakInfo.Line := AR.currentline;
-          pSubItem := frmStack.lstCallStack.Items.Insert(0);
-          pSubItem.Caption := '[' + AR.What + ']';
-          pSubItem.SubItems.Add('<External Call>');
-          pSubItem.SubItems.Add(IntToStr(PrevLine + 1));
+          pBreakInfo.Line := -1;  // Always -1 value when external definition
+          pBreakInfo.FileName := '[' + AR.What + ']';
+          pBreakInfo.Call := '<External Call>';
         end;
 
-        pSubItem.Data := pBreakInfo;
-
-        // Managing Stack braking icons...
-        frmStack.lstCallStack.Items[0].ImageIndex := 0;
-        if frmStack.lstCallStack.Items.Count > 1 then
-          frmStack.lstCallStack.Items[1].ImageIndex := -1;
+        // Add To Call Stack List
+        CallStack.Insert(0, pBreakInfo);
       end;
     end;
     LUA_HOOKRET:
     begin
       // Removing from CallStack...
-      if frmStack.lstCallStack.Items.Count > 0 then
+      if CallStack.Count > 0 then
       begin
-        TBreakInfo(frmStack.lstCallStack.Items[0].Data).Free;
-        frmStack.lstCallStack.Items.Delete(0);
+        TBreakInfo(CallStack.Items[0]).Free;
+        CallStack.Delete(0);
       end;
-
-      // Managing Stack braking icons...
-      if frmStack.lstCallStack.Items.Count > 0 then
-        frmStack.lstCallStack.Items[0].ImageIndex := 0;
     end;
     LUA_HOOKLINE:
     begin
@@ -3579,6 +3619,7 @@ begin
     end;
     LUA_HOOKCOUNT, LUA_HOOKTAILRET:
     begin
+      // nothing for now
     end;
   end;
 end;
@@ -3638,7 +3679,38 @@ begin
 end;
 
 // print the call stack
-procedure TfrmMain.PrintStack(L: Plua_State);
+procedure TfrmMain.PrintStack;
+var
+  x: Integer;
+  pItem: TListItem;
+begin
+  // Clear call stack before displaying
+  frmStack.lstCallStack.Clear;
+  frmStack.lstCallStack.Items.BeginUpdate;
+
+  // Display Stack
+  for x := 0 to CallStack.Count - 1 do
+  begin
+    pItem := frmStack.lstCallStack.Items.Add;
+    pItem.Caption := TBreakInfo(CallStack.Items[x]).FileName;
+    pItem.SubItems.Strings[0] := TBreakInfo(CallStack.Items[x]).Call;
+    pItem.SubItems.Strings[1] := TBreakInfo(CallStack.Items[x]).LineOut;
+    pItem.Data := CallStack.Items[x];
+  end;
+
+  if frmStack.lstCallStack.Items.Count > 0 then
+  begin
+    // Managing Stack breaking icons...
+    frmStack.lstCallStack.Items[0].ImageIndex := 0;
+    if frmStack.lstCallStack.Items.Count > 1 then
+      frmStack.lstCallStack.Items[1].ImageIndex := -1;
+  end;
+
+  frmStack.lstCallStack.Items.EndUpdate;
+end;
+
+// print the lua stack
+procedure TfrmMain.PrintLuaStack(L: Plua_State);
 begin
   LuaStackToStrings(L, frmLuaStack.lstLuaStack.Items, PRINT_SIZE);
 end;
@@ -3850,20 +3922,25 @@ begin
 end;
 
 procedure TfrmMain.stbMainDrawPanel(StatusBar: TStatusBar; Panel: TStatusPanel; const Rect: TRect);
+var
+  InflatedRect: TRect;
 begin
   if not IsCompiledComplete then
   begin
-    stbMain.Canvas.Font.Color := clWhite;
-    stbMain.Canvas.Brush.Color := clNavy;
-    stbMain.Canvas.FillRect(Rect);
-    stbMain.Canvas.TextRect(Rect, Rect.Left, rect.Top, '  '+LastMessage);
+    StatusBar.Canvas.Font.Color := clWhite;
+    StatusBar.Canvas.Brush.Color := clNavy;
+    StatusBar.Canvas.FillRect(Rect);
+    StatusBar.Canvas.TextRect(Rect, Rect.Left, rect.Top, '  '+LastMessage);
   end
   else
   begin
-    stbMain.Canvas.Font.Color := clBlack;
-    stbMain.Canvas.Brush.Color := clBtnFace;
-    stbMain.Canvas.FillRect(Rect);
-    stbMain.Canvas.TextRect(Rect, Rect.Left, rect.Top, '  '+LastMessage);
+    StatusBar.Canvas.Font.Color := clBlack;
+    StatusBar.Canvas.FillRect(Rect);
+    StatusBar.Canvas.TextRect(Rect, Rect.Left, Rect.Top, '  '+Panel.Text);
+    InflatedRect := Rect;
+    InflateRect(InflatedRect, 1, 1);
+    StatusBar.Canvas.Brush.Color := clGrayText;
+    StatusBar.Canvas.FrameRect(Rect);
   end;
 end;
 
@@ -4185,13 +4262,13 @@ begin
       if Pos('*', jvUnitBar.SelectedTab.Caption) <> Length(jvUnitBar.SelectedTab.Caption) then
         jvUnitBar.SelectedTab.Caption := jvUnitBar.SelectedTab.Caption + '*';
       jvUnitBar.SelectedTab.Modified := True;
-      stbMain.Panels[2].Text := 'Modified';
+      stbMain.Panels[3].Text := 'Modified';
       NotifyModified := True;
     end
     else
     begin
       pLuaUnit.HasChanged := False;
-      stbMain.Panels[2].Text := '';
+      stbMain.Panels[3].Text := '';
       NotifyModified := False;
       if Pos('*', jvUnitBar.SelectedTab.Caption) = Length(jvUnitBar.SelectedTab.Caption) then
         jvUnitBar.SelectedTab.Caption := Copy(jvUnitBar.SelectedTab.Caption, 1, Length(jvUnitBar.SelectedTab.Caption) - 1);
@@ -4199,15 +4276,83 @@ begin
     end; 
 
     if pLuaUnit.IsReadOnly then
-      stbMain.Panels[3].Text := 'Read Only'
+      stbMain.Panels[4].Text := 'Read Only'
     else
-      stbMain.Panels[3].Text := '';
+      stbMain.Panels[4].Text := '';
       
     pLuaUnit.pDebugInfos.iLineError := -1;
     HasChangedWhileCompiled := True;
+    pLuaUnit.LastEditedLine := pLuaUnit.synUnit.CaretY;
     pLuaUnit.PrevLineNumber := pLuaUnit.synUnit.Lines.Count;
     pLuaUnit.synUnit.Refresh;
     CheckButtons;
+  end;
+end;
+
+procedure TfrmMain.synEditDblClick(Sender: TObject);
+const
+  OpeningBrackets: set of char = ['(', '[', '{', '<'];
+  ClosingBrackets: set of char = [')', ']', '}', '>'];
+var
+  pLuaUnit: TLuaUnit;
+  pCoord: TBufferCoord;
+begin
+  if Assigned(jvUnitBar.SelectedTab.Data) then
+  begin
+    // Get current unit and find matching bracket
+    pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
+
+    if pLuaUnit.synUnit.Lines[pLuaUnit.synUnit.CaretY - 1][pLuaUnit.synUnit.CaretX] in OpeningBrackets then
+    begin
+      if ((FirstClickPos.Line = pLuaUnit.synUnit.CaretXY.Line) and (FirstClickPos.Char = pLuaUnit.synUnit.CaretXY.Char)) then
+      begin
+        // Get matching bracket
+        pCoord := pLuaUnit.synUnit.GetMatchingBracket;
+
+        // Select matching bracket if found one
+        if pCoord.Char <> 0 then
+        begin
+          Inc(pCoord.Char);
+          pLuaUnit.synUnit.BlockBegin := pLuaUnit.synUnit.CaretXY;
+          pLuaUnit.synUnit.BlockEnd := pCoord;
+        end;
+      end;
+    end
+    else if pLuaUnit.synUnit.Lines[pLuaUnit.synUnit.CaretY - 1][pLuaUnit.synUnit.CaretX - 1] in ClosingBrackets then
+    begin
+    end;
+      // Get matching bracket with previous char
+      pCoord := pLuaUnit.synUnit.CaretXY;
+      Dec(pCoord.Char);
+      pCoord := pLuaUnit.synUnit.GetMatchingBracketEx(pCoord);
+
+      // Select matching bracket if found one
+      if pCoord.Char <> 0 then
+      begin
+        pLuaUnit.synUnit.BlockBegin := pLuaUnit.synUnit.CaretXY;
+        pLuaUnit.synUnit.BlockEnd := pCoord;
+      end;
+  end;
+end;
+
+procedure TfrmMain.synEditMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+var
+  pLuaUnit: TLuaUnit;
+begin
+  // Only if left button is down (in other words... when selecting)
+  if ssLeft	in Shift then
+  begin
+    if Assigned(jvUnitBar.SelectedTab.Data) then
+    begin
+      // Get currently opened unit
+      pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
+
+      // Set square selection mode if Alt key is held down
+      if ssAlt in Shift then
+        pLuaUnit.synUnit.SelectionMode := smColumn
+      else
+        pLuaUnit.synUnit.SelectionMode := smNormal;
+    end;
   end;
 end;
 
@@ -4409,365 +4554,229 @@ procedure TfrmMain.synCompletionExecute(Kind: SynCompletionType; Sender: TObject
 var
   pLuaUnit: TLuaUnit;
   pFctInfo: TFctInfo;
-  sTemp: String;
-  sFunctionName: String;
-  lstLocalTable: TStringList;
-  i, Index: Integer;
+  hFileSearch: TSearchRec;
+  GotTable: Boolean;
+  sTemp, sFormatString, sFunctionName, sNestedTable: String;
+  sTable, sParameters, LineType, Lookup, LookupTable: String;
+  lstLocalTable, sFileContent: TStringList;
+  i, j, k, Index: Integer;
 begin
+  // Initialize stuff before going
+  lstLocalTable := TStringList.Create;
   pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
   pLuaUnit.synCompletion.ItemList.Clear;
   pLuaUnit.synCompletion.ClearList;
   pLuaUnit.synCompletion.InsertList.Clear;
+  j := pLuaUnit.synUnit.CaretX - 1;
 
-  if Copy(pLuaUnit.synUnit.LineText, pLuaUnit.synUnit.CaretX - Length('coroutine.'), Length('coroutine.')) = 'coroutine.' then
+  // Getting lookup text and lookup table at cursor
+  while ((Copy(pLuaUnit.synUnit.Lines[pLuaUnit.synUnit.CaretY - 1], j, 1) <> ' ') and (Copy(pLuaUnit.synUnit.Lines[pLuaUnit.synUnit.CaretY - 1], j, 1) <> '') and (j > 0)) do
   begin
-    //Coroutines functions
-    pLuaUnit.synCompletion.InsertList.Add('create');
-    pLuaUnit.synCompletion.InsertList.Add('resume');
-    pLuaUnit.synCompletion.InsertList.Add('status');
-    pLuaUnit.synCompletion.InsertList.Add('wrap');
-    pLuaUnit.synCompletion.InsertList.Add('yield');
+    // Retreive lookup text at cursor
+    Lookup := Copy(pLuaUnit.synUnit.Lines[pLuaUnit.synUnit.CaretY - 1], j, 1) + Lookup;
 
-    //Coroutines functions
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}create\style{-B}(f)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}resume\style{-B}(co, val1, ...)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}status\style{-B}(co)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}wrap\style{-B}(f)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}yield\style{-B}(val1, ...)');
+    // Retreive lookup table at cursor if any
+    if ((Copy(pLuaUnit.synUnit.Lines[pLuaUnit.synUnit.CaretY - 1], j, 1) = '.') or GotTable) then
+    begin
+      // Don't retreive first point encountered
+      if GotTable then
+        LookupTable := Copy(pLuaUnit.synUnit.Lines[pLuaUnit.synUnit.CaretY - 1], j, 1) + LookupTable;
+
+      GotTable := True;
+    end;
+
+    Dec(j);
   end;
 
-  if Copy(pLuaUnit.synUnit.LineText, pLuaUnit.synUnit.CaretX - Length('string.'), Length('string.')) = 'string.' then
+  // Go through all libraries search paths
+  for i := 0 to LibrariesSearchPaths.Count - 1 do
   begin
-    //Strings functions
-    pLuaUnit.synCompletion.InsertList.Add('byte');
-    pLuaUnit.synCompletion.InsertList.Add('char');
-    pLuaUnit.synCompletion.InsertList.Add('dump');
-    pLuaUnit.synCompletion.InsertList.Add('find');
-    pLuaUnit.synCompletion.InsertList.Add('len');
-    pLuaUnit.synCompletion.InsertList.Add('lower');
-    pLuaUnit.synCompletion.InsertList.Add('rep');
-    pLuaUnit.synCompletion.InsertList.Add('sub');
-    pLuaUnit.synCompletion.InsertList.Add('upper');
-    pLuaUnit.synCompletion.InsertList.Add('format');
-    pLuaUnit.synCompletion.InsertList.Add('gfind');
-    pLuaUnit.synCompletion.InsertList.Add('gsub');
+    // Begin file search
+    if FindFirst(LibrariesSearchPaths.Strings[i]+'*.lib', faAnyFile, hFileSearch) = 0 then
+    begin
+      repeat
+        // Create and initialize temporary content container
+        sFileContent := TStringList.Create;
+        sFileContent.LoadFromFile(LibrariesSearchPaths.Strings[i]+hFileSearch.Name);
 
-    //Strings functions
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}byte\style{-B}(s, [, i])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}char\style{-B}(i1, i2, ...)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}dump\style{-B}(function)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}find\style{-B}(s, pattern [, init [, plain]])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}len\style{-B}(s)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}lower\style{-B}(s)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}rep\style{-B}(s, n)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}sub\style{-B}(s, i [, j])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}upper\style{-B}(s)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}format\style{-B}(formatstring, e1, e2, ...)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}gfind\style{-B}(s, pat)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}gsub\style{-B}(s, pat, rep1 [, n])');
+        // Parse content and add it to the lookup list
+        for j := 0 to sFileContent.Count - 1 do
+        begin
+          // Extract line type
+          LineType := UpperCase(Copy(sFileContent.Strings[j], Length(sFileContent.Strings[j]) - 2, 3));
+          sTemp := Copy(sFileContent.Strings[j], 1, Length(sFileContent.Strings[j]) - 4);
+
+          // Format line according to type
+          if LineType = 'FOO' then
+            sFormatString := '\color{clBlue}function\color{clBlack}   \column{}\style{+B}'
+          else if LineType = 'VAR' then
+            sFormatString := '\color{clMaroon}global var\color{clBlack} \column{}\style{+B}'
+          else if LineType = 'LIB' then
+            sFormatString := '\color{clGreen}library\color{clBlack}       \column{}\style{+B}';
+
+          // Initialize variable before starting
+          sParameters := '';
+          sFunctionName := '';
+          sTable := '';
+          sNestedTable := '';
+
+          // Determine if a table is to retreive
+          while ((Pos('.', sTemp) <> 0) and ((Pos('(', sTemp) <> 0) and (Pos('.', sTemp) < Pos('(', sTemp)))) do
+          begin
+            // Retreive table and function name
+            sTable := Copy(sTemp, 1, Pos('.', sTemp) - 1);
+            sTemp := StringReplace(sTemp, sTable + '.', '', [rfReplaceAll, rfIgnoreCase]);
+            if sNestedTable = '' then
+              sNestedTable := sTable
+            else
+              sNestedTable := sNestedTable + '.' + sTable;
+
+            // Sort list of table/nested table before doing the find call
+            lstLocalTable.Sort;
+
+            // Add table in table list if not already in it
+            if not lstLocalTable.Find(sNestedTable, Index) then
+              lstLocalTable.Add(sNestedTable);
+          end;
+
+          // Determine if parameters are to retreive
+          if Pos('(', sTemp) <> 0 then
+            sParameters := Copy(sTemp, Pos('(', sTemp) + 1, Length(sTemp) - 1 - Pos('(', sFileContent.Strings[j]));
+
+          if Pos('(', sTemp) <> 0 then
+            sFunctionName := Copy(sTemp, 1, Pos('(', sTemp) - 1)
+          else
+            sFunctionName := sTemp;
+
+          if sFunctionName <> '' then
+          begin
+            if ((LookupTable = Copy(sNestedTable, 1, Length(Lookup))) and (LookupTable <> '')) then
+            begin
+              if ((Pos('(', sTemp) <> 0) and (LineType = 'FOO')) then
+                pLuaUnit.synCompletion.ItemList.Add(sFormatString + sFunctionName + '\style{-B}(' + sParameters + ')')
+              else
+                pLuaUnit.synCompletion.ItemList.Add(sFormatString + sFunctionName + '\style{-B}');
+
+              pLuaUnit.synCompletion.InsertList.Add(sFunctionName);
+            end
+            else if (Lookup = Copy(sFunctionName, 1, Length(Lookup))) and (sNestedTable = '') then
+            begin
+              if ((Pos('(', sTemp) <> 0) and (LineType = 'FOO')) then
+                pLuaUnit.synCompletion.ItemList.Add(sFormatString + sFunctionName + '\style{-B}(' + sParameters + ')')
+              else
+                pLuaUnit.synCompletion.ItemList.Add(sFormatString + sFunctionName + '\style{-B}');
+
+              pLuaUnit.synCompletion.InsertList.Add(sFunctionName);
+            end;
+          end;
+        end;
+
+        // Free temporary content container
+        sFileContent.Free;
+      until FindNext(hFileSearch) <> 0;
+
+      FindClose(hFileSearch);
+    end;
   end;
-
-  if Copy(pLuaUnit.synUnit.LineText, pLuaUnit.synUnit.CaretX - Length('table.'), Length('table.')) = 'table.' then
-  begin
-    //table functions
-    pLuaUnit.synCompletion.InsertList.Add('concat');
-    pLuaUnit.synCompletion.InsertList.Add('foreach');
-    pLuaUnit.synCompletion.InsertList.Add('foreachi');
-    pLuaUnit.synCompletion.InsertList.Add('getn');
-    pLuaUnit.synCompletion.InsertList.Add('sort');
-    pLuaUnit.synCompletion.InsertList.Add('insert');
-    pLuaUnit.synCompletion.InsertList.Add('remove');
-    pLuaUnit.synCompletion.InsertList.Add('setn');
-
-    //table functions
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}concat\style{-B}(table [, sep [, i [, j]]])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}foreach\style{-B}(table, f)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}foreachi\style{-B}(table, f)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}getn\style{-B}(table)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}sort\style{-B}(table [, comp])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}insert\style{-B}(table, [pos,] value)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}remove\style{-B}(table [, pos])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}setn\style{-B}(table, n)');
-  end;
-
-  if Copy(pLuaUnit.synUnit.LineText, pLuaUnit.synUnit.CaretX - Length('math.'), Length('math.')) = 'math.' then
-  begin
-    //math functions
-    pLuaUnit.synCompletion.InsertList.Add('abs');
-    pLuaUnit.synCompletion.InsertList.Add('acos');
-    pLuaUnit.synCompletion.InsertList.Add('asin');
-    pLuaUnit.synCompletion.InsertList.Add('atan');
-    pLuaUnit.synCompletion.InsertList.Add('atan2');
-    pLuaUnit.synCompletion.InsertList.Add('ceil');
-    pLuaUnit.synCompletion.InsertList.Add('cos');
-    pLuaUnit.synCompletion.InsertList.Add('deg');
-    pLuaUnit.synCompletion.InsertList.Add('exp');
-    pLuaUnit.synCompletion.InsertList.Add('floor');
-    pLuaUnit.synCompletion.InsertList.Add('log');
-    pLuaUnit.synCompletion.InsertList.Add('log10');
-    pLuaUnit.synCompletion.InsertList.Add('max');
-    pLuaUnit.synCompletion.InsertList.Add('min');
-    pLuaUnit.synCompletion.InsertList.Add('mod');
-    pLuaUnit.synCompletion.InsertList.Add('pow');
-    pLuaUnit.synCompletion.InsertList.Add('rad');
-    pLuaUnit.synCompletion.InsertList.Add('sin');
-    pLuaUnit.synCompletion.InsertList.Add('sqrt');
-    pLuaUnit.synCompletion.InsertList.Add('tan');
-    pLuaUnit.synCompletion.InsertList.Add('frexp');
-    pLuaUnit.synCompletion.InsertList.Add('ldexp');
-    pLuaUnit.synCompletion.InsertList.Add('random');
-    pLuaUnit.synCompletion.InsertList.Add('randomseed');
-    pLuaUnit.synCompletion.InsertList.Add('pi');
-
-    //table functions
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}abs\style{-B}(n)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}acos\style{-B}(n)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}asin\style{-B}(n)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}atan\style{-B}(n)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}atan2\style{-B}(n1, n2)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}ceil\style{-B}(n)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}cos\style{-B}(n)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}deg\style{-B}(n)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}exp\style{-B}(n)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}floor\style{-B}(n)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}log\style{-B}(n)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}log10\style{-B}(n)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}max\style{-B}(n1 [, ...])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}min\style{-B}(n1 [, ...)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}mod\style{-B}(n1, n2)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}pow\style{-B}(n1, n2)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}rad\style{-B}(n)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}sin\style{-B}(n)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}sqrt\style{-B}(n)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}tan\style{-B}(n)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}frexp\style{-B}(n, exp)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}ldexp\style{-B}(n, exp)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}random\style{-B}([rangemin [, rangemax]])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}randomseed\style{-B}(seed)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clMaroon}var\color{clBlack}           \column{}\style{+B}pi\style{-B}');
-  end;
-
-  if Copy(pLuaUnit.synUnit.LineText, pLuaUnit.synUnit.CaretX - Length('io.'), Length('io.')) = 'io.' then
-  begin
-    //io functions
-    pLuaUnit.synCompletion.InsertList.Add('close');
-    pLuaUnit.synCompletion.InsertList.Add('flush');
-    pLuaUnit.synCompletion.InsertList.Add('input');
-    pLuaUnit.synCompletion.InsertList.Add('lines');
-    pLuaUnit.synCompletion.InsertList.Add('open');
-    pLuaUnit.synCompletion.InsertList.Add('output');
-    pLuaUnit.synCompletion.InsertList.Add('read');
-    pLuaUnit.synCompletion.InsertList.Add('tmpfile');
-    pLuaUnit.synCompletion.InsertList.Add('type');
-    pLuaUnit.synCompletion.InsertList.Add('write');
-
-    //io functions
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}close\style{-B}([file])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}flush\style{-B}()');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}input\style{-B}([file])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}lines\style{-B}([filename])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}open\style{-B}(filename [, mode])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}output\style{-B}([file])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}read\style{-B}(format1, ...)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}tmpfile\style{-B}()');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}type\style{-B}(obj)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}write\style{-B}(value1, ...)');
-  end;
-
-  if Copy(pLuaUnit.synUnit.LineText, pLuaUnit.synUnit.CaretX - Length(':'), Length(':')) = ':' then
-  begin
-    //following of io functions
-    pLuaUnit.synCompletion.InsertList.Add('close');
-    pLuaUnit.synCompletion.InsertList.Add('flush');
-    pLuaUnit.synCompletion.InsertList.Add('lines');
-    pLuaUnit.synCompletion.InsertList.Add('read');
-    pLuaUnit.synCompletion.InsertList.Add('seek');
-    pLuaUnit.synCompletion.InsertList.Add('write');
-
-    //following of io functions
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}close\style{-B}()');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}flush\style{-B}()');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}lines\style{-B}()');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}read\style{-B}(format1, ...)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}seek\style{-B}([whence] [, offset])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}write\style{-B}(value1, ...)');
-  end;
-
-  if Copy(pLuaUnit.synUnit.LineText, pLuaUnit.synUnit.CaretX - Length('os.'), Length('os.')) = 'os.' then
-  begin
-    //os functions
-    pLuaUnit.synCompletion.InsertList.Add('clock');
-    pLuaUnit.synCompletion.InsertList.Add('date');
-    pLuaUnit.synCompletion.InsertList.Add('difftime');
-    pLuaUnit.synCompletion.InsertList.Add('execute');
-    pLuaUnit.synCompletion.InsertList.Add('exit');
-    pLuaUnit.synCompletion.InsertList.Add('getenv');
-    pLuaUnit.synCompletion.InsertList.Add('remove');
-    pLuaUnit.synCompletion.InsertList.Add('rename');
-    pLuaUnit.synCompletion.InsertList.Add('setlocale');
-    pLuaUnit.synCompletion.InsertList.Add('time');
-    pLuaUnit.synCompletion.InsertList.Add('tmpname');
-
-    //os functions
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}clock\style{-B}()');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}date\style{-B}([format [, time]])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}difftime\style{-B}(t2, t1)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}execute\style{-B}(command)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}exit\style{-B}([code])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}getenv\style{-B}(varname)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}remove\style{-B}(filename)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}rename\style{-B}(oldname, newname)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}setlocale\style{-B}(locale [, category])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}time\style{-B}([table])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}tmpname\style{-B}()');
-  end;
-
-  if Copy(pLuaUnit.synUnit.LineText, pLuaUnit.synUnit.CaretX - Length('debug.'), Length('debug.')) = 'debug.' then
-  begin
-    //debug functions
-    pLuaUnit.synCompletion.InsertList.Add('debug');
-    pLuaUnit.synCompletion.InsertList.Add('gethook');
-    pLuaUnit.synCompletion.InsertList.Add('getinfo');
-    pLuaUnit.synCompletion.InsertList.Add('getlocal');
-    pLuaUnit.synCompletion.InsertList.Add('getupvalue');
-    pLuaUnit.synCompletion.InsertList.Add('setlocal');
-    pLuaUnit.synCompletion.InsertList.Add('setupvalue');
-    pLuaUnit.synCompletion.InsertList.Add('sethook');
-    pLuaUnit.synCompletion.InsertList.Add('traceback');
-
-    //debug functions
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}debug\style{-B}()');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}gethook\style{-B}()');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}getinfo\style{-B}(function [, what])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}getlocal\style{-B}(level, local)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}getupvalue\style{-B}(func, up)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}setlocal\style{-B}(level, local, value)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}setupvalue\style{-B}(func, up, value)');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}sethook\style{-B}(hook, mask [, count])');
-    pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}traceback\style{-B}([message])');
-  end;
-  
-  //standard functions
-  pLuaUnit.synCompletion.InsertList.Add('assert');
-  pLuaUnit.synCompletion.InsertList.Add('collectgarbage');
-  pLuaUnit.synCompletion.InsertList.Add('dofile');
-  pLuaUnit.synCompletion.InsertList.Add('error');
-  pLuaUnit.synCompletion.InsertList.Add('_G');
-  pLuaUnit.synCompletion.InsertList.Add('getfenv');
-  pLuaUnit.synCompletion.InsertList.Add('getmetatable');
-  pLuaUnit.synCompletion.InsertList.Add('gcinfo');
-  pLuaUnit.synCompletion.InsertList.Add('inpairs');
-  pLuaUnit.synCompletion.InsertList.Add('loadfile');
-  pLuaUnit.synCompletion.InsertList.Add('loadlib');
-  pLuaUnit.synCompletion.InsertList.Add('loadstring');
-  pLuaUnit.synCompletion.InsertList.Add('next');
-  pLuaUnit.synCompletion.InsertList.Add('pairs');
-  pLuaUnit.synCompletion.InsertList.Add('pcall');
-  pLuaUnit.synCompletion.InsertList.Add('print');
-  pLuaUnit.synCompletion.InsertList.Add('rawequal');
-  pLuaUnit.synCompletion.InsertList.Add('rawget');
-  pLuaUnit.synCompletion.InsertList.Add('rawset');
-  pLuaUnit.synCompletion.InsertList.Add('require');
-  pLuaUnit.synCompletion.InsertList.Add('setfenv');
-  pLuaUnit.synCompletion.InsertList.Add('setmetatable');
-  pLuaUnit.synCompletion.InsertList.Add('tonumber');
-  pLuaUnit.synCompletion.InsertList.Add('tostring');
-  pLuaUnit.synCompletion.InsertList.Add('type');
-  pLuaUnit.synCompletion.InsertList.Add('unpack');
-  pLuaUnit.synCompletion.InsertList.Add('_VERSION');
-  pLuaUnit.synCompletion.InsertList.Add('xpcall');
-  pLuaUnit.synCompletion.InsertList.Add('coroutine');
-  pLuaUnit.synCompletion.InsertList.Add('string');
-  pLuaUnit.synCompletion.InsertList.Add('table');
-  pLuaUnit.synCompletion.InsertList.Add('math');
-  pLuaUnit.synCompletion.InsertList.Add('io');
-
-  //standard functions
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}assert\style{-B}(v [, message])');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}collectgarbage\style{-B}([limit])');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}dofile\style{-B}(filename)');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}error\style{-B}(message [, level])');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clMaroon}global var\color{clBlack} \column{}\style{+B}_G\style{-B}');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}getfenv\style{-B}(f)');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}getmetatable\style{-B}(object)');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}gcinfo\style{-B}()');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}inpairs\style{-B}(t)');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}loadfile\style{-B}(filename)');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}loadlib\style{-B}(libname, funcname)');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}loadstring\style{-B}(string [, chunkname])');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}next\style{-B}(table [, index])');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}pairs\style{-B}(t)');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}pcall\style{-B}(f, arg1, arg2, ...)');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}print\style{-B}(e1, e2, ...)');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}rawequal\style{-B}(v1, v2)');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}rawget\style{-B}(table, index)');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}rawset\style{-B}(table, index, value)');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}require\style{-B}(packagename)');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}setfenv\style{-B}(f, table)');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}setmetatable\style{-B}(table, metatable)');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}tonumber\style{-B}(e [, base])');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}tostring\style{-B}(e)');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}type\style{-B}(v)');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}unpack\style{-B}(list)');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clMaroon}global var\color{clBlack} \column{}\style{+B}_VERSION\style{-B}');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}xpcall\style{-B}(f, err)');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clGreen}library\color{clBlack}       \column{}\style{+B}coroutine\style{-B}');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clGreen}library\color{clBlack}       \column{}\style{+B}string\style{-B}');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clGreen}library\color{clBlack}       \column{}\style{+B}table\style{-B}');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clGreen}library\color{clBlack}       \column{}\style{+B}math\style{-B}');
-  pLuaUnit.synCompletion.ItemList.Add('\color{clGreen}library\color{clBlack}       \column{}\style{+B}io\style{-B}');
 
   // Local definitions
   frmFunctionList.RefreshList(pLuaUnit.sUnitPath);
-  lstLocalTable := TStringList.Create;
 
   for i := 0 to frmFunctionList.lvwFunctions.Items.Count - 1 do
   begin
     pFctInfo := TFctInfo(frmFunctionList.lvwFunctions.Items[i].Data);
+    sTemp := pFctInfo.FctDef;
     sFunctionName := '';
+    sParameters := '';
+    sTable := '';
+    sNestedTable := '';
 
     // look if it is member of a table
-    if Pos('.', pFctInfo.FctDef) <> 0 then
+    while ((Pos('.', sTemp) <> 0) and ((Pos('(', sTemp) <> 0) and (Pos('.', sTemp) < Pos('(', sTemp)))) do
     begin
-      sTemp := Copy(pFctInfo.FctDef, 1, Pos('.', pFctInfo.FctDef));
+      // Retreive table and function name
+      sTable := Copy(sTemp, 1, Pos('.', sTemp) - 1);
+      sTemp := StringReplace(sTemp, sTable + '.', '', [rfReplaceAll, rfIgnoreCase]);
+      if sNestedTable = '' then
+        sNestedTable := sTable
+      else
+        sNestedTable := sNestedTable + '.' + sTable;
+
+      // Sort list of table/nested table before doing the find call
       lstLocalTable.Sort;
-      if not lstLocalTable.Find(sTemp, Index) then
-        lstLocalTable.Add(sTemp);
 
+      // Add table in table list if not already in it
+      if not lstLocalTable.Find(sNestedTable, Index) then
+        lstLocalTable.Add(sNestedTable);
+    end;
 
-      if Copy(pLuaUnit.synUnit.LineText, pLuaUnit.synUnit.CaretX - Length(sTemp), Length(sTemp)) = sTemp then
-      begin
-        sFunctionName := StringReplace(Copy(pFctInfo.FctDef, 1, Pos('(', pFctInfo.FctDef) - 1), sTemp, '', [rfReplaceAll, rfIgnoreCase]);
-      end;
-    end
-    else
-      sFunctionName := Copy(pFctInfo.FctDef, 1, Pos('(', pFctInfo.FctDef) - 1);
+    // Retreive parameters and function name
+    sParameters := pFctInfo.Params;
+    sFunctionName := Copy(sTemp, 1, Pos('(', sTemp) - 1);
 
     if sFunctionName <> '' then
     begin
-      pLuaUnit.synCompletion.InsertList.Add(sFunctionName);
-      pLuaUnit.synCompletion.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}' + sFunctionName + '\style{-B}(' + pFctInfo.Params + ')');
+      if ((LookupTable = Copy(sNestedTable, 1, Length(Lookup))) and (LookupTable <> '')) then
+      begin
+        if ((Pos('(', sTemp) <> 0) and (LineType = 'FOO')) then
+          pLuaUnit.synCompletion.ItemList.Add(sFormatString + sFunctionName + '\style{-B}(' + sParameters + ')')
+        else
+          pLuaUnit.synCompletion.ItemList.Add(sFormatString + sFunctionName + '\style{-B}');
+
+        pLuaUnit.synCompletion.InsertList.Add(sFunctionName);
+      end
+      else if (Lookup = Copy(sFunctionName, 1, Length(Lookup))) and (sNestedTable = '') then
+      begin
+        if ((Pos('(', sTemp) <> 0) and (LineType = 'FOO')) then
+          pLuaUnit.synCompletion.ItemList.Add(sFormatString + sFunctionName + '\style{-B}(' + sParameters + ')')
+        else
+          pLuaUnit.synCompletion.ItemList.Add(sFormatString + sFunctionName + '\style{-B}');
+
+        pLuaUnit.synCompletion.InsertList.Add(sFunctionName);
+      end;
     end;
   end;
 
+  // add all found libraries
   for i := 0 to lstLocalTable.Count - 1 do
   begin
-    pLuaUnit.synCompletion.InsertList.Add(Copy(lstLocalTable.Strings[i], 1, Length(lstLocalTable.Strings[i]) - 1));
-    pLuaUnit.synCompletion.ItemList.Add('\color{clGreen}library\color{clBlack}       \column{}\style{+B}' + Copy(lstLocalTable.Strings[i], 1, Length(lstLocalTable.Strings[i]) - 1) + '\style{-B}');
+    if ((LookupTable = Copy(lstLocalTable.Strings[i], 1, Length(LookupTable))) and (LookupTable <> '') and (lstLocalTable.Strings[i] <> LookupTable)  and (Pos('.', Copy(lstLocalTable.Strings[i], Length(Lookup) + 1, Length(lstLocalTable.Strings[i]) - Length(Lookup) + 1)) = 0)) then
+    begin
+      // Because of sub tables, retreive only last part before last point
+      j := Length(lstLocalTable.Strings[i]);
+      sTemp := '';
+      while ((Copy(lstLocalTable.Strings[i], j, 1) <> '.') and (j > 0)) do
+      begin
+        sTemp := Copy(lstLocalTable.Strings[i], j, 1) + sTemp;
+        Dec(j);
+      end;
+
+      pLuaUnit.synCompletion.InsertList.Add(sTemp);
+      pLuaUnit.synCompletion.ItemList.Add('\color{clGreen}library\color{clBlack}       \column{}\style{+B}' + sTemp + '\style{-B}');
+    end
+    else if ((Lookup = Copy(lstLocalTable.Strings[i], 1, Length(Lookup))) and (Pos('.', Copy(lstLocalTable.Strings[i], Length(Lookup) + 1, Length(lstLocalTable.Strings[i]) - Length(Lookup) + 1)) = 0)) then
+    begin
+      pLuaUnit.synCompletion.InsertList.Add(Copy(lstLocalTable.Strings[i], 1, Length(lstLocalTable.Strings[i])));
+      pLuaUnit.synCompletion.ItemList.Add('\color{clGreen}library\color{clBlack}       \column{}\style{+B}' + Copy(lstLocalTable.Strings[i], 1, Length(lstLocalTable.Strings[i])) + '\style{-B}');
+    end;
   end;
 
+  // Free stuff before leaving 
   lstLocalTable.Free;
 
   //change title
-  pLuaUnit.synCompletion.Title := 'Lua 5.0 Library';
+  pLuaUnit.synCompletion.Title := 'LuaEdit Completion Proposal';
   pLuaUnit.synCompletion.ResetAssignedList;
 end;
 
 procedure TfrmMain.synParamsExecute(Kind: SynCompletionType; Sender: TObject; var AString: String; var x, y: Integer; var CanExecute: Boolean);
 var
-  locline, lookup, sFunctionName, sProposition: String;
+  locline, lookup, sProposition: String;
+  sFunctionName, sParameters: String;
   TmpX, savepos, StartX, ParenCounter: Integer;
-  TmpLocation, i: Integer;
+  TmpLocation, i, j: Integer;
+  sFileContent: TStringList;
+  hFileSearch: TSearchRec;
   FoundMatch: Boolean;
   pFctInfo: TFctInfo;
 begin
@@ -4836,322 +4845,48 @@ begin
     begin
       TSynCompletionProposal(Sender).ItemList.Clear;
 
-      if Lookup = 'ASSERT' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"v", "[, message]"');
-      end else if Lookup = 'COLLECTGARBAGE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"[limit]"');
-      end else if Lookup = 'DOFILE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"filename"');
-      end else if Lookup = 'ERROR' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"message", "[, level]"');
-      end else if Lookup = 'GETFENV' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"f"');
-      end else if Lookup = 'GETMETATABLE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"object"');
-      end else if Lookup = 'GCINFO' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"* No Parameters Expected *"');
-      end else if Lookup = 'IPAIRS' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"t"');
-      end else if Lookup = 'LOADFILE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"filename"');
-      end else if Lookup = 'LOADLIB' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"libname", ", funcname"');
-      end else if Lookup = 'LOADSTRING' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"string", "[, chunkname]"');
-      end else if Lookup = 'NEXT' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"table", "[, index]"');
-      end else if Lookup = 'PAIRS' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"t"');
-      end else if Lookup = 'PCALL' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"f", ", arg1", ", arg2", ", ..."');
-      end else if Lookup = 'PRINT' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"e1", ", e2", ", ..."');
-      end else if Lookup = 'RAWEQUAL' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"v1", ", v2"');
-      end else if Lookup = 'RAWGET' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"table", ", index"');
-      end else if Lookup = 'RAWSET' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"table", ", index", ", value"');
-      end else if Lookup = 'REQUIRE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"packagename"');
-      end else if Lookup = 'SETFENV' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"f", ", table"');
-      end else if Lookup = 'SETMETATABLE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"table", ", metatable"');
-      end else if Lookup = 'TONUMBER' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"e", "[, base]"');
-      end else if Lookup = 'TOSTRING' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"e"');
-      end else if Lookup = 'TYPE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"v"');
-      end else if Lookup = 'UNPACK' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"list"');
-      end else if Lookup = 'XPCALL' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"f", ", err"');
-      end else if Lookup = 'COROUTINE.CREATE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"f"');
-      end else if Lookup = 'COROUTINE.RESUME' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"co", ", val1", ", ..."');
-      end else if Lookup = 'COROUTINE.STATUS' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"co"');
-      end else if Lookup = 'COROUTINE.WRAP' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"f"');
-      end else if Lookup = 'COROUTINE.YIELD' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"val1", ", ..."');
-      end else if Lookup = 'STRING.BYTE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"s", "[, i]"');
-      end else if Lookup = 'STRING.CHAR' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"i1", ", i2", ", ..."');
-      end else if Lookup = 'STRING.DUMP' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"function"');
-      end else if Lookup = 'STRING.FIND' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"s", ", pattern", "[, init", "[, plain]]"');
-      end else if Lookup = 'STRING.LEN' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"s"');
-      end else if Lookup = 'STRING.LOWER' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"s"');
-      end else if Lookup = 'STRING.REP' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"s", ", n"');
-      end else if Lookup = 'STRING.SUB' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"s", ", i", "[, j]"');
-      end else if Lookup = 'STRING.UPPER' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"s"');
-      end else if Lookup = 'STRING.FORMAT' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"formatstring", ", e1", ", e2", ", ..."');
-      end else if Lookup = 'STRING.GFIND' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"s", ", pat"');
-      end else if Lookup = 'STRING.GSUB' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"s", ", pat", ", rep1", "[, n]"');
-      end else if Lookup = 'TABLE.CONCAT' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"table", "[, sep", "[, i", "[, j]]]"');
-      end else if Lookup = 'TABLE.FOREACH' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"table", ", f"');
-      end else if Lookup = 'TABLE.FOREACHI' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"table", ", f"');
-      end else if Lookup = 'TABLE.GETN' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"table"');
-      end else if Lookup = 'TABLE.SORT' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"table", "[, comp]"');
-      end else if Lookup = 'TABLE.INSERT' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"table", "[, pos]", ", value"');
-      end else if Lookup = 'TABLE.REMOVE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"table", "[, pos]"');
-      end else if Lookup = 'TABLE.SETN' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"table", ", n"');
-      end else if Lookup = 'MATH.ABS' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n"');
-      end else if Lookup = 'MATH.ACOS' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n"');
-      end else if Lookup = 'MATH.ASIN' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n"');
-      end else if Lookup = 'MATH.ATAN' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n"');
-      end else if Lookup = 'MATH.ATAN2' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n1", ", n2"');
-      end else if Lookup = 'MATH.CEIL' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n"');
-      end else if Lookup = 'MATH.COS' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n"');
-      end else if Lookup = 'MATH.DEG' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n"');
-      end else if Lookup = 'MATH.EXP' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n"');
-      end else if Lookup = 'MATH.FLOOR' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n"');
-      end else if Lookup = 'MATH.LOG' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n"');
-      end else if Lookup = 'MATH.LOG10' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n"');
-      end else if Lookup = 'MATH.MAX' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n1", "[, ...]"');
-      end else if Lookup = 'MATH.MIN' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n1", "[, ...]"');
-      end else if Lookup = 'MATH.MOD' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n1", ", n2"');
-      end else if Lookup = 'MATH.POW' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n1", ", n2"');
-      end else if Lookup = 'MATH.RAD' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n"');
-      end else if Lookup = 'MATH.SIN' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n"');
-      end else if Lookup = 'MATH.SQRT' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n"');
-      end else if Lookup = 'MATH.TAN' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n"');
-      end else if Lookup = 'MATH.FREXP' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n1", ", exp"');
-      end else if Lookup = 'MATH.LDEXP' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"n1", ", exp"');
-      end else if Lookup = 'MATH.RANDOM' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"[rangemin", "[, rangemax]]"');
-      end else if Lookup = 'MATH.RANDOMSEED' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"seed"');
-      end else if Lookup = 'IO.CLOSE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"[file]"');
-      end else if Lookup = 'IO.FLUSH' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"* No Parameters Expected *"');
-      end else if Lookup = 'IO.INPUT' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"[file]"');
-      end else if Lookup = 'IO.LINES' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"[filename]"');
-      end else if Lookup = 'IO.OPEN' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"filename", "[, mode]"');
-      end else if Lookup = 'IO.OUTPUT' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"[file]"');
-      end else if Lookup = 'IO.READ' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"format1", ", ..."');
-      end else if Lookup = 'IO.TMPFILE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"* No Parameters Expected *"');
-      end else if Lookup = 'IO.TYPE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"obj"');
-      end else if Lookup = 'IO.WRITE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"value1", ", ..."');
-      end else if Lookup = 'OS.CLOCK' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"* No Parameters Expected *"');
-      end else if Lookup = 'OS.DATE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"[format", "[, time]]"');
-      end else if Lookup = 'OS.DIFFTIME' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"t2", ", t1"');
-      end else if Lookup = 'OS.EXECUTE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"command"');
-      end else if Lookup = 'OS.EXIT' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"[code]"');
-      end else if Lookup = 'OS.GETENV' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"varname"');
-      end else if Lookup = 'OS.REMOVE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"filename"');
-      end else if Lookup = 'OS.RENAME' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"oldname", ", newname"');
-      end else if Lookup = 'OS.SETLOCALE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"locale", "[, category]"');
-      end else if Lookup = 'OS.TIME' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"[table]"');
-      end else if Lookup = 'OS.TMPNAME' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"* No Parameters Expected *"');
-      end else if Lookup = 'DEBUG.DEBUG' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"* No Parameters Expected *"');
-      end else if Lookup = 'DEBUG.GETHOOK' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"* No Parameters Expected *"');
-      end else if Lookup = 'DEBUG.GETINFO' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"function", "[, what]"');
-      end else if Lookup = 'DEBUG.GETLOCAL' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"level", ", local"');
-      end else if Lookup = 'DEBUG.GETUPVALUE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"func", "up"');
-      end else if Lookup = 'DEBUG.SETLOCAL' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"level", ", local", ", value"');
-      end else if Lookup = 'DEBUG.SETUPVALUE' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"func", ", up", ", value"');
-      end else if Lookup = 'DEBUG.SETHOOK' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"hook", ", mask", "[, count]"');
-      end else if Lookup = 'DEBUG.TRACEBACK' then
-      begin
-        TSynCompletionProposal(Sender).ItemList.Add('"[message]"');
-      end;
+      // Go through all libraries search paths
+      for i := 0 to LibrariesSearchPaths.Count - 1 do
+      begin
+        // Begin file search
+        if FindFirst(LibrariesSearchPaths.Strings[i]+'*.lib', faAnyFile, hFileSearch) = 0 then
+        begin
+          repeat
+            // Create and initialize temporary content container
+            sFileContent := TStringList.Create;
+            sFileContent.LoadFromFile(LibrariesSearchPaths.Strings[i]+hFileSearch.Name);
+
+            // Parse content and add it to the lookup list
+            for j := 0 to sFileContent.Count - 1 do
+            begin
+              if UpperCase(Copy(sFileContent.Strings[j], Length(sFileContent.Strings[j]) - 2, 3)) = 'FOO' then
+              begin
+                // Retreive parameters from the list
+                sParameters := Copy(sFileContent.Strings[j], Pos('(', sFileContent.Strings[j]) + 1, Length(sFileContent.Strings[j]) - 4 - Pos('(', sFileContent.Strings[j]));
+                sFunctionName := Copy(sFileContent.Strings[j], 1, Pos('(', sFileContent.Strings[j]) - 1);
+
+                // if current function call is equal to any of these
+                if Lookup = UpperCase(sFunctionName) then
+                begin
+                  // Format the string to be compatible with the proposition engine
+                  if sParameters = '' then
+                    sProposition := '* No Parameters Expected *'
+                  else
+                    sProposition := StringReplace(sParameters, ',', '", ", ', [rfReplaceAll, rfIgnoreCase]);
+
+                  sProposition := '"(' + sProposition + '"';
+                  TSynCompletionProposal(Sender).ItemList.Add(sProposition);
+                end;
+              end;
+            end;
+
+            // Free temporary content container
+            sFileContent.Free;
+          until FindNext(hFileSearch) <> 0;
+
+          FindClose(hFileSearch);
+        end;
+      end;  
 
       // looking for local definitions
       for i := 0 to frmFunctionList.lvwFunctions.Items.Count - 1 do
@@ -5168,7 +4903,7 @@ begin
           else
             sProposition := StringReplace(pFctInfo.Params, ',', '", ", ', [rfReplaceAll, rfIgnoreCase]);
 
-          sProposition := '"' + sProposition + '"';
+          sProposition := '"(' + sProposition + ')"';
           TSynCompletionProposal(Sender).ItemList.Add(sProposition);
         end;
       end;
@@ -5176,136 +4911,42 @@ begin
   end else TSynCompletionProposal(Sender).ItemList.Clear;
 end;
 
-//Is called when form create
+// Is called when form create
 procedure TfrmMain.FillLookUpList;
 var
   pFctInfo: TFctInfo;
-  x: Integer;
+  hFileSearch: TSearchRec;
+  sFileContent: TStringList;
+  x, y: Integer;
 begin
+  // Initialize stuff before starting
   LookupList.Clear;
-  
-  //base lib
-  LookupList.Add('assert');
-  LookupList.Add('collectgarbage');
-  LookupList.Add('dofile');
-  LookupList.Add('error');
-  LookupList.Add('getfenv');
-  LookupList.Add('getmetatable');
-  LookupList.Add('gcinfo');
-  LookupList.Add('inpairs');
-  LookupList.Add('loadfile');
-  LookupList.Add('loadlib');
-  LookupList.Add('loadstring');
-  LookupList.Add('next');
-  LookupList.Add('pairs');
-  LookupList.Add('pcall');
-  LookupList.Add('print');
-  LookupList.Add('rawequal');
-  LookupList.Add('rawget');
-  LookupList.Add('rawset');
-  LookupList.Add('require');
-  LookupList.Add('setfenv');
-  LookupList.Add('setmetatable');
-  LookupList.Add('tonumber');
-  LookupList.Add('tostring');
-  LookupList.Add('type');
-  LookupList.Add('unpack');
-  LookupList.Add('xpcall');
 
-  //Coroutines functions
-  LookupList.Add('coroutine.create');
-  LookupList.Add('coroutine.resume');
-  LookupList.Add('coroutine.status');
-  LookupList.Add('coroutine.wrap');
-  LookupList.Add('coroutine.yield');
+  // Go through all libraries search paths
+  for x := 0 to LibrariesSearchPaths.Count - 1 do
+  begin
+    // Begin file search
+    if FindFirst(LibrariesSearchPaths.Strings[x]+'*.lib', faAnyFile, hFileSearch) = 0 then
+    begin
+      repeat
+        // Create and initialize temporary content container
+        sFileContent := TStringList.Create;
+        sFileContent.LoadFromFile(LibrariesSearchPaths.Strings[x]+hFileSearch.Name);
 
-  //Strings functions
-  LookupList.Add('string.byte');
-  LookupList.Add('string.char');
-  LookupList.Add('string.dump');
-  LookupList.Add('string.find');
-  LookupList.Add('string.len');
-  LookupList.Add('string.lower');
-  LookupList.Add('string.rep');
-  LookupList.Add('string.sub');
-  LookupList.Add('string.upper');
-  LookupList.Add('string.format');
-  LookupList.Add('string.gfind');
-  LookupList.Add('string.gsub');
+        // Parse content and add it to the lookup list
+        for y := 0 to sFileContent.Count - 1 do
+        begin
+          if UpperCase(Copy(sFileContent.Strings[y], Length(sFileContent.Strings[y]) - 2, 3)) = 'FOO' then
+            LookupList.Add(Copy(sFileContent.Strings[y], 1, Pos('(', sFileContent.Strings[y]) - 1));
+        end;
 
-  //debug functions
-  LookupList.Add('debug.debug');
-  LookupList.Add('debug.gethook');
-  LookupList.Add('debug.getinfo');
-  LookupList.Add('debug.getlocal');
-  LookupList.Add('debug.getupvalue');
-  LookupList.Add('debug.setlocal');
-  LookupList.Add('debug.setupvalue');
-  LookupList.Add('debug.sethook');
-  LookupList.Add('debug.traceback');
+        // Free temporary content container
+        sFileContent.Free;
+      until FindNext(hFileSearch) <> 0;
 
-  //os functions
-  LookupList.Add('os.clock');
-  LookupList.Add('os.date');
-  LookupList.Add('os.difftime');
-  LookupList.Add('os.execute');
-  LookupList.Add('os.exit');
-  LookupList.Add('os.getenv');
-  LookupList.Add('os.remove');
-  LookupList.Add('os.rename');
-  LookupList.Add('os.setlocale');
-  LookupList.Add('os.time');
-  LookupList.Add('os.tmpname');
-
-  //table functions
-  LookupList.Add('table.concat');
-  LookupList.Add('table.foreach');
-  LookupList.Add('table.foreachi');
-  LookupList.Add('table.getn');
-  LookupList.Add('table.sort');
-  LookupList.Add('table.insert');
-  LookupList.Add('table.remove');
-  LookupList.Add('table.setn');
-
-  //io functions
-  LookupList.Add('io.close');
-  LookupList.Add('io.flush');
-  LookupList.Add('io.input');
-  LookupList.Add('io.lines');
-  LookupList.Add('io.open');
-  LookupList.Add('io.output');
-  LookupList.Add('io.read');
-  LookupList.Add('io.tmpfile');
-  LookupList.Add('io.type');
-  LookupList.Add('io.write');
-  LookupList.Add('io.seek');
-
-  //math functions
-  LookupList.Add('math.abs');
-  LookupList.Add('math.acos');
-  LookupList.Add('math.asin');
-  LookupList.Add('math.atan');
-  LookupList.Add('math.atan2');
-  LookupList.Add('math.ceil');
-  LookupList.Add('math.cos');
-  LookupList.Add('math.deg');
-  LookupList.Add('math.exp');
-  LookupList.Add('math.floor');
-  LookupList.Add('math.log');
-  LookupList.Add('math.log10');
-  LookupList.Add('math.max');
-  LookupList.Add('math.min');
-  LookupList.Add('math.mod');
-  LookupList.Add('math.pow');
-  LookupList.Add('math.rad');
-  LookupList.Add('math.sin');
-  LookupList.Add('math.sqrt');
-  LookupList.Add('math.tan');
-  LookupList.Add('math.frexp');
-  LookupList.Add('math.ldexp');
-  LookupList.Add('math.random');
-  LookupList.Add('math.randomseed');
-  LookupList.Add('math.pi');
+      FindClose(hFileSearch);
+    end;
+  end;
 
   // Add local definitions
   for x := 0 to frmFunctionList.lvwFunctions.Items.Count - 1 do
@@ -5324,7 +4965,7 @@ procedure TfrmMain.LoadEditorSettings;
 var
   pIniFile: TIniFile;
 begin
-  pIniFile := TIniFile.Create(ExtractFilePath(Application.ExeName)+'\LuaEdit.ini');
+  pIniFile := TIniFile.Create(ExtractFilePath(Application.ExeName)+'LuaEdit.ini');
   EditorColors.Clear;
 
   // Reading print Settings
@@ -5348,6 +4989,9 @@ begin
   SaveUnitsInc := pIniFile.ReadBool('General', 'SaveUnitsInc', False);
   SaveProjectsInc := pIniFile.ReadBool('General', 'SaveProjectsInc', False);
   ShowExSaveDlg := pIniFile.ReadBool('General', 'ShowExSaveDlg', True);
+
+  // Reading Environment settings
+  LibrariesSearchPaths.CommaText := pIniFile.ReadString('Environement', 'LibrariesSearchPaths', ExtractFilePath(Application.ExeName)+'Libraries\Completion');
   
   //Reading display settings
   ShowGutter := pIniFile.ReadBool('Display', 'ShowGutter', True);
@@ -5648,6 +5292,34 @@ end;
 procedure TfrmMain.actBlockIndentExecute(Sender: TObject);
 begin
   TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.ExecuteCommand(ecBlockIndent, #0, nil);
+end;
+
+procedure TfrmMain.actBlockCommentExecute(Sender: TObject);
+var
+  pLuaUnit: TLuaUnit;
+  x: Integer;
+begin
+  pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
+
+  for x := pLuaUnit.synUnit.BlockBegin.Line to pLuaUnit.synUnit.BlockEnd.Line - 1 do
+  begin
+    if Copy(pLuaUnit.synUnit.Lines.Strings[x], 1, 2) <> '--' then
+      pLuaUnit.synUnit.Lines.Strings[x] := '--' + pLuaUnit.synUnit.Lines.Strings[x];
+  end;
+end;
+
+procedure TfrmMain.actBlockUncommentExecute(Sender: TObject);
+var
+  pLuaUnit: TLuaUnit;
+  x: Integer;
+begin
+  pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
+
+  for x := pLuaUnit.synUnit.BlockBegin.Line - 1 to pLuaUnit.synUnit.BlockEnd.Line - 1 do
+  begin
+    if Copy(pLuaUnit.synUnit.Lines.Strings[x], 1, 2) = '--' then
+      pLuaUnit.synUnit.Lines.Strings[x] := Copy(pLuaUnit.synUnit.Lines.Strings[x], 3, Length(pLuaUnit.synUnit.Lines.Strings[x]) - 2);
+  end;
 end;
 
 procedure TfrmMain.actPrjSettingsExecute(Sender: TObject);
@@ -6541,9 +6213,9 @@ begin
               frmMain.GetAssociatedTab(pLuaUnit).Selected := True;
 
               if pLuaUnit.HasChanged then
-                frmMain.stbMain.Panels[2].Text := 'Modified'
+                frmMain.stbMain.Panels[3].Text := 'Modified'
               else
-                frmMain.stbMain.Panels[2].Text := '';
+                frmMain.stbMain.Panels[3].Text := '';
 
               frmMain.synEditClick(pLuaUnit.synUnit);
             end;
@@ -6572,11 +6244,15 @@ begin
 end;
 
 procedure TfrmMain.ppmEditorPopup(Sender: TObject);
+var
+  sTextToShow, sOriginalName: String;
 begin
   if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelAvail then
   begin
     OpenFileatCursor1.Enabled := True;
-    OpenFileatCursor1.Caption := 'Open Document "'+TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelText+'"';
+    sOriginalName := StringReplace(TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelText, '\\', '\', [rfIgnoreCase, rfReplaceAll]);
+    sTextToShow := MinimizeName(sOriginalName, stbMain.Canvas, 150);
+    OpenFileatCursor1.Caption := 'Open Document "'+sTextToShow+'"';
   end
   else
   begin
@@ -6604,7 +6280,6 @@ end;
 procedure TfrmMain.jvUnitBarTabSelected(Sender: TObject; Item: TJvTabBarItem);
 var
   pLuaUnit: TLuaUnit;
-  test: Bool;
 begin
   if Assigned(Item) then
   begin
@@ -6619,14 +6294,14 @@ begin
       pLuaUnit.synUnit.Visible := True;
 
       if pLuaUnit.HasChanged then
-        stbMain.Panels[2].Text := 'Modified'
-      else
-        stbMain.Panels[2].Text := '';
-
-      if pLuaUnit.IsReadOnly then
-        stbMain.Panels[3].Text := 'Read Only'
+        stbMain.Panels[3].Text := 'Modified'
       else
         stbMain.Panels[3].Text := '';
+
+      if pLuaUnit.IsReadOnly then
+        stbMain.Panels[4].Text := 'Read Only'
+      else
+        stbMain.Panels[4].Text := '';
 
       synEditClick(pLuaUnit.synUnit);
       frmFunctionList.RefreshList(pLuaUnit.sUnitPath);
@@ -6759,7 +6434,6 @@ begin
   Close2.Enabled := (jvUnitBar.Tabs.Count <> 0);
 end;
 
-{
 procedure TfrmMain.actFunctionHeaderExecute(Sender: TObject);
 var
   sLine: String;
@@ -6769,10 +6443,52 @@ begin
     if Assigned(jvUnitBar.SelectedTab.Data) then
     begin
       sLine := TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Lines[TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.CaretY - 1];
-      FunctionHeaderBuilder(PChar(sLine));
+      FunctionHeaderBuilder(Application.Handle, PChar(sLine));
     end;
   end;
 end;
-}
+
+procedure TfrmMain.jvAppDropDrop(Sender: TObject; Pos: TPoint; Value: TStrings);
+var
+  x: Integer;
+  pLuaUnit: TLuaUnit;
+  pNewPrj: TLuaProject;
+  FileName: String;
+begin
+  for x := 0 to Value.Count - 1 do
+  begin
+    // Get current file name
+    FileName := Value.Strings[x];
+
+    // Make the file exists
+    if FileExists(FileName) then
+    begin
+      if ExtractFileExt(FileName) = '.lua' then
+      begin
+        // Add new single unit to the tree
+        if not frmMain.FileIsInTree(FileName) then
+        begin
+          pLuaUnit := frmMain.AddFileInProject(FileName, False, LuaSingleUnits);
+          pLuaUnit.IsLoaded := True;
+          frmMain.AddFileInTab(pLuaUnit);
+          frmMain.MonitorFile(FileName);
+        end;
+      end
+      else if ExtractFileExt(FileName) = '.lpr' then
+      begin
+        // Add new project to the tree
+        if not frmMain.IsProjectOpened(FileName) then
+        begin
+          pNewPrj := TLuaProject.Create(FileName);
+          pNewPrj.GetProjectFromDisk(FileName);
+        end;
+      end;
+    end;
+  end;
+
+  // Rebuild the project tree and initialize stuff
+  frmProjectTree.BuildProjectTree;
+  frmMain.CheckButtons;
+end;
 
 end.

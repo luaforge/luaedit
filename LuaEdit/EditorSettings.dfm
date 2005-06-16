@@ -120,7 +120,7 @@ object frmEditorSettings: TfrmEditorSettings
       Top = 0
       Width = 492
       Height = 375
-      ActivePage = stabGeneral
+      ActivePage = TabSheet1
       Align = alClient
       TabOrder = 0
       object stabGeneral: TTabSheet
@@ -308,6 +308,48 @@ object frmEditorSettings: TfrmEditorSettings
             Height = 17
             Caption = 'Show Extended Save Dialog on Exit'
             TabOrder = 2
+          end
+        end
+      end
+      object TabSheet1: TTabSheet
+        Caption = 'Environment'
+        ImageIndex = 3
+        object GroupBox4: TGroupBox
+          Left = 16
+          Top = 16
+          Width = 457
+          Height = 89
+          Caption = 'Search Path'
+          TabOrder = 0
+          DesignSize = (
+            457
+            89)
+          object Label10: TLabel
+            Left = 17
+            Top = 30
+            Width = 42
+            Height = 13
+            Caption = 'Libraries:'
+          end
+          object txtLibraries: TEdit
+            Left = 17
+            Top = 44
+            Width = 401
+            Height = 21
+            TabOrder = 0
+          end
+          object btnBrowseLibraries: TButton
+            Left = 424
+            Top = 46
+            Width = 20
+            Height = 17
+            Hint = 'Browse for Completion Proposal Search Paths...'
+            Anchors = [akTop, akRight]
+            Caption = '...'
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 1
+            OnClick = btnBrowseLibrariesClick
           end
         end
       end

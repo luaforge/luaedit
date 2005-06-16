@@ -68,6 +68,11 @@ type
     chkSaveUnitsInc: TCheckBox;
     chkSaveBreakpoints: TCheckBox;
     chkShowExSaveDlg: TCheckBox;
+    TabSheet1: TTabSheet;
+    GroupBox4: TGroupBox;
+    txtLibraries: TEdit;
+    Label10: TLabel;
+    btnBrowseLibraries: TButton;
     procedure cboFontsMeasureItem(Control: TWinControl; Index: Integer;  var Height: Integer);
     procedure cboFontsDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
     procedure FormCreate(Sender: TObject);
@@ -92,6 +97,7 @@ type
     procedure chkFileAssociateClick(Sender: TObject);
     procedure cboFontSizeMeasureItem(Control: TWinControl; Index: Integer;
       var Height: Integer);
+    procedure btnBrowseLibrariesClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -111,7 +117,7 @@ function WinExit(iFlags: integer): Boolean; cdecl; external 'LuaEditSys.dll';
 
 implementation
 
-uses RegSetFileType;
+uses RegSetFileType, SearchPath;
 
 {$R *.dfm}
 
@@ -266,7 +272,7 @@ var
   x: Integer;
 begin
   Screen.Cursor := crHourGlass;
-  pIniFile := TIniFile.Create(ExtractFilePath(Application.ExeName)+'\LuaEdit.ini');
+  pIniFile := TIniFile.Create(ExtractFilePath(Application.ExeName)+'LuaEdit.ini');
 
   //Writing general settings
   if chkAutoIndent.Checked then
@@ -369,6 +375,9 @@ begin
       end;
     end;
   end;
+
+  // Writing environement settings
+  pIniFile.WriteString('Environement', 'LibrariesSearchPaths', txtLibraries.Text);
 
   //Writing display settings
   pIniFile.WriteBool('Display', 'ShowGutter', chkShowGutter.Checked);
@@ -587,9 +596,10 @@ begin
   chkSaveProjectsInc.Checked := SaveProjectsInc;
   chkSaveUnitsInc.Checked := SaveUnitsInc;
   chkShowExSaveDlg.Checked := ShowExSaveDlg;
-
+  chkSaveBreakpoints.Checked := SaveBreakpoints;
   txtUndoLimit.Text := IntToStr(Main.UndoLimit);
   txtTabWidth.Text := IntToStr(Main.TabWidth);
+  txtLibraries.Text := LibrariesSearchPaths.CommaText;
   chkShowGutter.Checked := Main.ShowGutter;
   chkShowLineNumbers.Checked := Main.ShowLineNumbers;
   chkLeadingZeros.Checked := Main.LeadingZeros;
@@ -636,6 +646,20 @@ begin
     NotifyRestart(True)
   else
     NotifyRestart(False);
+end;
+
+procedure TfrmEditorSettings.btnBrowseLibrariesClick(Sender: TObject);
+begin
+  // Initialize search path form
+  frmSearchPath := TfrmSearchPath.Create(nil);
+  frmSearchPath.InitSearchPathForm(txtLibraries.Text, 'Libraries Search Paths', 'Select libraries search paths for LuaEdit to use when looking for *.lib and *.def files:');
+
+  // Show form and replace current path string by the new one
+  if frmSearchPath.ShowModal = mrOk then
+     txtLibraries.Text := frmSearchPath.GetSearchPathString;
+
+  // Free search path form
+  frmSearchPath.Free;
 end;
 
 end.

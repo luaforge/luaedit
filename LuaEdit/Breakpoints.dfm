@@ -25,7 +25,7 @@ object frmBreakpoints: TfrmBreakpoints
     Left = 0
     Top = 0
     Width = 539
-    Height = 266
+    Height = 273
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 0
@@ -117,7 +117,7 @@ object frmBreakpoints: TfrmBreakpoints
       Left = 0
       Top = 24
       Width = 539
-      Height = 242
+      Height = 249
       Align = alClient
       Checkboxes = True
       Columns = <
@@ -694,15 +694,18 @@ object frmBreakpoints: TfrmBreakpoints
     Top = 80
     object RemoveBreakpoint1: TMenuItem
       Caption = 'Remove Breakpoint'
+      OnClick = RemoveBreakpoint1Click
     end
     object N1: TMenuItem
       Caption = '-'
     end
     object Goto1: TMenuItem
       Caption = 'Goto Breakpoint'
+      OnClick = Goto1Click
     end
     object Condition1: TMenuItem
       Caption = 'Set Condition...'
+      OnClick = Condition1Click
     end
   end
   object JvDockClient1: TJvDockClient
