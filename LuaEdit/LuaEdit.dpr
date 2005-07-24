@@ -45,7 +45,12 @@ uses
   AsciiTable in 'AsciiTable.pas' {frmAsciiTable},
   ReadOnlyMsgBox in 'ReadOnlyMsgBox.pas' {frmReadOnlyMsgBox},
   Rings in 'Rings.pas' {frmRings},
-  SearchPath in 'SearchPath.pas' {frmSearchPath};
+  SearchPath in 'SearchPath.pas' {frmSearchPath},
+  InternalBrowser in 'InternalBrowser.pas' {frmInternalBrowser},
+  FindInFiles in 'FindInFiles.pas' {frmFindInFiles},
+  SIFReport in 'SIFReport.pas' {frmSIFReport},
+  FindWindow1 in 'FindWindow1.pas' {frmFindWindow1},
+  FindWindow2 in 'FindWindow2.pas' {frmFindWindow2};
 
 {$R *.res}
 
@@ -77,6 +82,8 @@ begin
   Application.CreateForm(TfrmAddBreakpoint, frmAddBreakpoint);
   Application.CreateForm(TfrmEditorSettings, frmEditorSettings);
   Application.CreateForm(TfrmAsciiTable, frmAsciiTable);
+  Application.CreateForm(TfrmFindInFiles, frmFindInFiles);
+  Application.CreateForm(TfrmSIFReport, frmSIFReport);
   frmMain.CheckButtons;
 
   // show splash screen...

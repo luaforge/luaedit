@@ -73,6 +73,7 @@ type
     txtLibraries: TEdit;
     Label10: TLabel;
     btnBrowseLibraries: TButton;
+    chkKeepReportOpened: TCheckBox;
     procedure cboFontsMeasureItem(Control: TWinControl; Index: Integer;  var Height: Integer);
     procedure cboFontsDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
     procedure FormCreate(Sender: TObject);
@@ -82,7 +83,6 @@ type
     procedure txtUndoLimitKeyPress(Sender: TObject; var Key: Char);
     procedure txtTabWidthKeyPress(Sender: TObject; var Key: Char);
     procedure txtGutterWidthKeyPress(Sender: TObject; var Key: Char);
-    procedure WriteEditorSettings;
     procedure btnOKClick(Sender: TObject);
     procedure chkShowGutterClick(Sender: TObject);
     procedure lstElementClick(Sender: TObject);
@@ -95,8 +95,7 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure synEditSpecialLineColors(Sender: TObject; Line: Integer; var Special: Boolean; var FG, BG: TColor);
     procedure chkFileAssociateClick(Sender: TObject);
-    procedure cboFontSizeMeasureItem(Control: TWinControl; Index: Integer;
-      var Height: Integer);
+    procedure cboFontSizeMeasureItem(Control: TWinControl; Index: Integer; var Height: Integer);
     procedure btnBrowseLibrariesClick(Sender: TObject);
   private
     { Private declarations }
@@ -104,6 +103,8 @@ type
     { Public declarations }
     procedure UMMeasureFonts(var msg: TMessage); message UM_MEASUREFONTS;
     procedure NotifyRestart(Notify: Boolean);
+    procedure LoadEditorSettings;
+    procedure WriteEditorSettings;
   end;
 
 var
@@ -343,6 +344,7 @@ begin
   pIniFile.WriteBool('General', 'SaveUnitsInc', chkSaveUnitsInc.Checked);
   pIniFile.WriteBool('General', 'AssociateFiles', chkFileAssociate.Checked);
   pIniFile.WriteBool('General', 'ShowExSaveDlg', chkShowExSaveDlg.Checked);
+  pIniFile.WriteBool('General', 'KeepSIFWindowOpened', chkKeepReportOpened.Checked);
 
   if AssociateFiles <> chkFileAssociate.Checked then
   begin
@@ -408,6 +410,105 @@ begin
   for x := 0 to LuaOpenedUnits.Count - 1 do
     frmMain.ApplyValuesToEditor(TLuaUnit(LuaOpenedUnits.Items[x]).synUnit, EditorColors);
   Screen.Cursor := crDefault;
+end;
+
+procedure TfrmEditorSettings.LoadEditorSettings;
+begin
+  lstEditorColorsTemp.Assign(EditorColors);
+  Options := EditorOptions;
+
+  if eoAutoIndent in Options then
+    chkAutoIndent.Checked := True
+  else
+    chkAutoIndent.Checked := False;
+
+  if eoGroupUndo in Options then
+    chkGroupUndo.Checked := True
+  else
+    chkGroupUndo.Checked := False;
+
+  if eoTabIndent in Options then
+    chkTabIndent.Checked := True
+  else
+    chkTabIndent.Checked := False;
+
+  if eoSmartTabs in Options then
+    chkSmartTab.Checked := True
+  else
+    chkSmartTab.Checked := False;
+
+  if eoRightMouseMovesCursor in Options then
+    chkRightMouseMovesCursor.Checked := True
+  else
+    chkRightMouseMovesCursor.Checked := False;
+
+  if eoEnhanceHomeKey in Options then
+    chkEHomeKey.Checked := True
+  else
+    chkEHomeKey.Checked := False;
+
+  if eoTabsToSpaces in Options then
+    chkTabsToSpaces.Checked := True
+  else
+    chkTabsToSpaces.Checked := False;
+
+  if eoHideShowScrollbars in Options then
+    chkHideScrollBars.Checked := True
+  else
+    chkHideScrollBars.Checked := False;
+
+  if eoScrollPastEof in Options then
+    chkScrollPastEOF.Checked := True
+  else
+    chkScrollPastEOF.Checked := False;
+
+  if eoScrollPastEol in Options then
+    chkScrollPastEOL.Checked := True
+  else
+    chkScrollPastEOL.Checked := False;
+
+  if eoKeepCaretX in Options then
+    chkKeepCaretX.Checked := True
+  else
+    chkKeepCaretX.Checked := False;
+
+  if eoTrimTrailingSpaces in Options then
+    chkTrailBlanks.Checked := True
+  else
+    chkTrailBlanks.Checked := False;
+
+  chkFileAssociate.Checked := AssociateFiles;
+  chkSaveProjectsInc.Checked := SaveProjectsInc;
+  chkSaveUnitsInc.Checked := SaveUnitsInc;
+  chkShowExSaveDlg.Checked := ShowExSaveDlg;
+  chkSaveBreakpoints.Checked := SaveBreakpoints;
+  chkKeepReportOpened.Checked := KeepSIFWindowOpened;
+  txtUndoLimit.Text := IntToStr(Main.UndoLimit);
+  txtTabWidth.Text := IntToStr(Main.TabWidth);
+  txtLibraries.Text := LibrariesSearchPaths.CommaText;
+  chkShowGutter.Checked := Main.ShowGutter;
+  chkShowLineNumbers.Checked := Main.ShowLineNumbers;
+  chkLeadingZeros.Checked := Main.LeadingZeros;
+  txtGutterWidth.Text := IntToStr(Main.GutterWidth);
+  cboGutterColor.Selected := StringToColor(Main.GutterColor);
+  cboFonts.ItemIndex := cboFonts.Items.IndexOf(Main.FontName);
+  cboFontSize.ItemIndex := cboFontSize.Items.IndexOf(IntToStr(Main.FontSize));
+
+  lstElement.Items.Clear;
+  lstElement.Items.AddObject('Background', lstEditorColorsTemp.Items[0]);
+  lstElement.Items.AddObject('Comment', lstEditorColorsTemp.Items[1]);
+  lstElement.Items.AddObject('Error Line', lstEditorColorsTemp.Items[2]);
+  lstElement.Items.AddObject('Execution Line', lstEditorColorsTemp.Items[3]);
+  lstElement.Items.AddObject('Identifier', lstEditorColorsTemp.Items[4]);
+  lstElement.Items.AddObject('Numbers', lstEditorColorsTemp.Items[5]);
+  lstElement.Items.AddObject('Reserved Words', lstEditorColorsTemp.Items[6]);
+  lstElement.Items.AddObject('Selection', lstEditorColorsTemp.Items[7]);
+  lstElement.Items.AddObject('Strings', lstEditorColorsTemp.Items[8]);
+  lstElement.Items.AddObject('Valid Breakpoint', lstEditorColorsTemp.Items[9]);
+
+  frmMain.ApplyValuesToEditor(synSample, lstEditorColorsTemp);
+  lstElement.ItemIndex := 0;
+  lstElementClick(lstElement);
 end;
 
 procedure TfrmEditorSettings.btnOKClick(Sender: TObject);
@@ -529,100 +630,7 @@ procedure TfrmEditorSettings.FormShow(Sender: TObject);
 begin
   pgcDebuggerSettings.ActivePageIndex := 0;
   lstEditorColorsTemp.Clear;
-  lstEditorColorsTemp.Assign(Main.EditorColors);
-  Options := Main.EditorOptions;
-
-  if eoAutoIndent in Options then
-    chkAutoIndent.Checked := True
-  else
-    chkAutoIndent.Checked := False;
-
-  if eoGroupUndo in Options then
-    chkGroupUndo.Checked := True
-  else
-    chkGroupUndo.Checked := False;
-
-  if eoTabIndent in Options then
-    chkTabIndent.Checked := True
-  else
-    chkTabIndent.Checked := False;
-
-  if eoSmartTabs in Options then
-    chkSmartTab.Checked := True
-  else
-    chkSmartTab.Checked := False;
-
-  if eoRightMouseMovesCursor in Options then
-    chkRightMouseMovesCursor.Checked := True
-  else
-    chkRightMouseMovesCursor.Checked := False;
-
-  if eoEnhanceHomeKey in Options then
-    chkEHomeKey.Checked := True
-  else
-    chkEHomeKey.Checked := False;
-
-  if eoTabsToSpaces in Options then
-    chkTabsToSpaces.Checked := True
-  else
-    chkTabsToSpaces.Checked := False;
-
-  if eoHideShowScrollbars in Options then
-    chkHideScrollBars.Checked := True
-  else
-    chkHideScrollBars.Checked := False;
-
-  if eoScrollPastEof in Options then
-    chkScrollPastEOF.Checked := True
-  else
-    chkScrollPastEOF.Checked := False;
-
-  if eoScrollPastEol in Options then
-    chkScrollPastEOL.Checked := True
-  else
-    chkScrollPastEOL.Checked := False;
-
-  if eoKeepCaretX in Options then
-    chkKeepCaretX.Checked := True
-  else
-    chkKeepCaretX.Checked := False;
-
-  if eoTrimTrailingSpaces in Options then
-    chkTrailBlanks.Checked := True
-  else
-    chkTrailBlanks.Checked := False;
-
-  chkFileAssociate.Checked := AssociateFiles;
-  chkSaveProjectsInc.Checked := SaveProjectsInc;
-  chkSaveUnitsInc.Checked := SaveUnitsInc;
-  chkShowExSaveDlg.Checked := ShowExSaveDlg;
-  chkSaveBreakpoints.Checked := SaveBreakpoints;
-  txtUndoLimit.Text := IntToStr(Main.UndoLimit);
-  txtTabWidth.Text := IntToStr(Main.TabWidth);
-  txtLibraries.Text := LibrariesSearchPaths.CommaText;
-  chkShowGutter.Checked := Main.ShowGutter;
-  chkShowLineNumbers.Checked := Main.ShowLineNumbers;
-  chkLeadingZeros.Checked := Main.LeadingZeros;
-  txtGutterWidth.Text := IntToStr(Main.GutterWidth);
-  cboGutterColor.Selected := StringToColor(Main.GutterColor);
-  cboFonts.ItemIndex := cboFonts.Items.IndexOf(Main.FontName);
-  cboFontSize.ItemIndex := cboFontSize.Items.IndexOf(IntToStr(Main.FontSize));
-
-  lstElement.Items.Clear;
-  lstElement.Items.AddObject('Background', lstEditorColorsTemp.Items[0]);
-  lstElement.Items.AddObject('Comment', lstEditorColorsTemp.Items[1]);
-  lstElement.Items.AddObject('Error Line', lstEditorColorsTemp.Items[2]);
-  lstElement.Items.AddObject('Execution Line', lstEditorColorsTemp.Items[3]);
-  lstElement.Items.AddObject('Identifier', lstEditorColorsTemp.Items[4]);
-  lstElement.Items.AddObject('Numbers', lstEditorColorsTemp.Items[5]);
-  lstElement.Items.AddObject('Reserved Words', lstEditorColorsTemp.Items[6]);
-  lstElement.Items.AddObject('Selection', lstEditorColorsTemp.Items[7]);
-  lstElement.Items.AddObject('Strings', lstEditorColorsTemp.Items[8]);
-  lstElement.Items.AddObject('Valid Breakpoint', lstEditorColorsTemp.Items[9]);
-
-  frmMain.ApplyValuesToEditor(synSample, lstEditorColorsTemp);
-  lstElement.ItemIndex := 0;
-  lstElementClick(lstElement);
+  LoadEditorSettings;
 
   // Hide notification
   NotifyRestart(False);

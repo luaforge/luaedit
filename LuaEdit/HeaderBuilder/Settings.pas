@@ -202,7 +202,7 @@ begin
 
     // Remove tag from registry
     if pReg.OpenKey('\Software\LuaEdit\HdrBld\Tags', False) then
-      pReg.DeleteValue(lvwTags.Selected.Caption)
+      pReg.DeleteValue(lvwTags.Selected.Caption);
 
     pReg.Free;
     lvwTags.Items.Delete(lvwTags.Selected.Index);

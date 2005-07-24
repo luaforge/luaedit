@@ -4,8 +4,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, JvOutlookBar, JvDockControlForm,
-  ExtCtrls, JvNavigationPane, JvJVCLUtils, JvComponent, JvExControls;
+  Dialogs, JvOutlookBar, JvDockControlForm, JvExControls,
+  ExtCtrls, JvNavigationPane, JvJVCLUtils, JvComponent;
 
 type
   TfrmRings = class(TForm)

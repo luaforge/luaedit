@@ -119,7 +119,7 @@ function LuaDataStrToStrings(const TableStr: string; Strings: TStrings): string;
 function LuaDoFile(L: Plua_State): Integer; cdecl;
 
 const
-  LuaGlobalVariableStr = '{グローバル変数}';
+  LuaGlobalVariableStr = '[LUA_GLOBALSINDEX]';
 var
   OnLuaStdout: TOnLuaStdout;
   DefaultMaxTable: Integer;
@@ -642,7 +642,7 @@ function LuaStackToStr(L: Plua_State; Index: Integer; MaxTable: Integer): string
       else
         Value := LuaStackToStr(L, -1, MaxTable);
       if (lua_type(L, -1) = LUA_TFUNCTION) then
-        Result := Result + Format('%s() ', [Key])
+        Result := Result + Format('%s()=%p ', [Key, lua_topointer(L, -1)])
       else
         Result := Result + Format('%s=%s ', [Key, Value]);
       // Key は次のために残す
@@ -874,7 +874,7 @@ procedure LuaTableToTreeView(L: Plua_State; Index: Integer; TV: TTreeView; MaxTa
       else
       begin
         if (Key = '_G') then
-          TV.Items.AddChild(TreeNode, Key + '={グローバル変数}')
+          TV.Items.AddChild(TreeNode, Key + '=[LUA_GLOBALSINDEX]')
         else
           ParseTreeNode(TV.Items.AddChild(TreeNode, Key), -1);
       end;
@@ -1066,7 +1066,6 @@ function LuaPCallFunction(L: Plua_State; FunctionName :String;
 var
    NArgs,
    i        :Integer;
-   auxVar   :Variant;
 
 begin
      //Put Function To Call on the Stack

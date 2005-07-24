@@ -144,7 +144,7 @@ begin
     end
     else
     begin
-      frmMain.GetAssociatedTab(TLuaUnit(lvwBreakpoints.Selected.Data)).Selected := True;
+      frmMain.jvUnitBar.SelectedTab := frmMain.GetAssociatedTab(TLuaUnit(lvwBreakpoints.Selected.Data));
     end;
 
     TLuaUnit(lvwBreakpoints.Selected.Data).synUnit.GotoLineAndCenter(StrToInt(lvwBreakpoints.Selected.SubItems.Strings[2]));
@@ -210,8 +210,8 @@ begin
           Item.ImageIndex := 8;
         end;
 
-        if Assigned(pCurrentSynEdit) then
-          pCurrentSynEdit.Refresh;
+        if Assigned(frmMain.jvUnitBar.SelectedTab.Data) then
+          TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
       end;
     end;
   end;
@@ -225,8 +225,8 @@ begin
     lvwBreakpoints.Selected.Delete;
   end;
 
-  if Assigned(pCurrentSynEdit) then
-    pCurrentSynEdit.Refresh;
+  if Assigned(frmMain.jvUnitBar.SelectedTab.Data) then
+    TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
 end;
 
 procedure TfrmBreakpoints.tbtnToggleClick(Sender: TObject);
@@ -247,8 +247,8 @@ begin
     end;
   end;
 
-  if Assigned(pCurrentSynEdit) then
-    pCurrentSynEdit.Refresh;
+  if Assigned(frmMain.jvUnitBar.SelectedTab.Data) then
+    TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
 end;
 
 procedure TfrmBreakpoints.lvwBreakpointsDblClick(Sender: TObject);
@@ -265,8 +265,8 @@ begin
     lvwBreakpoints.Items[x].Checked := False;
   end;
 
-  if Assigned(pCurrentSynEdit) then
-    pCurrentSynEdit.Refresh;
+  if Assigned(frmMain.jvUnitBar.SelectedTab.Data) then
+    TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
 end;
 
 procedure TfrmBreakpoints.tbtnEnableAllBreakpointsClick(Sender: TObject);
@@ -278,8 +278,8 @@ begin
     lvwBreakpoints.Items[x].Checked := True;
   end;
 
-  if Assigned(pCurrentSynEdit) then
-    pCurrentSynEdit.Refresh;
+  if Assigned(frmMain.jvUnitBar.SelectedTab.Data) then
+    TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
 end;
 
 procedure TfrmBreakpoints.tbtnAllRemoveClick(Sender: TObject);
@@ -292,8 +292,8 @@ begin
       lvwBreakpoints.Items[0].Delete;
     end;
 
-    if Assigned(pCurrentSynEdit) then
-      pCurrentSynEdit.Refresh;
+    if Assigned(frmMain.jvUnitBar.SelectedTab.Data) then
+      TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
   end;
 end;
 

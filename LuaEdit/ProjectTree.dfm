@@ -1,11 +1,13 @@
 object frmProjectTree: TfrmProjectTree
   Left = 501
   Top = 320
-  Width = 271
-  Height = 230
+  Width = 250
+  Height = 200
   BorderStyle = bsSizeToolWin
   Caption = 'Project Tree'
   Color = clBtnFace
+  Constraints.MinHeight = 200
+  Constraints.MinWidth = 250
   DockSite = True
   DragKind = dkDock
   DragMode = dmAutomatic
@@ -22,32 +24,52 @@ object frmProjectTree: TfrmProjectTree
   object Panel1: TPanel
     Left = 0
     Top = 0
-    Width = 263
-    Height = 196
+    Width = 242
+    Height = 173
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 0
-    object trvProjectTree: TJvDotNetTreeView
+    object vstProjectTree: TVirtualStringTree
       Left = 0
       Top = 0
-      Width = 263
-      Height = 196
+      Width = 242
+      Height = 173
       Align = alClient
+      Header.AutoSizeIndex = 1
+      Header.Font.Charset = DEFAULT_CHARSET
+      Header.Font.Color = clWindowText
+      Header.Font.Height = -11
+      Header.Font.Name = 'MS Sans Serif'
+      Header.Font.Style = []
+      Header.Options = [hoAutoResize, hoColumnResize, hoDrag, hoVisible]
+      Header.Style = hsFlatButtons
       Images = imlProjectTree
-      Indent = 19
       PopupMenu = ppmProjectTree
-      ReadOnly = True
-      RowSelect = True
       TabOrder = 0
-      OnAdvancedCustomDrawItem = trvProjectTreeAdvancedCustomDrawItem
-      OnDblClick = trvProjectTreeDblClick
-      OnMouseDown = trvProjectTreeMouseDown
-      LineColor = 13160660
+      TreeOptions.MiscOptions = [toAcceptOLEDrop, toFullRepaintOnResize, toInitOnSave, toReportMode, toToggleOnDblClick, toWheelPanning]
+      OnAfterItemPaint = vstProjectTreeAfterItemPaint
+      OnDblClick = vstProjectTreeDblClick
+      OnGetText = vstProjectTreeGetText
+      OnPaintText = vstProjectTreePaintText
+      OnGetImageIndex = vstProjectTreeGetImageIndex
+      OnGetNodeDataSize = vstProjectTreeGetNodeDataSize
+      OnMouseDown = vstProjectTreeMouseDown
+      Columns = <
+        item
+          Position = 0
+          Width = 100
+          WideText = 'Files'
+        end
+        item
+          Position = 1
+          Width = 138
+          WideText = 'Path'
+        end>
     end
   end
   object imlProjectTree: TImageList
-    Left = 8
-    Top = 9
+    Left = 40
+    Top = 41
     Bitmap = {
       494C010103000400040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
@@ -190,8 +212,8 @@ object frmProjectTree: TfrmProjectTree
   end
   object ppmProjectTree: TPopupMenu
     OnPopup = ppmProjectTreePopup
-    Left = 40
-    Top = 8
+    Left = 8
+    Top = 72
     object ActivateSelectedProject1: TMenuItem
       Action = frmMain.actActiveSelPrj
     end

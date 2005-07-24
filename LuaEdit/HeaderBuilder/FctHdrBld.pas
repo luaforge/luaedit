@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, ExtCtrls, XPMenu, ImgList, ComCtrls, ToolWin, Grids,
-  ValEdit, XPMan, Registry, System;
+  ValEdit, XPMan, Registry;
 
 type
   TfrmFctHdrBld = class(TForm)
@@ -54,6 +54,8 @@ type
     procedure ClearForm(bPrompt: Boolean = False);
     procedure CheckButtons;
     function GetHeader: String;
+    function FormatParameters(): String;
+    function FormatValue(sValue: String): String;
   end;
 
 var
@@ -171,13 +173,25 @@ begin
   end;
 end;
 
+function TfrmFctHdrBld.FormatParameters(): String;
+begin
+  //todo
+  Result := '';
+end;
+
+function TfrmFctHdrBld.FormatValue(sValue: String): String;
+begin
+  //todo
+  Result := sValue;
+end;
+
 function TfrmFctHdrBld.GetHeader: String;
 var
   pReg: TRegistry;
-  TagNotFound: Boolean;
-  x, TagO, TagC, TagIndex: Integer;
+  IsShortened: Boolean;
+  x, TagO, TagC: Integer;
   sTemplatePath, sToday, sInitialRealese: String;
-  sCopyright, sDevelopperName, sTemp, sTag: String;
+  sCopyright, sDevelopperName, sToReplace, sReplaceValue, sTemp, sTag: String;
   strTemplate, strTags: TStringList;
 begin
   Result := '';
@@ -198,39 +212,67 @@ begin
       // Get tags from registry and parse the template to replace tags by their assigned value
       if pReg.OpenKey('\Software\LuaEdit\HdrBld\Tags', False) then
       begin
-        pReg.GetValueNames(strTags);
+        // Get template from specified location on the disk
         strTemplate := TStringList.Create;
         strTemplate.LoadFromFile(sTemplatePath);
-        strTags.Add('Function');
-        strTags.Sort;
         sTemp := strTemplate.Text;
+
+        // Retreive tags from registry and add local tags
+        strTags := TStringList.Create;
+        strTags.Text := 'This is a gottam text!';
+        pReg.GetValueNames(strTags);
+        strTags.Values['Function'] := FormatValue(txtFunctionName.Text);
+        strTags.Values['Comment'] := FormatValue(memoComment.Text);
+        strTags.Values['Parameters'] := FormatParameters;
+        strTags.Values['Return'] := FormatValue(txtReturn.Text);
+        strTags.Values['Sample'] := FormatValue(txtCallSample.Text);
 
         // parsing template
         repeat
+          // reinitialize values
+          IsShortened := False;
+          TagO := Pos('<', sTemp);
+          
           // look for possible tag opening
-          if ((TagO := Pos('<', sTemp)) <> 0) then
+          if TagO <> 0 then
           begin
-            if ((TagC := Pos('>', sTemp)) <> 0) then
+            TagC := Pos('>', sTemp);
+            
+            // Get possible tag name
+            if TagC <> 0 then
             begin
               // Extract current tag
-              sTag := Copy(sTemp, TagO + 1, (TagC - 1) - (TagO + 1));
-              TagNotFound := False;
+              sTag := Copy(sTemp, TagO, TagC - TagO + 1);
 
-              case UpperCase(sTag) of
-                'FUNCTION':
-                begin
-                  
-                end;
+              // check if the tag we found is shortened
+              if Copy(sTag, Length(sTag) - 1, 1) = '/' then
+              begin
+                IsShortened := True;
+                sTag := Copy(sTag, 1, Length(sTag) - 1);
+              end;
+
+              // Extract tag name from tag element
+              sTag := Copy(sTag, 2, Length(sTag) - 2);
+
+              // Simple string replace call if it is a shortened one
+              if IsShortened then
+              begin
+                sTemp := StringReplace(sTemp, '<' + sTag + '/>', strTags.Values[sTag], [rfReplaceAll, rfIgnoreCase]);
+              end
               else
+              begin
+                // when not shortened, find closing tag and extract the whole
+                // string out of it. Once done, find the %value% tag
+                sToReplace := Copy(sTemp, TagO, Length(sTemp) - Pos('</' + sTag + '>', sTemp) + Length('</' + sTag + '>'));
+                sReplaceValue := StringReplace(sToReplace, '%value%', strTags.Values[sTag], [rfReplaceAll, rfIgnoreCase]);
+                sTemp := StringReplace(sTemp, sToReplace, sReplaceValue, [rfReplaceAll, rfIgnoreCase]);
               end;
             end;
           end;
         until TagO <> 0;
 
-        for x := 0 to strTags.Count - 1 do
-          strTemplate.Text := StringReplace(strTemplate.Text, '<@' + strTags.Strings[x] + '/>', pReg.ReadString(strTags.Strings[x]), [rfReplaceAll, rfIgnoreCase]);
-
         Result := strTemplate.Text;
+        strTags.Free;
         strTemplate.Free;
       end;
     end;

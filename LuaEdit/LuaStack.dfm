@@ -16,6 +16,7 @@ object frmLuaStack: TfrmLuaStack
   Font.Style = []
   FormStyle = fsStayOnTop
   OldCreateOrder = False
+  Position = poOwnerFormCenter
   OnActivate = FormActivate
   PixelsPerInch = 96
   TextHeight = 13
@@ -23,7 +24,7 @@ object frmLuaStack: TfrmLuaStack
     Left = 0
     Top = 0
     Width = 442
-    Height = 116
+    Height = 123
     Align = alClient
     Font.Charset = ANSI_CHARSET
     Font.Color = clWindowText

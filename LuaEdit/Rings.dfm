@@ -23,7 +23,7 @@ object frmRings: TfrmRings
     Left = 0
     Top = 0
     Width = 335
-    Height = 237
+    Height = 244
     Align = alClient
     Pages = <
       item
@@ -62,8 +62,26 @@ object frmRings: TfrmRings
         Font.Style = []
         ParentColor = True
         TopButtonIndex = 0
+      end
+      item
+        Alignment = taLeftJustify
+        Buttons = <>
+        ButtonSize = olbsLarge
+        Caption = 'Internal Browser History'
+        DownFont.Charset = DEFAULT_CHARSET
+        DownFont.Color = clWindowText
+        DownFont.Height = -11
+        DownFont.Name = 'MS Sans Serif'
+        DownFont.Style = []
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWhite
+        Font.Height = -11
+        Font.Name = 'MS Sans Serif'
+        Font.Style = []
+        ParentColor = True
+        TopButtonIndex = 0
       end>
-    ActivePageIndex = 1
+    ActivePageIndex = 2
     ThemedBackground = False
     OnCustomDraw = jvRingsCustomDraw
     Font.Charset = DEFAULT_CHARSET

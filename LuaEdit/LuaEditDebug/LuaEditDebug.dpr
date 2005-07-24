@@ -96,7 +96,7 @@ Var
 
 begin
 try
-RTAssert(0, true, 'Freeing', '', 0);
+  RTAssert(0, true, 'Freeing', '', 0);
   MainFormHandle :=frmMain.Handle;
   for i :=0 to Screen.CustomFormCount-1 do
    if (Screen.CustomForms[0]<>Nil) then
@@ -109,8 +109,7 @@ RTAssert(0, true, 'Freeing', '', 0);
      Sleep(100);
   Until not(IsWindow(MainFormHandle));
 
-RTAssert(0, true, 'Free Done', '', 0);
-
+  RTAssert(0, true, 'Free Done', '', 0);
 except
    RTAssert(0, true, 'Free exception', '', 0);
 
@@ -139,7 +138,7 @@ Var
    pLuaUnit: TLuaUnit;
 
 begin
-   RTAssert(0, true, 'Starting '+Filename, '', 0);
+     RTAssert(0, true, 'Starting '+Filename, '', 0);
      Result :=LUA_ERRRUN;
      MainForm :=LuaGetTableLightUserData(LState, LUA_REGISTRYINDEX, 'LuaEditDebug_MainForm');
      if (MainForm<>Nil)

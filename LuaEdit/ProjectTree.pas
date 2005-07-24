@@ -5,9 +5,17 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ComCtrls, CommCtrl, ExtCtrls, ImgList, Menus, JvComponent,
-  JvDockControlForm, JvExComCtrls, JvComCtrls, JvDotNetControls;
+  JvDockControlForm, JvExComCtrls, JvComCtrls, JvDotNetControls, Main,
+  VirtualTrees;
 
 type
+  PProjectTreeData = ^TProjectTreeData;
+  TProjectTreeData = record
+    pLuaUnit: TLuaUnit;
+    pLuaPrj: TLuaProject;
+    ActiveProject: Boolean;
+  end;
+
   TfrmProjectTree = class(TForm)
     Panel1: TPanel;
     imlProjectTree: TImageList;
@@ -16,17 +24,20 @@ type
     N1: TMenuItem;
     UnloadFileProject1: TMenuItem;
     JvDockClient1: TJvDockClient;
-    trvProjectTree: TJvDotNetTreeView;
     N2: TMenuItem;
     AddUnittoProject1: TMenuItem;
     RemoveUnitFromProject1: TMenuItem;
     Options1: TMenuItem;
-    procedure trvProjectTreeDblClick(Sender: TObject);
-    procedure trvProjectTreeMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-    procedure trvProjectTreeAdvancedCustomDrawItem(Sender: TCustomTreeView;
-      Node: TTreeNode; State: TCustomDrawState; Stage: TCustomDrawStage; var PaintImages, DefaultDraw: Boolean);
+    vstProjectTree: TVirtualStringTree;
     procedure UnloadFileProject1Click(Sender: TObject);
     procedure ppmProjectTreePopup(Sender: TObject);
+    procedure vstProjectTreeGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: WideString);
+    procedure vstProjectTreeGetImageIndex(Sender: TBaseVirtualTree; Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var ImageIndex: Integer);
+    procedure vstProjectTreeGetNodeDataSize(Sender: TBaseVirtualTree; var NodeDataSize: Integer);
+    procedure vstProjectTreePaintText(Sender: TBaseVirtualTree; const TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType);
+    procedure vstProjectTreeDblClick(Sender: TObject);
+    procedure vstProjectTreeMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure vstProjectTreeAfterItemPaint(Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode; ItemRect: TRect);
   private
     { Private declarations }
   public
@@ -39,34 +50,43 @@ var
 
 implementation
 
-uses Main;
-
 {$R *.dfm}
 
-procedure TfrmProjectTree.trvProjectTreeDblClick(Sender: TObject);
+procedure TfrmProjectTree.vstProjectTreeDblClick(Sender: TObject);
 var
+  pNode: PVirtualNode;
+  pData: PProjectTreeData;
   pLuaUnit: TLuaUnit;
 begin
-  if (Assigned(frmProjectTree.trvProjectTree.Selected) and ((frmProjectTree.trvProjectTree.Selected.ImageIndex = 1) and (frmProjectTree.trvProjectTree.Selected.SelectedIndex = 1))) then
-  begin
-    pLuaUnit := TLuaUnit(frmProjectTree.trvProjectTree.Selected.Data);
-    
-    if pLuaUnit.IsLoaded then
-    begin
-      if LuaOpenedUnits.IndexOf(pLuaUnit) = -1 then
-      begin
-        frmMain.AddFileInTab(pLuaUnit);
-      end
-      else
-      begin
-        frmMain.GetAssociatedTab(pLuaUnit).Selected := True;
-        
-        if pLuaUnit.HasChanged then
-          frmMain.stbMain.Panels[2].Text := 'Modified'
-        else
-          frmMain.stbMain.Panels[2].Text := '';
+  pNode := vstProjectTree.GetFirstSelected;
 
-        frmMain.synEditClick(pLuaUnit.synUnit);
+  if Assigned(pNode) then
+  begin
+    pData := vstProjectTree.GetNodeData(pNode);
+
+    if Assigned(pData.pLuaUnit) then
+    begin
+      pLuaUnit := pData.pLuaUnit;
+
+      if pLuaUnit.IsLoaded then
+      begin
+        if LuaOpenedUnits.IndexOf(pLuaUnit) = -1 then
+        begin
+          // Insert new tab in the page control to view the requested unit
+          frmMain.AddFileInTab(pLuaUnit);
+        end
+        else
+        begin
+          // Activate the tab associated to the requested unit
+          frmMain.jvUnitBar.SelectedTab := frmMain.GetAssociatedTab(pLuaUnit);
+
+          if pLuaUnit.HasChanged then
+            frmMain.stbMain.Panels[2].Text := 'Modified'
+          else
+            frmMain.stbMain.Panels[2].Text := '';
+
+          frmMain.synEditClick(pLuaUnit.synUnit);
+        end;
       end;
     end;
   end;
@@ -77,20 +97,23 @@ end;
 procedure TfrmProjectTree.BuildProjectTree(HandleNotifier: Boolean);
 var
   pTempPrj: TLuaProject;
-  pNewPrjNode, pNewNode: TTreeNode;
-  x, y: integer;
+  pNewPrjNode, pNewNode, pSingleUnitLastNode: PVirtualNode;
+  pData: PProjectTreeData;
+  x, y: Integer;
 begin
-  pNewPrjNode := nil;
+  // Initialize stuff
   pNewNode := nil;
+  pSingleUnitLastNode := nil;
 
+  // If the changes notifier is handled, we stop it while building the tree
   if HandleNotifier then
   begin
     frmMain.jvchnNotifier.Active := False;
     frmMain.jvchnNotifier.Notifications.Clear;
   end;
 
-  frmProjectTree.trvProjectTree.Items.BeginUpdate;
-  frmProjectTree.trvProjectTree.Items.Clear;
+  vstProjectTree.BeginUpdate;
+  vstProjectTree.Clear;
 
   for x := 0 to LuaProjects.Count - 1 do
   begin
@@ -98,74 +121,48 @@ begin
 
     if pTempPrj.sPrjName <> '[@@SingleUnits@@]' then
     begin
-      // Adding single unit (projectless) to the tree
-      pNewPrjNode := frmProjectTree.trvProjectTree.Items.Add(nil, pTempPrj.sPrjName + ' (' + pTempPrj.sPrjPath + ')');
-      pNewPrjNode.Data := pTempPrj;
-      pNewPrjNode.ImageIndex := 0;
-      pNewPrjNode.SelectedIndex := 0;
+      // Create the node
+      pNewPrjNode := vstProjectTree.AddChild(vstProjectTree.RootNode);
+      pData := vstProjectTree.GetNodeData(pNewPrjNode);
+      pData.pLuaUnit := nil;
+      pData.pLuaPrj := pTempPrj;
+      pData.ActiveProject := (pTempPrj = ActiveProject);
 
       // Adding project root to change notifier...
       if ((not pTempPrj.IsNew) and HandleNotifier) then
         frmMain.AddToNotifier(ExtractFileDir(pTempPrj.sPrjPath));
-    end;
+    end
+    else
+      pNewPrjNode := pSingleUnitLastNode;
 
     for y := 0 to pTempPrj.lstUnits.Count - 1 do
     begin
-      pNewNode := frmProjectTree.trvProjectTree.Items.AddChild(pNewPrjNode, ExtractFileName(TLuaUnit(pTempPrj.lstUnits.Items[y]).sName) + '   (' + TLuaUnit(pTempPrj.lstUnits.Items[y]).sUnitPath + ')');
-      if TLuaUnit(pTempPrj.lstUnits.Items[y]).IsLoaded then
-      begin
-        pNewNode.ImageIndex := 1;
-        pNewNode.SelectedIndex := 1;
-      end
+      // Adding single unit (projectless) to the tree
+      if pTempPrj.sPrjName = '[@@SingleUnits@@]' then
+        pNewNode := vstProjectTree.InsertNode(pNewPrjNode, amInsertAfter)
       else
-      begin
-        pNewNode.ImageIndex := 2;
-        pNewNode.SelectedIndex := 2;
-      end;
+        pNewNode := vstProjectTree.AddChild(pNewPrjNode);
 
-      pNewNode.Data := TLuaUnit(pTempPrj.lstUnits.Items[y]);
+      // Update last single unit node
+      pSingleUnitLastNode := pNewNode;
+
+      // Create the node
+      pData := vstProjectTree.GetNodeData(pNewNode);
+      pData.pLuaUnit := TLuaUnit(pTempPrj.lstUnits.Items[y]);
+      pData.pLuaPrj := nil;
+      pData.ActiveProject := False;
 
       // Adding unit root to change notifier...
       if ((not TLuaUnit(pTempPrj.lstUnits.Items[y]).IsNew) and HandleNotifier) then
         frmMain.AddToNotifier(ExtractFileDir(TLuaUnit(pTempPrj.lstUnits.Items[y]).sUnitPath));
     end;
-
-    if Assigned(pNewPrjNode) then
-      pNewPrjNode.Expand(True);
   end;
 
-  frmProjectTree.trvProjectTree.Items.EndUpdate;
+  vstProjectTree.EndUpdate;
+
+  // Set back on the changes notifier if required
   if ((frmMain.jvchnNotifier.Notifications.Count > 0) and HandleNotifier) then
     frmMain.jvchnNotifier.Active := True;
-end;
-
-procedure TfrmProjectTree.trvProjectTreeMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-begin
-  frmMain.CheckButtons;
-end;
-
-procedure TfrmProjectTree.trvProjectTreeAdvancedCustomDrawItem(Sender: TCustomTreeView; Node: TTreeNode; State: TCustomDrawState; Stage: TCustomDrawStage; var PaintImages, DefaultDraw: Boolean);
-begin
-  if Stage = cdPrepaint then
-  begin
-    Sender.Canvas.Font.Style := [];
-
-    if ((Node.ImageIndex = 2) or (Node.SelectedIndex = 2)) then
-    begin
-      if not TLuaUnit(Node.Data).IsLoaded then
-      begin
-        Sender.Canvas.Font.Color := clGray;
-      end;
-    end
-    else if ((Node.ImageIndex = 0) or (Node.SelectedIndex = 0)) then
-    begin
-      if TLuaProject(Node.Data) = ActiveProject then
-      begin
-        Sender.Canvas.Font.Style := [fsBold];
-        frmMain.Caption := 'LuaEdit - ' + TLuaProject(Node.Data).sPrjName;
-      end;
-    end;
-  end;
 end;
 
 procedure TfrmProjectTree.UnloadFileProject1Click(Sender: TObject);
@@ -174,15 +171,20 @@ var
   pLuaUnit: TLuaUnit;
   Answer, x: Integer;
   UnitsToDelete: TList;
+  pNode: PVirtualNode;
+  pData: PProjectTreeData;
 begin
-  if Assigned(trvProjectTree.Selected) then
+  pNode := vstProjectTree.GetFirstSelected;
+
+  if Assigned(pNode) then
   begin
+    pData := vstProjectTree.GetNodeData(pNode);
     UnitsToDelete := TList.Create;
-    
+
     // Case where the selected file was a project
-    if ((trvProjectTree.Selected.ImageIndex = 0) or (trvProjectTree.Selected.SelectedIndex = 0)) then
+    if Assigned(pData.pLuaPrj) then
     begin
-      pLuaPrj := TLuaProject(trvProjectTree.Selected.Data);
+      pLuaPrj := pData.pLuaPrj;
 
       // Ssaving any new or modified project's files
       for x := 0 to pLuaPrj.lstUnits.Count - 1 do
@@ -227,9 +229,9 @@ begin
         end;
       end;
     end
-    else if ((trvProjectTree.Selected.ImageIndex = 1) or (trvProjectTree.Selected.SelectedIndex = 1)) then
+    else if Assigned(pData.pLuaUnit) then
     begin
-      pLuaUnit := TLuaUnit(trvProjectTree.Selected.Data);
+      pLuaUnit := pData.pLuaUnit;
 
       if pLuaUnit.pPrjOwner.sPrjName = '[@@SingleUnits@@]' then
       begin
@@ -294,28 +296,147 @@ end;
 
 procedure TfrmProjectTree.ppmProjectTreePopup(Sender: TObject);
 var
-  pNode: TTreeNode;
+  pNode: PVirtualNode;
+  pData: PProjectTreeData;
 begin
   // set all menus status initially to false
   UnloadFileProject1.Enabled := False;
   AddUnittoProject1.Enabled := False;
   RemoveUnitFromProject1.Enabled := False;
   Options1.Enabled := False;
+  pNode := vstProjectTree.GetFirstSelected;
 
   // Only if a menu is selected
-  if Assigned(trvProjectTree.Selected) then
+  if Assigned(pNode) then
   begin
-    // Only if data is attached to the selected node
-    if Assigned(trvProjectTree.Selected.Data) then
-    begin
-      // getting selected node
-      pNode := trvProjectTree.Selected;
+    // Retreive data from selected node
+    pData := vstProjectTree.GetNodeData(pNode);
 
-      // setting menu status
-      AddUnittoProject1.Enabled := (trvProjectTree.Selected.Data = ActiveProject);
-      RemoveUnitFromProject1.Enabled := (trvProjectTree.Selected.Data = ActiveProject);
-      Options1.Enabled := (trvProjectTree.Selected.Data = ActiveProject);
-      UnloadFileProject1.Enabled := (((((pNode.ImageIndex = 1) or (pNode.SelectedIndex = 1)) and (not Assigned(pNode.Parent))) or ((pNode.ImageIndex = 0) or (pNode.SelectedIndex = 0))));
+    // setting menu status
+    AddUnitToProject1.Enabled := (pData.pLuaPrj = ActiveProject);
+    RemoveUnitFromProject1.Enabled := (pData.pLuaPrj = ActiveProject);
+    Options1.Enabled := (pData.pLuaPrj = ActiveProject);
+    UnloadFileProject1.Enabled := (((Assigned(pData.pLuaUnit)) and (pNode.Parent = vstProjectTree.RootNode)) or (Assigned(pData.pLuaPrj)));
+  end;
+end;
+
+procedure TfrmProjectTree.vstProjectTreeGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: WideString);
+var
+  pData: PProjectTreeData;
+begin
+  // Set text to display for all nodes
+  if TextType = ttNormal then
+  begin
+    case Column of
+      0:
+      begin
+        pData := Sender.GetNodeData(Node);
+        if Assigned(pData.pLuaPrj) then
+          CellText := pData.pLuaPrj.sPrjName
+        else
+          CellText := pData.pLuaUnit.sName;
+      end;
+      1:
+      begin
+        pData := Sender.GetNodeData(Node);
+        if Assigned(pData.pLuaPrj) then
+          CellText := pData.pLuaPrj.sPrjPath
+        else
+          CellText := pData.pLuaUnit.sUnitPath;
+      end;
+    end;
+  end;
+end;
+
+procedure TfrmProjectTree.vstProjectTreePaintText(Sender: TBaseVirtualTree; const TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType);
+var
+  pData: PProjectTreeData;
+begin
+  pData := Sender.GetNodeData(Node);
+
+  if Assigned(pData.pLuaPrj) then
+  begin
+    // Set bold style on the active project node
+    if pData.ActiveProject then
+    begin
+      TargetCanvas.Font.Style := [fsBold];
+      frmMain.Caption := 'LuaEdit - ' + TLuaProject(pData.pLuaPrj).sPrjName;
+    end;
+  end
+  else
+  begin
+    // Set disabled color for non-loaded units
+    if not pData.pLuaUnit.IsLoaded then
+      TargetCanvas.Pen.Color := clInactiveCaption;
+  end;
+end;
+
+procedure TfrmProjectTree.vstProjectTreeGetImageIndex(Sender: TBaseVirtualTree; Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var ImageIndex: Integer);
+var
+  pData: PProjectTreeData;
+begin
+  // Set image index for all nodes
+  if Column = 0 then
+  begin
+    pData := Sender.GetNodeData(Node);
+
+    if Assigned(pData.pLuaPrj) then
+    begin
+      ImageIndex := 0;
+    end
+    else
+    begin
+      if pData.pLuaUnit.IsLoaded then
+        ImageIndex := 1
+      else
+        ImageIndex := 2;
+    end;
+  end;
+end;
+
+procedure TfrmProjectTree.vstProjectTreeGetNodeDataSize(Sender: TBaseVirtualTree; var NodeDataSize: Integer);
+begin
+  NodeDataSize := SizeOf(TProjectTreeData);
+end;
+
+procedure TfrmProjectTree.vstProjectTreeMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  frmMain.CheckButtons;
+end;
+
+procedure TfrmProjectTree.vstProjectTreeAfterItemPaint(Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode; ItemRect: TRect);
+var
+  pRect: TRect;
+begin
+  pRect := ItemRect;
+  InflateRect(pRect, 0, 1);
+  pRect.Right := pRect.Left + 22;
+  TargetCanvas.Brush.Color := clWhite;
+  TargetCanvas.FillRect(pRect);
+
+  // Draw node button since the noda has some child
+  if ((Node.Parent = Sender.RootNode) and (Node.ChildCount <> 0)) then
+  begin
+    // Draw the frame around the button
+    TargetCanvas.Pen.Color := clBtnShadow;
+    TargetCanvas.Rectangle(5, 4, 14, 13);
+    TargetCanvas.MoveTo(14, 8);
+    TargetCanvas.LineTo(20, 8);
+    TargetCanvas.Pen.Color := clBlack;
+
+    if not (vsExpanded in Node.States) then
+    begin
+      // Draw expandable node button (plus sign)
+      TargetCanvas.MoveTo(7, 8);
+      TargetCanvas.LineTo(12, 8);
+      TargetCanvas.MoveTo(9, 6);
+      TargetCanvas.LineTo(9, 11);
+    end
+    else
+    begin
+      // Draw non-expandable node button (minus sign)
+      TargetCanvas.MoveTo(7, 8);
+      TargetCanvas.LineTo(12, 8);
     end;
   end;
 end;

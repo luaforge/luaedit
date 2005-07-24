@@ -115,8 +115,8 @@ begin
   TLuaUnit(cboUnits.Items.Objects[cboUnits.ItemIndex]).pDebugInfos.lstBreakpoint.Add(pBreakpoint);
   frmBreakpoints.RefreshBreakpointList;
 
-  if Assigned(pCurrentSynEdit) then
-    pCurrentSynEdit.Refresh;
+  if Assigned(frmMain.jvUnitBar.SelectedTab.Data) then
+    TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
     
   ModalResult := mrOk;
 end;

@@ -78,9 +78,9 @@ object frmFctHdrBld: TfrmFctHdrBld
     object lblCallSample: TLabel
       Left = 16
       Top = 304
-      Width = 58
+      Width = 113
       Height = 13
-      Caption = 'Call Sample:'
+      Caption = '<Sample/> Call Sample:'
     end
     object Label5: TLabel
       Left = 16

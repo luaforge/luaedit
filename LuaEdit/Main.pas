@@ -14,9 +14,9 @@ uses
   JvChangeNotify, JvClipboardMonitor, JvMenus, JvExComCtrls, JvToolBar,
   JvInspector, XPStyleActnCtrls, ActnMan, ActnCtrls, CustomizeDlg,
   ActnMenus, ActnColorMaps, StdStyleActnCtrls, XPMenu, Clipbrd, JvLookOut,
-  JvExControls, FileCtrl
+  JvExControls, FileCtrl, MiscClasses, VirtualTrees
   {$ifdef RTASSERT}  , RTDebug  {$endif}
-  , JvDragDrop, JvAppEvent;
+  , JvDragDrop, JvAppEvent, JvExStdCtrls, JvButton, JvCtrls, JvComCtrls;
 
 const
   otLuaProject  = 1;
@@ -28,14 +28,23 @@ const
   LUA_DBGPLAY     = 4;
   LUA_DBGPAUSE    = 5;
 
+  HIGHLIGHT_STACK = 0;
+  HIGHLIGHT_ERROR = 1;
+  HIGHLIGHT_BREAKLINE = 2;
+
   BKPT_DISABLED = 0;
   BKPT_ENABLED  = 1;
 
-  JVPAGE_RING_FILES     = 0;
-  JVPAGE_RING_CLIPBOARD = 1;
+  SIF_ACTPROJECT = 0;
+  SIF_OPENED = 1;
+  SIF_DIRECTORY = 2;
+
+  JVPAGE_RING_FILES       = 0;
+  JVPAGE_RING_CLIPBOARD   = 1;
+  JVPAGE_RING_BRWHISTORY  = 2;
 
   HOOK_MASK    = LUA_MASKCALL or LUA_MASKRET or LUA_MASKLINE;
-  PRINT_SIZE   = 32;
+  PRINT_SIZE   = 2048;
   ArgIdent     = 'arg';
 
 type
@@ -187,14 +196,14 @@ type
     actCut: TAction;
     actCopy: TAction;
     actPaste: TAction;
-    actSearch: TAction;
-    actSearchAgain: TAction;
-    actSearchReplace: TAction;
+    actFind: TAction;
+    actFindAgain: TAction;
+    actFindReplace: TAction;
     actGoToLine: TAction;
     actRunScript: TAction;
     actStepOver: TAction;
     actStepInto: TAction;
-    actAddBreakpoint: TAction;
+    actToggleBreakpoint: TAction;
     actCheckSyntax: TAction;
     actPause: TAction;
     actStop: TAction;
@@ -292,9 +301,7 @@ type
     jvDockVSNet: TJvDockVSNetStyle;
     jvDockServer: TJvDockServer;
     imlDock: TImageList;
-    jvUnitBar: TJvTabBar;
     jvModernUnitBarPainter: TJvModernTabBarPainter;
-    pnlMain: TPanel;
     actAddWatch: TAction;
     N22: TMenuItem;
     Save2: TMenuItem;
@@ -433,6 +440,22 @@ type
     ToolButton24: TToolButton;
     ToolButton25: TToolButton;
     jvAppDrop: TJvDragDrop;
+    actUpperCase: TAction;
+    actLowerCase: TAction;
+    UpperCaseSelection1: TMenuItem;
+    LowerCaseSelection1: TMenuItem;
+    pnlMain: TPanel;
+    actShowInternalBrowser: TAction;
+    InternalBrowser1: TMenuItem;
+    AddWatch1: TMenuItem;
+    AddWatch2: TMenuItem;
+    jvUnitBar: TJvTabBar;
+    actFindInFiles: TAction;
+    FindinFiles1: TMenuItem;
+    actShowFindWindow1: TAction;
+    actShowFindWindow2: TAction;
+    FindWindow11: TMenuItem;
+    FindWindow21: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure synEditKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure actOpenFileExecute(Sender: TObject);
@@ -451,21 +474,18 @@ type
     procedure actCutExecute(Sender: TObject);
     procedure actCopyExecute(Sender: TObject);
     procedure actPasteExecute(Sender: TObject);
-    procedure actSelectAllExecute(Sender: TObject);
-    procedure actSearchExecute(Sender: TObject);
-    procedure actSearchAgainExecute(Sender: TObject);
-    procedure actSearchReplaceExecute(Sender: TObject);
+    procedure actFindExecute(Sender: TObject);
+    procedure actFindAgainExecute(Sender: TObject);
+    procedure actFindReplaceExecute(Sender: TObject);
     procedure actGoToLineExecute(Sender: TObject);
     procedure AboutLuaEdit1Click(Sender: TObject);
     procedure actRunScriptExecute(Sender: TObject);
     procedure LuaHelp1Click(Sender: TObject);
-    procedure actAddBreakpointExecute(Sender: TObject);
+    procedure actToggleBreakpointExecute(Sender: TObject);
     procedure stbMainDrawPanel(StatusBar: TStatusBar; Panel: TStatusPanel; const Rect: TRect);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure actStepOverExecute(Sender: TObject);
-    procedure actStepIntoExecute(Sender: TObject);
     procedure actPauseExecute(Sender: TObject);
-    procedure actStopExecute(Sender: TObject);
     procedure actRunToCursorExecute(Sender: TObject);
     procedure actAddToPrjExecute(Sender: TObject);
     procedure actRemoveFromPrjExecute(Sender: TObject);
@@ -476,7 +496,6 @@ type
     procedure Calculator1Click(Sender: TObject);
     procedure actBlockUnindentExecute(Sender: TObject);
     procedure actBlockIndentExecute(Sender: TObject);
-    procedure actPrjSettingsExecute(Sender: TObject);
     procedure actActiveSelPrjExecute(Sender: TObject);
     procedure ErrorLookup1Click(Sender: TObject);
     procedure PrintSetup1Click(Sender: TObject);
@@ -491,8 +510,7 @@ type
     procedure OpenFileatCursor1Click(Sender: TObject);
     procedure Conversions1Click(Sender: TObject);
     procedure ppmEditorPopup(Sender: TObject);
-    procedure jvUnitBarTabSelected(Sender: TObject; Item: TJvTabBarItem);
-    procedure jvUnitBarTabClosing(Sender: TObject; Item: TJvTabBarItem; var AllowClose: Boolean);
+    procedure jvTabTabBarChange(Sender: TObject);
     procedure actAddWatchExecute(Sender: TObject);
     procedure ppmUnitsPopup(Sender: TObject);
     procedure jvchnNotifierChangeNotify(Sender: TObject; Dir: String; Actions: TJvChangeActions);
@@ -520,6 +538,19 @@ type
     procedure actBlockCommentExecute(Sender: TObject);
     procedure actBlockUncommentExecute(Sender: TObject);
     procedure jvAppDropDrop(Sender: TObject; Pos: TPoint; Value: TStrings);
+    procedure actUpperCaseExecute(Sender: TObject);
+    procedure actLowerCaseExecute(Sender: TObject);
+    procedure actShowInternalBrowserExecute(Sender: TObject);
+    procedure jvUnitBarTabSelecting(Sender: TObject; Item: TJvTabBarItem;
+      var AllowSelect: Boolean);
+    procedure jvUnitBarTabClosed(Sender: TObject; Item: TJvTabBarItem);
+    procedure actPrjSettingsExecute(Sender: TObject);
+    procedure actStopExecute(Sender: TObject);
+    procedure actStepIntoExecute(Sender: TObject);
+    procedure actSelectAllExecute(Sender: TObject);
+    procedure actFindInFilesExecute(Sender: TObject);
+    procedure actShowFindWindow1Execute(Sender: TObject);
+    procedure actShowFindWindow2Execute(Sender: TObject);
     //procedure actFunctionHeaderExecute(Sender: TObject);
   private
     { Private declarations }
@@ -538,10 +569,15 @@ type
     LuaState: Plua_State;
 
     //Search variables
+    sSearchInFilesString: String;
+    sSearchInFilesDir: String;
     sSearchString: String;
     sReplaceString: String;
     SearchedText: TStringList;
+    SearchedInFilesText: TStringList;
     ReplacedText: TStringList;
+    srSearchInFilesWhere: Integer;
+    srSearchInFilesOutput: Integer;
     srSearchDriection: Integer;
     srSearchScope: Integer;
     srSearchOrigin: Integer;
@@ -550,8 +586,12 @@ type
     srSearchSensitive: Boolean;
     srSearchRegularExpression: Boolean;
     srSearchWholeWords: Boolean;
+    srSearchInFilesSensitive: Boolean;
+    srSearchInFilesRegularExpression: Boolean;
+    srSearchInFilesWholeWords: Boolean;
+    srSearchInFilesSubDir: Boolean;
 
-    procedure ClosingUnit();
+    function ClosingUnit(): Boolean;
     procedure AddFileInTab(pLuaUnit: TLuaUnit);
     procedure AddToNotifier(sPath: String);
     function AddFileInProject(sFilePath: String; IsNew: Boolean; pPrj: TLuaProject): TLuaUnit;
@@ -575,8 +615,6 @@ type
     procedure synCompletionExecute(Kind: SynCompletionType; Sender: TObject; var CurrentInput: String; var x, y: Integer; var CanExecute: Boolean);
     function GetBaseCompletionProposal: TSynCompletionProposal;
     function GetBaseParamsProposal: TSynCompletionProposal;
-    procedure UpdateWatch;
-    procedure UpdateFctList;
     procedure LoadEditorSettings;
     procedure ApplyValuesToEditor(synTemp: TSynEdit; lstColorSheme: TList);
     function ExecuteInitializer(sInitializer: String; L: PLua_State): Integer;
@@ -596,10 +634,76 @@ type
     function IsICI(ICI: Integer): Boolean;
     function IsEdited(pIgnoreUnit: TLuaUnit = nil): Boolean;
     function GetValue(Name: string): string;
-    function PopUpUnitToScreen(sFileName: String; iLine: Integer = -1; bCleanPrevUnit: Boolean = False): TLuaUnit;
+    function PopUpUnitToScreen(sFileName: String; iLine: Integer = -1; bCleanPrevUnit: Boolean = False; HighlightMode: Integer = -1): TLuaUnit;
     procedure ExecuteCurrent(Pause: Boolean; PauseICI: Integer; PauseFile: string; PauseLine: Integer);
     procedure CustomExecute(Pause: Boolean; PauseICI: Integer; PauseFile: string; PauseLine: Integer; FuncName: string; const Args: array of string; Results: TStrings);
     procedure CallHookFunc(L: Plua_State; AR: Plua_Debug);
+
+    // Action manager functions    
+    function DoCheckSyntaxExecute(): Boolean;
+    function DoOpenFileExecute(): Boolean;
+    function DoOpenProjectExecute(): Boolean;
+    function DoExitExecute(): Boolean;
+    function DoSaveAsExecute(): Boolean;
+    function DoNewUnitExecute(): Boolean;
+    function DoNewProjectExecute(): Boolean;
+    function DoSaveProjectAsExecute(): Boolean;
+    function DoSaveAllExecute(): Boolean;
+    function DoMainMenuFileExecute(): Boolean;
+    function DoMainMenuEditExecute(): Boolean;
+    function DoMainMenuViewExecute(): Boolean;
+    function DoMainMenuProjectExecute(): Boolean;
+    function DoMainMenuRunExecute(): Boolean;
+    function DoMainMenuToolsExecute(): Boolean;
+    function DoMainMenuHelpExecute(): Boolean;
+    function DoShowProjectTreeExecute(): Boolean;
+    function DoShowBreakpointsExecute(): Boolean;
+    function DoShowMessagesExecute(): Boolean;
+    function DoShowWatchListExecute(): Boolean;
+    function DoShowCallStackExecute(): Boolean;
+    function DoShowLuaStackExecute(): Boolean;
+    function DoShowLuaOutputExecute(): Boolean;
+    function DoShowLuaGlobalsExecute(): Boolean;
+    function DoShowLuaLocalsExecute(): Boolean;
+    function DoShowRingsExecute(): Boolean;
+    function DoShowFunctionListExecute(): Boolean;
+    function DoShowInternalBrowserExecute(): Boolean;
+    function DoShowFindWindow1Execute(): Boolean;
+    function DoShowFindWindow2Execute(): Boolean;
+    function DoUndoExecute(): Boolean;
+    function DoRedoExecute(): Boolean;
+    function DoCutExecute(): Boolean;
+    function DoCopyExecute(): Boolean;
+    function DoPasteExecute(): Boolean;
+    function DoSelectAll(): Boolean;
+    function DoFindExecute(): Boolean;
+    function DoFindAgainExecute(): Boolean;
+    function DoFindReplaceExecute(): Boolean;
+    function DoFindInFilesExecute(): Boolean;
+    function DoGoToLineExecute(): Boolean;
+    function DoGotoLastEditedExecute(): Boolean;
+    function DoRunScriptExecute(): Boolean;
+    function DoAddWatchExecute(): Boolean;
+    function DoToggleBreakpointExecute(): Boolean;
+    function DoStepOverExecute(): Boolean;
+    function DoStepIntoExecute(): Boolean;
+    function DoPauseExecute(): Boolean;
+    function DoStopExecute(): Boolean;
+    function DoRunToCursorExecute(): Boolean;
+    function DoAddToPrjExecute(): Boolean;
+    function DoRemoveFromPrjExecute(): Boolean;
+    function DoEditorSettingsExecute(): Boolean;
+    function DoBlockUnindentExecute(): Boolean;
+    function DoBlockIndentExecute(): Boolean;
+    function DoBlockCommentExecute(): Boolean;
+    function DoBlockUncommentExecute(): Boolean;
+    function DoUpperCaseExecute(): Boolean;
+    function DoLowerCaseExecute(): Boolean;
+    function DoPrjSettingsExecute(): Boolean;
+    function DoActiveSelPrjExecute(): Boolean;
+    function DoPrintExecute(): Boolean;
+    function DoCloseExecute(): Boolean;
+    function DoSaveExecute(): Boolean;
   end;
 
 var
@@ -610,7 +714,6 @@ var
   ActiveProject: TLuaProject;
   DraggedTab: Integer;
   LookupList: TStringList;
-  pCurrentSynEdit: TSynEdit;
   CallStack: TList;
 
   //Settings variables
@@ -635,6 +738,7 @@ var
   SaveUnitsInc: Boolean;
   SaveBreakpoints: Boolean;
   ShowExSaveDlg: Boolean;
+  KeepSIFWindowOpened: Boolean;
   LibrariesSearchPaths: TStringList;
 
   //Debugger variables
@@ -690,7 +794,9 @@ uses
   PrjSettings, RemFromPrj, ErrorLookup, LuaStack, PrintSetup, CntString,
   Connecting, Math, Contributors, LuaOutput, Breakpoints, LuaGlobals,
   LuaLocals, LuaEditMessages, ExSaveExit, AsciiTable, ReadOnlyMsgBox,
-  Rings, JvOutlookBar, SynEditTextBuffer, FunctionList;
+  Rings, JvOutlookBar, SynEditTextBuffer, FunctionList,
+  JvDockSupportControl, InternalBrowser, FindInFiles, SIFReport,
+  FindWindow1, FindWindow2;
 
 {$R *.dfm}
 
@@ -1291,10 +1397,6 @@ begin
   pDebugPlugin.Free;
   pDebugInfos.Free;
   lstFunctions.Free;
-
-  if pCurrentSynEdit = synUnit then
-    pCurrentSynEdit := nil;
-
   synUnit.Free;
 end;
 
@@ -1645,12 +1747,15 @@ begin
   EditorColors := TList.Create;
   CallStack := TList.Create;
   lstLocals := TStringList.Create;
+  lstLocals.CaseSensitive := True;
   lstGlobals := TStringList.Create;
+  lstGlobals.CaseSensitive := True;
   lstStack := TStringList.Create;
   lstLuaStack := TStringList.Create;
   LuaProjects := TList.Create;
   LuaOpenedUnits := TList.Create;
   SearchedText := TStringList.Create;
+  SearchedInFilesText := TStringList.Create;
   ReplacedText := TStringList.Create;
   LibrariesSearchPaths := TStringList.Create;
   LuaSingleUnits := TLuaProject.Create('');
@@ -1661,17 +1766,20 @@ begin
   CurrentICI := 1;
 
   // Create dockable forms...
-  frmProjectTree := TfrmProjectTree.Create(nil);
-  frmLuaOutput := TfrmLuaOutput.Create(nil);
-  frmLuaStack := TfrmLuaStack.Create(nil);
-  frmWatch := TfrmWatch.Create(nil);
-  frmStack := TfrmStack.Create(nil);
-  frmLuaLocals := TfrmLuaLocals.Create(nil);
-  frmLuaGlobals := TfrmLuaGlobals.Create(nil);
-  frmLuaEditMessages := TfrmLuaEditMessages.Create(nil);
-  frmBreakpoints := TfrmBreakpoints.Create(nil);
-  frmRings := TfrmRings.Create(nil);
-  frmFunctionList := TfrmFunctionList.Create(nil);
+  frmProjectTree := TfrmProjectTree.Create(Self);
+  frmLuaOutput := TfrmLuaOutput.Create(Self);
+  frmLuaStack := TfrmLuaStack.Create(Self);
+  frmWatch := TfrmWatch.Create(Self);
+  frmStack := TfrmStack.Create(Self);
+  frmLuaLocals := TfrmLuaLocals.Create(Self);
+  frmLuaGlobals := TfrmLuaGlobals.Create(Self);
+  frmLuaEditMessages := TfrmLuaEditMessages.Create(Self);
+  frmBreakpoints := TfrmBreakpoints.Create(Self);
+  frmRings := TfrmRings.Create(Self);
+  frmFunctionList := TfrmFunctionList.Create(Self);
+  frmInternalBrowser := TfrmInternalBrowser.Create(Self);
+  frmFindWindow1 := TfrmFindWindow1.Create(Self);
+  frmFindWindow2 := TfrmFindWindow2.Create(Self);
 
   // Assign dockable forms icons...
   imlDock.GetIcon(0, frmWatch.Icon);
@@ -1685,10 +1793,15 @@ begin
   imlDock.GetIcon(6, frmBreakpoints.Icon);
   imlDock.GetIcon(10, frmRings.Icon);
   imlDock.GetIcon(11, frmFunctionList.Icon);
+  imlDock.GetIcon(12, frmInternalBrowser.Icon);
+  imlDock.GetIcon(13, frmFindWindow1.Icon);
+  imlDock.GetIcon(13, frmFindWindow2.Icon);
 
   // Paint some non overriden components
   xmpMenuPainter.InitComponent(frmBreakpoints.tlbBreakpoints);
   xmpMenuPainter.InitComponent(frmFunctionList.tblFunctionList);
+  xmpMenuPainter.InitComponent(frmInternalBrowser.tlbInternalBrowser);
+  xmpMenuPainter.InitComponent(frmWatch.tblWatch);
 
   // Build the reopen menus and ring
   BuildReopenMenu;
@@ -1699,13 +1812,14 @@ begin
   synEditClick(Sender);
 end;
 
-procedure TfrmMain.actOpenFileExecute(Sender: TObject);
+function TfrmMain.DoOpenFileExecute(): Boolean;
 var
   pReg: TRegistry;
   z: integer;
   pNewPrj: TLuaProject;
   pLuaUnit: TLuaUnit;
 begin
+  Result := False;
   pReg := TRegistry.Create;
 
   if pReg.OpenKey('\Software\LuaEdit', False) then
@@ -1719,6 +1833,7 @@ begin
       begin
         if not FileIsInTree(odlgOpenUnit.Files.Strings[z]) then
         begin
+          Result := True;
           pLuaUnit := AddFileInProject(odlgOpenUnit.Files.Strings[z], False, LuaSingleUnits);
           pLuaUnit.IsLoaded := True;
           AddFileInTab(pLuaUnit);
@@ -1738,6 +1853,7 @@ begin
       begin
         if not IsProjectOpened(odlgOpenUnit.Files.Strings[z]) then
         begin
+          Result := True;
           pNewPrj := TLuaProject.Create(odlgOpenUnit.Files.Strings[z]);
           pNewPrj.GetProjectFromDisk(odlgOpenUnit.Files.Strings[z]);
           // Add opened file to recent opens
@@ -1760,21 +1876,28 @@ begin
   pReg.Free;
 end;
 
+procedure TfrmMain.actOpenFileExecute(Sender: TObject);
+begin
+  DoOpenFileExecute;
+end;
+
 procedure TfrmMain.AddFileInTab(pLuaUnit: TLuaUnit);
 var
   synEdit: TSynEdit;
   HR: TSynLuaSyn;
-  sJvTab: TJvTabBarItem;
+  pJvTab: TJvTabBarItem;
 begin
-  sJvTab := jvUnitBar.AddTab(pLuaUnit.sName);
-  sJvTab.Visible := False;
-  sJvTab.Data := pLuaUnit;
+  Screen.Cursor := crHourGlass;
+  
+  pJvTab := jvUnitBar.AddTab(pLuaUnit.sName);
+  pJvTab.Data := pLuaUnit;
+  pJvTab.Visible := False;
 
-  synEdit := TSynEdit.Create(Self);
-  synEdit.MaxScrollWidth := 10000;
+  synEdit := TSynEdit.Create(pnlMain);
   synEdit.Parent := pnlMain;
-  synEdit.Visible := False;
+  synEdit.Visible := True;
   synEdit.Align := alClient;
+  synEdit.MaxScrollWidth := 10000;
   synEdit.WantTabs := True;
   synEdit.ShowHint := True;
   synEdit.PopupMenu := ppmEditor;
@@ -1791,6 +1914,7 @@ begin
 
   HR := TSynLuaSyn.Create(nil);
   synEdit.Highlighter := HR;
+  
   if not pLuaUnit.IsNew then
     synEdit.Lines.LoadFromFile(pLuaUnit.sUnitPath);
 
@@ -1806,14 +1930,15 @@ begin
   LuaOpenedUnits.Add(pLuaUnit);
 
   synEditClick(synEdit);
-  jvUnitBar.SelectedTab := sJvTab;
+  jvTabTabBarChange(jvUnitBar);
+  jvUnitBar.SelectedTab := pJvTab;
   ApplyValuesToEditor(pLuaUnit.synUnit, EditorColors);
-  pLuaUnit.synUnit.Parent := pnlMain;
-  sJvTab.Visible := True;
-  sJvTab.Selected := True;
+  pJvTab.Visible := True;
 
   pLuaUnit.GetBreakpoints();
   frmBreakpoints.RefreshBreakpointList;
+
+  Screen.Cursor := crDefault;
 end;
 
 function TfrmMain.AddFileInProject(sFilePath: String; IsNew: Boolean; pPrj: TLuaProject): TLuaUnit;
@@ -1950,12 +2075,13 @@ begin
     stbMain.Panels[2].Text := '';
 end;
 
-procedure TfrmMain.actOpenProjectExecute(Sender: TObject);
+function TfrmMain.DoOpenProjectExecute(): Boolean;
 var
   pNewPrj: TLuaProject;
   x: integer;
   pReg: TRegistry;
 begin
+  Result := False;
   pReg := TRegistry.Create;
 
   if pReg.OpenKey('\Software\LuaEdit', False) then
@@ -1967,6 +2093,7 @@ begin
     begin
       if not IsProjectOpened(odlgOpenProject.Files.Strings[x]) then
       begin
+        Result := True;
         pNewPrj := TLuaProject.Create(odlgOpenProject.Files.Strings[x]);
         pNewPrj.GetProjectFromDisk(odlgOpenProject.Files.Strings[x]);
 
@@ -1988,12 +2115,23 @@ begin
   pReg.Free;
 end;
 
-procedure TfrmMain.actExitExecute(Sender: TObject);
+procedure TfrmMain.actOpenProjectExecute(Sender: TObject);
 begin
+  DoOpenProjectExecute;
+end;
+
+function TfrmMain.DoExitExecute(): Boolean;
+begin
+  Result := True;
   Application.MainForm.Close;
 end;
 
-procedure TfrmMain.actSaveExecute(Sender: TObject);
+procedure TfrmMain.actExitExecute(Sender: TObject);
+begin
+  DoExitExecute;
+end;
+
+function TfrmMain.DoSaveExecute(): Boolean;
 var
   pLuaUnit: TLuaUnit;
 begin
@@ -2002,37 +2140,51 @@ begin
   if Assigned(pLuaUnit) then
   begin
     if SaveUnitsInc then
-      pLuaUnit.SaveUnitInc(pLuaUnit.sUnitPath)
+      Result := pLuaUnit.SaveUnitInc(pLuaUnit.sUnitPath)
     else
-      pLuaUnit.SaveUnit(pLuaUnit.sUnitPath);
+      Result := pLuaUnit.SaveUnit(pLuaUnit.sUnitPath);
+  end;
+end;
+
+procedure TfrmMain.actSaveExecute(Sender: TObject);
+begin
+  DoSaveExecute;
+end;
+
+function TfrmMain.DoSaveAsExecute(): Boolean;
+var
+  pLuaUnit: TLuaUnit;
+begin
+  Result := False;
+  pLuaUnit := TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data);
+
+  if Assigned(pLuaUnit) then
+  begin
+    if SaveUnitsInc then
+      Result := pLuaUnit.SaveUnitInc(pLuaUnit.sUnitPath, False, True)
+    else
+      Result := pLuaUnit.SaveUnit(pLuaUnit.sUnitPath, False, True);
   end;
 end;
 
 procedure TfrmMain.actSaveAsExecute(Sender: TObject);
-var
-  pLuaUnit: TLuaUnit;
 begin
-  pLuaUnit := TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data);
-
-  if Assigned(pLuaUnit) then
-  begin
-    if SaveUnitsInc then
-      pLuaUnit.SaveUnitInc(pLuaUnit.sUnitPath, False, True)
-    else
-      pLuaUnit.SaveUnit(pLuaUnit.sUnitPath, False, True);
-  end;
+  DoSaveAsExecute;
 end;
 
 procedure TfrmMain.CheckButtons;
+var
+  pNode: PVirtualNode;
+  pData: PProjectTreeData;
 begin
   actClose.Enabled := not (LuaOpenedUnits.Count = 0);
   actSave.Enabled := not (LuaOpenedUnits.Count = 0);
   actSaveAs.Enabled := not (LuaOpenedUnits.Count = 0);
   actSaveProjectAs.Enabled := not (LuaOpenedUnits.Count = 0);
   actSaveAll.Enabled := not (LuaOpenedUnits.Count = 0);
-  actSearch.Enabled := not (LuaOpenedUnits.Count = 0);
-  actSearchAgain.Enabled := not (LuaOpenedUnits.Count = 0);
-  actSearchReplace.Enabled := not (LuaOpenedUnits.Count = 0);
+  actFind.Enabled := not (LuaOpenedUnits.Count = 0);
+  actFindAgain.Enabled := not (LuaOpenedUnits.Count = 0);
+  actFindReplace.Enabled := not (LuaOpenedUnits.Count = 0);
   actSelectAll.Enabled := not (LuaOpenedUnits.Count = 0);
   actGoToLine.Enabled := not (LuaOpenedUnits.Count = 0);
   actGotoLastEdited.Enabled := not (LuaOpenedUnits.Count = 0);
@@ -2048,12 +2200,14 @@ begin
   actStepInto.Enabled := not (LuaOpenedUnits.Count = 0);
   actStepOver.Enabled := not (LuaOpenedUnits.Count = 0);
   actRunToCursor.Enabled := not (LuaOpenedUnits.Count = 0);
-  actAddBreakpoint.Enabled := not (LuaOpenedUnits.Count = 0);
+  actToggleBreakpoint.Enabled := not (LuaOpenedUnits.Count = 0);
   actPrint.Enabled := not (LuaOpenedUnits.Count = 0);
   actBlockIndent.Enabled := not (LuaOpenedUnits.Count = 0);
   actBlockUnindent.Enabled := not (LuaOpenedUnits.Count = 0);
   actBlockComment.Enabled := not (LuaOpenedUnits.Count = 0);
   actBlockUncomment.Enabled := not (LuaOpenedUnits.Count = 0);
+  actUpperCase.Enabled := not (LuaOpenedUnits.Count = 0);
+  actLowerCase.Enabled := not (LuaOpenedUnits.Count = 0);
   PrintSetup1.Enabled := not (LuaOpenedUnits.Count = 0);
   //HeaderBuilder1.Enabled := not (LuaOpenedUnits.Count = 0);
 
@@ -2061,15 +2215,18 @@ begin
   begin
     if Assigned(jvUnitBar.SelectedTab) then
     begin
-      if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.UndoList.ItemCount = 0 then
-        actUndo.Enabled := False
-      else
-        actUndo.Enabled := True;
+      if Assigned(jvUnitBar.SelectedTab.Data) then
+      begin
+        if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.UndoList.ItemCount = 0 then
+          actUndo.Enabled := False
+        else
+          actUndo.Enabled := True;
 
-      if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.RedoList.ItemCount = 0 then
-        actRedo.Enabled := False
-      else
-        actRedo.Enabled := True;
+        if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.RedoList.ItemCount = 0 then
+          actRedo.Enabled := False
+        else
+          actRedo.Enabled := True;
+      end;
     end
     else
     begin
@@ -2078,21 +2235,21 @@ begin
     end;
   end;
 
-  if Assigned(frmProjectTree.trvProjectTree.Selected) then
+  // Retreive selected node if any
+  pNode := frmProjectTree.vstProjectTree.GetFirstSelected;
+
+  if Assigned(pNode) then
   begin
-    if ((frmProjectTree.trvProjectTree.Selected.ImageIndex = 0) or (frmProjectTree.trvProjectTree.Selected.SelectedIndex = 0)) then
-    begin
-      actActiveSelPrj.Enabled := True;
-    end
+    // Retreive data from the selected node
+    pData := frmProjectTree.vstProjectTree.GetNodeData(pNode);
+
+    if Assigned(pData.pLuaPrj) then
+      actActiveSelPrj.Enabled := True
     else
-    begin
       actActiveSelPrj.Enabled := False;
-    end;
   end
   else
-  begin
     actActiveSelPrj.Enabled := False;
-  end;
 
   if Assigned(ActiveProject) then
   begin
@@ -2118,12 +2275,13 @@ begin
   Reopen1.Enabled := True;
 end;
 
-procedure TfrmMain.actNewUnitExecute(Sender: TObject);
+function TfrmMain.DoNewUnitExecute(): Boolean;
 var
   pLuaUnit: TLuaUnit;
   x, NewUnit: integer;
   FoundMatch: Boolean;
 begin
+  Result := False;
   NewUnit := 1;
 
   for x := 0 to LuaOpenedUnits.Count - 1 do
@@ -2147,6 +2305,7 @@ begin
     end;
   end;  
 
+  Result := True;
   pLuaUnit := AddFileInProject('Unit'+IntToStr(NewUnit)+'.lua', True, LuaSingleUnits);
   pLuaUnit.IsLoaded := True;
   AddFileInTab(pLuaUnit);
@@ -2154,13 +2313,19 @@ begin
   CheckButtons;
 end;
 
-procedure TfrmMain.actNewProjectExecute(Sender: TObject);
+procedure TfrmMain.actNewUnitExecute(Sender: TObject);
+begin
+  DoNewUnitExecute;
+end;
+
+function TfrmMain.DoNewProjectExecute(): Boolean;
 var
   pLuaUnit: TLuaUnit;
   pNewLuaPrj: TLuaProject;
   x, NewUnit, NewProject: integer;
   FoundMatch: Boolean;
 begin
+  Result := False;
   NewProject := 1;
 
   for x := 0 to LuaProjects.Count - 1 do
@@ -2199,11 +2364,17 @@ begin
       Inc(NewUnit);
   end;
 
+  Result := True;
   pLuaUnit := AddFileInProject('Unit'+IntToStr(NewUnit)+'.lua', True, pNewLuaPrj);
   pLuaUnit.IsLoaded := True;
   AddFileInTab(pLuaUnit);
   frmProjectTree.BuildProjectTree;
   CheckButtons;
+end;
+
+procedure TfrmMain.actNewProjectExecute(Sender: TObject);
+begin
+  DoNewProjectExecute;
 end;
 
 procedure TfrmMain.FormDestroy(Sender: TObject);
@@ -2225,6 +2396,7 @@ begin
   LuaOpenedUnits.Free;
   LibrariesSearchPaths.Free;
   ReplacedText.Free;
+  SearchedInFilesText.Free;
   SearchedText.Free;
   lstStack.Free;
   lstLuaStack.Free;
@@ -2233,81 +2405,137 @@ begin
   EditorColors.Free;
   LookupList.Free;
   CallStack.Free;
+
+  // Free the page controller
+  jvUnitBar.Free;
+
 {$ifdef RTASSERT} RTAssert(0, true, ' TfrmMain.FormDestroy Done', '', 0); {$endif}
 end;
 
-procedure TfrmMain.actSaveProjectAsExecute(Sender: TObject);
+function TfrmMain.DoSaveProjectAsExecute(): Boolean;
 begin
+  Result := False;
+  
   if SaveProjectsInc then
-    ActiveProject.SaveProjectInc(sdlgSaveAsPrj.FileName, False, True)
+    Result := ActiveProject.SaveProjectInc(sdlgSaveAsPrj.FileName, False, True)
   else
-    ActiveProject.SaveProject(sdlgSaveAsPrj.FileName, False, True);
-    
+    Result := ActiveProject.SaveProject(sdlgSaveAsPrj.FileName, False, True);
+
   RefreshOpenedUnits;
   frmProjectTree.BuildProjectTree;
 end;
 
-procedure TfrmMain.actSaveAllExecute(Sender: TObject);
+procedure TfrmMain.actSaveProjectAsExecute(Sender: TObject);
+begin
+  DoSaveProjectAsExecute;
+end;
+
+function TfrmMain.DoSaveAllExecute(): Boolean;
 var
   x, y: integer;
   pLuaPrj: TLuaProject;
   pLuaUnit: TLuaUnit;
 begin
+  Result := False;
+  
   for x := 0 to LuaProjects.Count - 1 do
   begin
     pLuaPrj := TLuaProject(LuaProjects.Items[x]);
-    
+
     for y := 0 to pLuaPrj.lstUnits.Count - 1 do
     begin
       pLuaUnit := TLuaUnit(pLuaPrj.lstUnits.Items[y]);
 
       if SaveUnitsInc then
-        pLuaUnit.SaveUnitInc(pLuaUnit.sUnitPath)
+        Result := pLuaUnit.SaveUnitInc(pLuaUnit.sUnitPath)
       else
-        pLuaUnit.SaveUnit(pLuaUnit.sUnitPath);
+        Result := pLuaUnit.SaveUnit(pLuaUnit.sUnitPath);
+
+      if not Result then
+        Exit;
     end;
     
     if pLuaPrj.sPrjName <> '[@@SingleUnits@@]' then
     begin
       if SaveProjectsInc then
-        pLuaPrj.SaveProjectInc(pLuaPrj.sPrjPath)
+        Result := pLuaPrj.SaveProjectInc(pLuaPrj.sPrjPath)
       else
-        pLuaPrj.SaveProject(pLuaPrj.sPrjPath);
+        Result := pLuaPrj.SaveProject(pLuaPrj.sPrjPath);
+
+      if not Result then
+        Exit;
     end;
   end;
 
   frmProjectTree.BuildProjectTree;
 end;
 
-procedure TfrmMain.actCloseExecute(Sender: TObject);
+procedure TfrmMain.actSaveAllExecute(Sender: TObject);
 begin
-  ClosingUnit;
-  jvUnitBar.SelectedTab.Destroy;
-
-  // Initialize stuff...
-  CheckButtons;
-  frmProjectTree.BuildProjectTree;
-  frmBreakpoints.RefreshBreakpointList;
+  DoSaveAllExecute;
 end;
 
-procedure TfrmMain.ClosingUnit();
+function TfrmMain.DoCloseExecute(): Boolean;
 var
-  Answer: Integer;
+  TabIndex: Integer;
 begin
+  Screen.Cursor := crHourGlass;
+  Result := ClosingUnit;
+
+  // Close the tab, free data...
+  if Result then
+  begin
+    jvUnitBar.SelectedTab.Free;
+  end;
+
+  Screen.Cursor := crDefault;
+end;
+
+procedure TfrmMain.actCloseExecute(Sender: TObject);
+begin
+  DoCloseExecute;
+end;
+
+function TfrmMain.ClosingUnit(): Boolean;
+var
+  Answer, x: Integer;
+begin
+  // Initialize result to true
+  Result := True;
+
+  // Prompt user for closing unit or not
   if ((TLuaUnit(jvUnitBar.SelectedTab.Data).HasChanged) or (TLuaUnit(jvUnitBar.SelectedTab.Data).IsNew)) then
   begin
     Answer := Application.MessageBox(PChar('Do you want to save "'+TLuaUnit(jvUnitBar.SelectedTab.Data).sUnitPath+'"?'), 'LuaEdit', MB_YESNOCANCEL+MB_ICONQUESTION);
     if Answer = IDYES then
-      actSaveExecute(nil)
+      Result := DoSaveExecute
     else if Answer = IDCANCEL then
-      Exit
-    else
-      TLuaUnit(jvUnitBar.SelectedTab.Data).pPrjOwner.lstUnits.Remove(TLuaUnit(jvUnitBar.SelectedTab.Data));
+    begin
+      Result := False;
+      Exit;
+    end;
+  end;
+
+  if Assigned(jvUnitBar.SelectedTab) then
+  begin
+    if jvUnitBar.Tabs.Count = 1 then
+    begin
+      // Free previously created TFctInfo objects...
+      for x := 0 to frmFunctionList.lvwFunctions.Items.Count - 1 do
+        TFctInfo(frmFunctionList.lvwFunctions.Items[x].Data).Free;
+
+      frmFunctionList.lvwFunctions.Clear;
+    end;
   end;
 
   // Remove file from global opened file list
   LuaOpenedUnits.Remove(TLuaUnit(jvUnitBar.SelectedTab.Data));
   TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Visible := False;
+
+  // Reinitialize stuff...
+  CheckButtons;
+  frmProjectTree.BuildProjectTree;
+  frmBreakpoints.RefreshBreakpointList;
 end;
 
 procedure TfrmMain.BuildReopenMenu;
@@ -2484,18 +2712,31 @@ begin
   pReg.Free;
 end;
 
+function TfrmMain.DoMainMenuFileExecute(): Boolean;
+begin
+  Result := True;
+  CloseUnit1.Enabled := (jvUnitBar.Tabs.Count  > 0);
+end;
+
 procedure TfrmMain.actMainMenuFileExecute(Sender: TObject);
 begin
-  CloseUnit1.Enabled := (jvUnitBar.Tabs.Count > 0);
+  DoMainMenuFileExecute;
+end;
+
+function TfrmMain.DoMainMenuEditExecute(): Boolean;
+begin
+  Result := False;
+  // Do nothing for now...
 end;
 
 procedure TfrmMain.actMainMenuEditExecute(Sender: TObject);
 begin
-  // do nothing
+  DoMainMenuEditExecute;
 end;
 
-procedure TfrmMain.actMainMenuViewExecute(Sender: TObject);
+function TfrmMain.DoMainMenuViewExecute(): Boolean;
 begin
+  Result := True;
   File2.Checked := tlbBaseFile.Visible;
   Edit2.Checked := tlbEdit.Visible;
   Run1.Checked := tlbRun.Visible;
@@ -2513,30 +2754,63 @@ begin
   actShowLuaLocals.Checked := frmLuaLocals.Visible;
   actShowRings.Checked := frmRings.Visible;
   actShowFunctionList.Checked := frmFunctionList.Visible;
+  actShowInternalBrowser.Checked := frmInternalBrowser.Visible;
+  actShowFindWindow1.Checked := frmFindWindow1.Visible;
+  actShowFindWindow2.Checked := frmFindWindow2.Visible;
+end;
+
+procedure TfrmMain.actMainMenuViewExecute(Sender: TObject);
+begin
+  DoMainMenuViewExecute;
+end;
+
+function TfrmMain.DoMainMenuProjectExecute(): Boolean;
+begin
+  Result := False;
+  // Do nothing for now...
 end;
 
 procedure TfrmMain.actMainMenuProjectExecute(Sender: TObject);
 begin
-  // do nothing
+  DoMainMenuProjectExecute;
+end;
+
+function TfrmMain.DoMainMenuRunExecute(): Boolean;
+begin
+  Result := False;
+  // Do nothing for now...
 end;
 
 procedure TfrmMain.actMainMenuRunExecute(Sender: TObject);
 begin
-  // do nothing
+  DoMainMenuRunExecute;
+end;
+
+function TfrmMain.DoMainMenuToolsExecute(): Boolean;
+begin
+  Result := False;
+  // Do nothing for now...
 end;
 
 procedure TfrmMain.actMainMenuToolsExecute(Sender: TObject);
 begin
-  // do nothing
+  DoMainMenuToolsExecute;
+end;
+
+function TfrmMain.DoMainMenuHelpExecute(): Boolean;
+begin
+  Result := False;
+  // Do nothing for now...
 end;
 
 procedure TfrmMain.actMainMenuHelpExecute(Sender: TObject);
 begin
-  // do nothing
+  DoMainMenuHelpExecute;
 end;
 
-procedure TfrmMain.actShowProjectTreeExecute(Sender: TObject);
+function TfrmMain.DoShowProjectTreeExecute(): Boolean;
 begin
+  Result := True;
   actShowProjectTree.Checked := not actShowProjectTree.Checked;
   frmProjectTree.Visible := actShowProjectTree.Checked;
 
@@ -2546,8 +2820,14 @@ begin
     HideDockForm(frmProjectTree);
 end;
 
-procedure TfrmMain.actShowBreakpointsExecute(Sender: TObject);
+procedure TfrmMain.actShowProjectTreeExecute(Sender: TObject);
 begin
+  DoShowProjectTreeExecute;
+end;
+
+function TfrmMain.DoShowBreakpointsExecute(): Boolean;
+begin
+  Result := True;
   actShowBreakpoints.Checked := not actShowBreakpoints.Checked;
   frmBreakpoints.Visible := actShowBreakpoints.Checked;
 
@@ -2557,8 +2837,14 @@ begin
     HideDockForm(frmBreakpoints);
 end;
 
-procedure TfrmMain.actShowMessagesExecute(Sender: TObject);
+procedure TfrmMain.actShowBreakpointsExecute(Sender: TObject);
 begin
+  DoShowBreakpointsExecute;
+end;
+
+function TfrmMain.DoShowMessagesExecute(): Boolean;
+begin
+  Result := True;
   actShowMessages.Checked := not actShowMessages.Checked;
   frmLuaEditMessages.Visible := actShowMessages.Checked;
 
@@ -2568,8 +2854,14 @@ begin
     HideDockForm(frmLuaEditMessages);
 end;
 
-procedure TfrmMain.actShowWatchListExecute(Sender: TObject);
+procedure TfrmMain.actShowMessagesExecute(Sender: TObject);
 begin
+  DoShowMessagesExecute;
+end;
+
+function TfrmMain.DoShowWatchListExecute(): Boolean;
+begin
+  Result := True;
   actShowWatchList.Checked := not actShowWatchList.Checked;
   frmWatch.Visible := actShowWatchList.Checked;
 
@@ -2579,8 +2871,14 @@ begin
     HideDockForm(frmWatch);
 end;
 
-procedure TfrmMain.actShowCallStackExecute(Sender: TObject);
+procedure TfrmMain.actShowWatchListExecute(Sender: TObject);
 begin
+  DoShowWatchListExecute;
+end;
+
+function TfrmMain.DoShowCallStackExecute(): Boolean;
+begin
+  Result := True;
   actShowCallStack.Checked := not actShowCallStack.Checked;
   frmStack.Visible := actShowCallStack.Checked;
 
@@ -2590,8 +2888,14 @@ begin
     HideDockForm(frmStack);
 end;
 
-procedure TfrmMain.actShowLuaStackExecute(Sender: TObject);
+procedure TfrmMain.actShowCallStackExecute(Sender: TObject);
 begin
+  DoShowCallStackExecute;
+end;
+
+function TfrmMain.DoShowLuaStackExecute(): Boolean;
+begin
+  Result := True;
   actShowLuaStack.Checked := not actShowLuaStack.Checked;
   frmLuaStack.Visible := actShowLuaStack.Checked;
 
@@ -2601,8 +2905,14 @@ begin
     HideDockForm(frmLuaStack);
 end;
 
-procedure TfrmMain.actShowLuaOutputExecute(Sender: TObject);
+procedure TfrmMain.actShowLuaStackExecute(Sender: TObject);
 begin
+  DoShowLuaStackExecute;
+end;
+
+function TfrmMain.DoShowLuaOutputExecute(): Boolean;
+begin
+  Result := True;
   actShowLuaOutput.Checked := not actShowLuaOutput.Checked;
   frmLuaOutput.Visible := actShowLuaOutput.Checked;
 
@@ -2612,8 +2922,14 @@ begin
     HideDockForm(frmLuaOutput);
 end;
 
-procedure TfrmMain.actShowLuaGlobalsExecute(Sender: TObject);
+procedure TfrmMain.actShowLuaOutputExecute(Sender: TObject);
 begin
+  DoShowLuaOutputExecute;
+end;
+
+function TfrmMain.DoShowLuaGlobalsExecute(): Boolean;
+begin
+  Result := True;
   actShowLuaGlobals.Checked := not actShowLuaGlobals.Checked;
   frmLuaGlobals.Visible := actShowLuaGlobals.Checked;
 
@@ -2623,8 +2939,14 @@ begin
     HideDockForm(frmLuaGlobals);
 end;
 
-procedure TfrmMain.actShowLuaLocalsExecute(Sender: TObject);
+procedure TfrmMain.actShowLuaGlobalsExecute(Sender: TObject);
 begin
+  DoShowLuaGlobalsExecute;
+end;
+
+function TfrmMain.DoShowLuaLocalsExecute(): Boolean;
+begin
+  Result := True;
   actShowLuaLocals.Checked := not actShowLuaLocals.Checked;
   frmLuaLocals.Visible := actShowLuaLocals.Checked;
 
@@ -2634,8 +2956,14 @@ begin
     HideDockForm(frmLuaLocals);
 end;
 
-procedure TfrmMain.actShowRingsExecute(Sender: TObject);
+procedure TfrmMain.actShowLuaLocalsExecute(Sender: TObject);
 begin
+  DoShowLuaLocalsExecute;
+end;
+
+function TfrmMain.DoShowRingsExecute(): Boolean;
+begin
+  Result := True;
   actShowRings.Checked := not actShowRings.Checked;
   frmRings.Visible := actShowRings.Checked;
 
@@ -2645,8 +2973,14 @@ begin
     HideDockForm(frmRings);
 end;
 
-procedure TfrmMain.actShowFunctionListExecute(Sender: TObject);
+procedure TfrmMain.actShowRingsExecute(Sender: TObject);
 begin
+  DoShowRingsExecute;
+end;
+
+function TfrmMain.DoShowFunctionListExecute(): Boolean;
+begin
+  Result := True;
   actShowFunctionList.Checked := not actShowFunctionList.Checked;
   frmFunctionList.Visible := actShowFunctionList.Checked;
 
@@ -2654,6 +2988,62 @@ begin
     ShowDockForm(frmFunctionList)
   else
     HideDockForm(frmFunctionList);
+end;
+
+procedure TfrmMain.actShowFunctionListExecute(Sender: TObject);
+begin
+  DoShowFunctionListExecute;
+end;
+
+function TfrmMain.DoShowInternalBrowserExecute(): Boolean;
+begin
+  Result := True;
+  actShowInternalBrowser.Checked := not actShowInternalBrowser.Checked;
+  frmInternalBrowser.Visible := actShowInternalBrowser.Checked;
+
+  if actShowInternalBrowser.Checked then
+    ShowDockForm(frmInternalBrowser)
+  else
+    HideDockForm(frmInternalBrowser);
+end;
+
+procedure TfrmMain.actShowInternalBrowserExecute(Sender: TObject);
+begin
+  DoShowInternalBrowserExecute;
+end;
+
+function TfrmMain.DoShowFindWindow1Execute(): Boolean;
+begin
+  Result := True;
+  actShowFindWindow1.Checked := not actShowFindWindow1.Checked;
+  frmFindWindow1.Visible := actShowFindWindow1.Checked;
+
+  if actShowFindWindow1.Checked then
+    ShowDockForm(frmFindWindow1)
+  else
+    HideDockForm(frmFindWindow1);
+end;
+
+procedure TfrmMain.actShowFindWindow1Execute(Sender: TObject);
+begin
+  DoShowFindWindow1Execute;
+end;
+
+function TfrmMain.DoShowFindWindow2Execute(): Boolean;
+begin
+  Result := True;
+  actShowFindWindow2.Checked := not actShowFindWindow2.Checked;
+  frmFindWindow2.Visible := actShowFindWindow2.Checked;
+
+  if actShowFindWindow2.Checked then
+    ShowDockForm(frmFindWindow2)
+  else
+    HideDockForm(frmFindWindow2);
+end;
+
+procedure TfrmMain.actShowFindWindow2Execute(Sender: TObject);
+begin
+  DoShowFindWindow2Execute;
 end;
 
 procedure TfrmMain.mnuXReopenClick(Sender: TObject);
@@ -2857,9 +3247,31 @@ begin
   end;
 end;
 
+function TfrmMain.DoUndoExecute(): Boolean;
+begin
+  Result := True;
+  TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Undo;
+
+  if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.UndoList.ItemCount = 0 then
+    actUndo.Enabled := False
+  else
+    actUndo.Enabled := True;
+
+  if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.RedoList.ItemCount = 0 then
+    actRedo.Enabled := False
+  else
+    actRedo.Enabled := True;
+end;
+
 procedure TfrmMain.actUndoExecute(Sender: TObject);
 begin
-  TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Undo;
+  DoUndoExecute;
+end;
+
+function TfrmMain.DoRedoExecute(): Boolean;
+begin
+  Result := True;
+  TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Redo;
 
   if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.UndoList.ItemCount = 0 then
     actUndo.Enabled := False
@@ -2874,31 +3286,23 @@ end;
 
 procedure TfrmMain.actRedoExecute(Sender: TObject);
 begin
-  TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Redo;
-
-  if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.UndoList.ItemCount = 0 then
-    actUndo.Enabled := False
-  else
-    actUndo.Enabled := True;
-
-  if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.RedoList.ItemCount = 0 then
-    actRedo.Enabled := False
-  else
-    actRedo.Enabled := True;
+  DoRedoExecute;
 end;
 
-procedure TfrmMain.actCutExecute(Sender: TObject);
+function TfrmMain.DoCutExecute(): Boolean;
 var
   jvOBBtn: TJvOutlookBarButton;
   x: Integer;
   pLuaUnit: TLuaUnit;
 begin
+  Result := False;
+
   if Assigned(jvUnitBar.SelectedTab) then
   begin
     if Assigned(jvUnitBar.SelectedTab.Data) then
     begin
       pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
-  
+
       if pLuaUnit.synUnit.SelText <> '' then
       begin
         pLuaUnit.synUnit.CutToClipboard;
@@ -2920,17 +3324,25 @@ begin
         jvOBBtn := frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons.Insert(0);
         jvOBBtn.Caption := Clipboard.AsText;
         jvOBBtn.OnClick := btnXClipboardClick;
+        Result := True;
       end;
     end;
   end;
 end;
 
-procedure TfrmMain.actCopyExecute(Sender: TObject);
+procedure TfrmMain.actCutExecute(Sender: TObject);
+begin
+  DoCutExecute;
+end;
+
+function TfrmMain.DoCopyExecute(): Boolean;
 var
   jvOBBtn: TJvOutlookBarButton;
   x: Integer;
   pLuaUnit: TLuaUnit;
 begin
+  Result := False;
+  
   if Assigned(jvUnitBar.SelectedTab) then
   begin
     if Assigned(jvUnitBar.SelectedTab.Data) then
@@ -2957,39 +3369,64 @@ begin
         jvOBBtn := frmRings.jvRings.Pages[JVPAGE_RING_CLIPBOARD].Buttons.Insert(0);
         jvOBBtn.Caption := Clipboard.AsText;
         jvOBBtn.OnClick := btnXClipboardClick;
+        Result := True;
       end;
     end;
   end;
 end;
 
+procedure TfrmMain.actCopyExecute(Sender: TObject);
+begin
+  DoCopyExecute;
+end;
+
+function TfrmMain.DoPasteExecute(): Boolean;
+begin
+  Result := Assigned(jvUnitBar.SelectedTab);
+
+  if Result then
+    TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.PasteFromClipboard;
+end;
+
 procedure TfrmMain.actPasteExecute(Sender: TObject);
 begin
-  TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.PasteFromClipboard;
+  DoPasteExecute;
+end;
+
+function TfrmMain.DoSelectAll(): Boolean;
+begin
+  Result := Assigned(jvUnitBar.SelectedTab);
+
+  if Result then
+    TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelectAll;
 end;
 
 procedure TfrmMain.actSelectAllExecute(Sender: TObject);
 begin
-  TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelectAll;
+  DoSelectAll;
 end;
 
-procedure TfrmMain.actSearchExecute(Sender: TObject);
+function TfrmMain.DoFindExecute(): Boolean;
 var
   Options: TSynSearchOptions;
+  Index: Integer;
 begin
+  Result := True;
   frmSearch.chkRegularExpression.Checked := srSearchRegularExpression;
   frmSearch.chkSearchCaseSensitive.Checked := srSearchSensitive;
   frmSearch.chkSearchWholeWords.Checked := srSearchWholeWords;
   frmSearch.optOrigin.ItemIndex := srSearchOrigin;
   frmSearch.optScope.ItemIndex := srSearchScope;
   frmSearch.optDirection.ItemIndex := srSearchDriection;
+  frmSearch.cboSearchText.Items.Clear;
   frmSearch.cboSearchText.Items.AddStrings(SearchedText);
 
   if SearchedText.Count > 0 then
     frmSearch.cboSearchText.Text := SearchedText.Strings[SearchedText.Count - 1];
-  
-  if ((TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelAvail) and (TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.BlockBegin.Line = TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.BlockEnd.Line)) then
+
+  if ((TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelLength > 0) and (TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.BlockBegin.Line = TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.BlockEnd.Line)) then
     frmSearch.cboSearchText.Text := TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelText
-  else
+  else if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.GetWordAtRowCol(TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.CaretXY) <> '' then
     frmSearch.cboSearchText.Text := TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.GetWordAtRowCol(TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.CaretXY);
 
   frmSearch.ShowModal;
@@ -3018,24 +3455,265 @@ begin
       Options := Options + [ssoBackwards];
 
     sSearchString := frmSearch.SearchText;
-    SearchedText.Add(sSearchString);
+    SearchedText.Sort;
+    if not SearchedText.Find(sSearchString, Index) then
+      SearchedText.Add(sSearchString);
 
     if srSearchRegularExpression then
-      TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SearchEngine := synMainSearch
+      TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SearchEngine := synMainSearchRegEx
     else
-      TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SearchEngine := synMainSearchRegEx;
-    
+      TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SearchEngine := synMainSearch;
+
     if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SearchReplace(sSearchString, '', Options) = 0 then
     begin
+      Result := False;
       Application.MessageBox(PChar('Search string "'+sSearchString+'" not found.'), 'LuaEdit', MB_OK+MB_ICONINFORMATION);
     end;
   end;
 end;
 
-procedure TfrmMain.actSearchAgainExecute(Sender: TObject);
+procedure TfrmMain.actFindExecute(Sender: TObject);
+begin
+  DoFindExecute;
+end;
+
+function TfrmMain.DoFindInFilesExecute(): Boolean;
+var
+  Options: TSynSearchOptions;
+  Index: Integer;
+
+  // Find all instances of the text in the given synedit control
+  procedure FindTextInSynEdit(FileName, TextToFind: String; Output: Integer; SynEdit: TSynEdit; SynOptions: TSynSearchOptions);
+  begin
+    // Initialize some stuff...
+    frmSIFReport.CurrentFile := FileName;
+    frmSIFReport.ScannedFiles := frmSIFReport.ScannedFiles + 1;
+    frmSIFReport.ScannedLines := frmSIFReport.ScannedLines + SynEdit.Lines.Count;
+    SynEdit.CaretX := 0;
+    SynEdit.CaretY := 0;
+
+    // Assign search engine (regular expressions or not)
+    if srSearchInFilesRegularExpression then
+      SynEdit.SearchEngine := synMainSearchRegEx
+    else
+      SynEdit.SearchEngine := synMainSearch;
+
+    while SynEdit.SearchReplace(TextToFind, '', SynOptions) <> 0 do
+    begin
+      frmSIFReport.MatchFound := frmSIFReport.MatchFound + 1;
+
+      // Add result in the right window
+      if Output = 0 then
+        frmFindWindow1.AddResult(FileName, SynEdit.CaretY, SynEdit.Lines[SynEdit.CaretY - 1])
+      else
+        frmFindWindow2.AddResult(FileName, SynEdit.CaretY, SynEdit.Lines[SynEdit.CaretY - 1])
+    end;
+  end;
+
+  // Find text through the current active project
+  procedure FindFilesInProject(TextToFind: String; LuaProject: TLuaProject; Output: Integer; SynOptions: TSynSearchOptions);
+  var
+    x: Integer;
+    pTmpSynEdit: TSynEdit;
+  begin
+    pTmpSynEdit := TSynEdit.Create(nil);
+    pTmpSynEdit.Visible := False;
+
+    for x := 0 to LuaProject.lstUnits.Count - 1 do
+    begin
+      if Assigned(TLuaUnit(LuaProject.lstUnits[x]).synUnit) then
+        pTmpSynEdit.Text := TLuaUnit(LuaProject.lstUnits[x]).synUnit.Text
+      else
+        pTmpSynEdit.Lines.LoadFromFile(TLuaUnit(LuaProject.lstUnits[x]).sUnitPath);
+
+      FindTextInSynEdit(TLuaUnit(LuaProject.lstUnits[x]).sUnitPath, TextToFind, Output, pTmpSynEdit, SynOptions);
+    end;
+
+    pTmpSynEdit.Free;
+  end;
+
+  // Find text through all opened files
+  procedure FindFilesOpened(TextToFind: String; Output: Integer; SynOptions: TSynSearchOptions);
+  var
+    x: Integer;
+    pTmpSynEdit: TSynEdit;
+  begin
+    pTmpSynEdit := TSynEdit.Create(nil);
+    pTmpSynEdit.Visible := False;
+
+    for x := 0 to LuaOpenedUnits.Count - 1 do
+    begin
+      pTmpSynEdit.Text := TLuaUnit(LuaOpenedUnits[x]).synUnit.Text;
+      FindTextInSynEdit(TLuaUnit(LuaOpenedUnits[x]).sUnitPath, TextToFind, Output, pTmpSynEdit, SynOptions);
+    end;
+
+    pTmpSynEdit.Free;
+  end;
+
+  // Find text through the specified directory (possibly all sub directory too -- recursive calls)
+  procedure FindFilesInDir(Path, TextToFind: String; IsRecursive: Boolean; Output: Integer; SynOptions: TSynSearchOptions);
+  var
+    pTmpSynEdit: TSynEdit;
+    FullPathName: String;
+    iSearchResult: Integer;
+    hSearchHandle: TSearchRec;
+  begin
+    if Path[Length(Path) - 1] = '\' then
+      iSearchResult := FindFirst(Path+'*.*', faAnyFile, hSearchHandle)
+    else
+      iSearchResult := FindFirst(Path+'\*.*', faAnyFile, hSearchHandle);
+
+    while iSearchResult = 0 do
+    begin
+      if Path[Length(Path) - 1] = '\' then
+        FullPathName := Path + hSearchHandle.Name
+      else
+        FullPathName := Path + '\' + hSearchHandle.Name;
+
+      if (IsRecursive and (hSearchHandle.Name <> '.') and (hSearchHandle.Name <> '..') and ((hSearchHandle.Attr and faDirectory) <> 0)) then
+      begin
+        // Recursive call for the new found directory
+        FindFilesInDir(FullPathName, TextToFind, IsRecursive, Output, SynOptions);
+      end
+      else
+      begin
+        if (hSearchHandle.Attr and faDirectory) = 0 then
+        begin
+          // Make sure the file is a *.lua file
+          if ExtractFileExt(FullPathName) = '.lua' then
+          begin
+            pTmpSynEdit := TSynEdit.Create(nil);
+            pTmpSynEdit.Visible := False;
+            pTmpSynEdit.Lines.LoadFromFile(FullPathName);
+            FindTextInSynEdit(FullPathName, TextToFind, Output, pTmpSynEdit, SynOptions);
+            pTmpSynEdit.Free;
+          end
+          else
+            frmSIFReport.SkippedFiles := frmSIFReport.SkippedFiles + 1;
+        end;
+      end;
+
+      iSearchResult := FindNext(hSearchHandle);
+    end;
+
+    FindClose(hSearchHandle);
+  end;
+begin
+  // Initialize find in files window
+  Result := True;
+  frmFindInFiles.chkRegularExpression.Checked := srSearchInFilesRegularExpression;
+  frmFindInFiles.chkSearchCaseSensitive.Checked := srSearchInFilesSensitive;
+  frmFindInFiles.chkSearchWholeWords.Checked := srSearchInFilesWholeWords;
+  frmFindInFiles.optOutput.ItemIndex := srSearchInFilesOutput;
+  frmFindInFiles.jvoptActiveProject.Enabled := Assigned(ActiveProject);
+  frmFindInFiles.jvoptOpenFiles.Enabled := (LuaOpenedUnits.Count <> 0);
+  frmFindInFiles.SetSearchMode(srSearchInFilesWhere);
+  frmFindInFiles.cboSearchInFilesText.Items.Clear;
+  frmFindInFiles.cboSearchInFilesText.Items.AddStrings(SearchedInFilesText);
+
+  if SearchedInFilesText.Count > 0 then
+    frmFindInFiles.cboSearchInFilesText.Text := SearchedInFilesText.Strings[SearchedInFilesText.Count - 1];
+
+  if Assigned(jvUnitBar.SelectedTab) then
+  begin
+    if ((TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelLength > 0) and (TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.BlockBegin.Line = TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.BlockEnd.Line)) then
+      frmFindInFiles.cboSearchInFilesText.Text := TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelText
+    else if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.GetWordAtRowCol(TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.CaretXY) <> '' then
+      frmFindInFiles.cboSearchInFilesText.Text := TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.GetWordAtRowCol(TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.CaretXY);
+  end;
+
+  // Show the find in files dialog
+  frmFindInFiles.ShowModal;
+
+  if frmFindInFiles.SearchText <> '' then
+  begin
+    // Set base search options
+    Options := [];
+
+    // Add user's preferences to search options
+    srSearchInFilesSubDir := frmFindInFiles.IsSubDir;
+    srSearchInFilesWhere := frmFindInFiles.GetSearchMode;
+    srSearchInFilesOutput := frmFindInFiles.GetOutput;
+    srSearchInFilesRegularExpression := frmFindInFiles.IsResgularExpression;
+    srSearchInFilesSensitive := frmFindInFiles.IsCaseSensitive;
+    if srSearchInFilesSensitive then
+      Options := Options + [ssoMatchCase];
+
+    srSearchInFilesWholeWords := frmFindInFiles.IsWholeWordOnly;
+    if srSearchInFilesWholeWords then
+      Options := Options + [ssoWholeWord];
+
+    sSearchInFilesString := frmFindInFiles.SearchText;
+    sSearchInFilesDir := frmFindInFiles.SearchDirectory;
+    SearchedInFilesText.Sort;
+    if not SearchedInFilesText.Find(sSearchInFilesString, Index) then
+      SearchedInFilesText.Add(sSearchInFilesString);
+      
+    if sSearchInFilesString <> '' then
+    begin
+      // Initialize stuff...
+      Screen.Cursor := crHourGlass;
+      frmSIFReport.ResetReport;
+      frmSIFReport.Show;
+
+      if srSearchInFilesOutput = 0 then
+        frmFindWindow1.lvwResult.Clear
+      else
+        frmFindWindow2.lvwResult.Clear;
+
+      // Find results according to the search mode
+      case srSearchInFilesWhere of
+        SIF_ACTPROJECT:   FindFilesInProject(sSearchInFilesString, ActiveProject, srSearchInFilesOutput, Options);
+        SIF_OPENED:       FindFilesOpened(sSearchInFilesString, srSearchInFilesOutput, Options);
+        SIF_DIRECTORY:    FindFilesInDir(sSearchInFilesDir, sSearchInFilesString, srSearchInFilesSubDir, srSearchInFilesOutput, Options);
+      end;
+
+      // Close the report window if required
+      if not KeepSIFWindowOpened then
+        frmSIFReport.Close;
+
+      // Uninitialize stuff...
+      Screen.Cursor := crDefault;
+
+      // Display messages if no match found or popup the right find window if there's a match
+      if frmSIFReport.MatchFound = 0 then
+      begin
+        Result := False;
+
+        // Spelling check, lol ([files were ...] or [file was ...])
+        if frmSIFReport.ScannedFiles > 1 then
+          Application.MessageBox(PChar('Search string "'+sSearchInFilesString+'" not found. ' + IntToStr(frmSIFReport.ScannedFiles) + ' files were scanned.'), 'LuaEdit', MB_OK+MB_ICONINFORMATION)
+        else
+          Application.MessageBox(PChar('Search string "'+sSearchInFilesString+'" not found. ' + IntToStr(frmSIFReport.ScannedFiles) + ' file was scanned.'), 'LuaEdit', MB_OK+MB_ICONINFORMATION);
+      end
+      else
+      begin
+        // Popup the corresponding find window if not already opened
+        if srSearchInFilesOutput = 0 then
+        begin
+          if not frmFindWindow1.Visible then
+            DoShowFindWindow1Execute;
+        end
+        else
+        begin
+          if not frmFindWindow2.Visible then
+            DoShowFindWindow2Execute;
+        end;
+      end;
+    end;
+  end;
+end;
+
+procedure TfrmMain.actFindInFilesExecute(Sender: TObject);
+begin
+  DoFindInFilesExecute;
+end;
+
+function TfrmMain.DoFindAgainExecute(): Boolean;
 var
   Options: TSynSearchOptions;
 begin
+  Result := True;
   Options := [];
 
   if srSearchSensitive then
@@ -3060,21 +3738,31 @@ begin
     
   if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SearchReplace(sSearchString, '', Options) = 0 then
   begin
+    Result := False;
     Application.MessageBox(PChar('Search string "'+sSearchString+'" not found.'), 'LuaEdit', MB_OK+MB_ICONINFORMATION);
   end;
 end;
 
-procedure TfrmMain.actSearchReplaceExecute(Sender: TObject);
+procedure TfrmMain.actFindAgainExecute(Sender: TObject);
+begin
+  DoFindAgainExecute;
+end;
+
+function TfrmMain.DoFindReplaceExecute(): Boolean;
 var
   Options: TSynSearchOptions;
+  Index: Integer;
 begin
+  Result := True;
   frmReplace.chkRegularExpression.Checked := srSearchRegularExpression;
   frmReplace.chkSearchCaseSensitive.Checked := srSearchSensitive;
   frmReplace.chkSearchWholeWords.Checked := srSearchWholeWords;
   frmReplace.optOrigin.ItemIndex := srSearchOrigin;
   frmReplace.optScope.ItemIndex := srSearchScope;
   frmReplace.optDirection.ItemIndex := srSearchDriection;
+  frmReplace.cboSearchText.Items.Clear;
   frmReplace.cboSearchText.Items.AddStrings(SearchedText);
+  frmReplace.cboReplaceText.Clear;
   frmReplace.cboReplaceText.Items.AddStrings(ReplacedText);
 
   if SearchedText.Count > 0 then
@@ -3082,7 +3770,7 @@ begin
   
   if ((TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelAvail) and (TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.BlockBegin.Line = TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.BlockEnd.Line)) then
     frmReplace.cboSearchText.Text := TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelText
-  else
+  else if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.GetWordAtRowCol(TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.CaretXY) <> '' then
     frmReplace.cboSearchText.Text := TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.GetWordAtRowCol(TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.CaretXY);
 
   frmReplace.ShowModal;
@@ -3121,19 +3809,30 @@ begin
 
     sSearchString := frmReplace.SearchText;
     sReplaceString := frmReplace.ReplaceText;
-    ReplacedText.Add(sReplaceString);
-    SearchedText.Add(sSearchString);
+    ReplacedText.Sort;
+    SearchedText.Sort;
+    if not ReplacedText.Find(sReplaceString, Index) then
+      ReplacedText.Add(sReplaceString);
+      
+    if not SearchedText.Find(sSearchString, Index) then
+      SearchedText.Add(sSearchString);
 
     if not srSearchRegularExpression then
       TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SearchEngine := synMainSearch
     else
       TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SearchEngine := synMainSearchRegEx;
-    
+
     if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SearchReplace(sSearchString, sReplaceString, Options) = 0 then
     begin
+      Result := False;
       Application.MessageBox(PChar('Search string "'+sSearchString+'" not found.'), 'LuaEdit', MB_OK+MB_ICONINFORMATION);
     end;
   end;
+end;
+
+procedure TfrmMain.actFindReplaceExecute(Sender: TObject);
+begin
+  DoFindReplaceExecute;
 end;
 
 procedure TfrmMain.SynEditReplaceText(Sender: TObject; const ASearch, AReplace: String; Line, Column: Integer; var Action: TSynReplaceAction);
@@ -3164,17 +3863,30 @@ begin
   end;
 end;
 
-procedure TfrmMain.actGoToLineExecute(Sender: TObject);
+function TfrmMain.DoGoToLineExecute(): Boolean;
 begin
   frmGotoLine.txtLineNumber.Text := '';
-  
-  if frmGotoLine.ShowModal = mrOK then
+  Result := (frmGotoLine.ShowModal = mrOK);
+
+  if Result then
     TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.GotoLineAndCenter(frmGotoLine.LineNumber);
+end;
+
+procedure TfrmMain.actGoToLineExecute(Sender: TObject);
+begin
+  DoGoToLineExecute;
+end;
+
+
+function TfrmMain.DoGotoLastEditedExecute(): Boolean;
+begin
+  Result := True;
+  TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.GotoLineAndCenter(TLuaUnit(jvUnitBar.SelectedTab.Data).LastEditedLine);
 end;
 
 procedure TfrmMain.actGotoLastEditedExecute(Sender: TObject);
 begin
-  TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.GotoLineAndCenter(TLuaUnit(jvUnitBar.SelectedTab.Data).LastEditedLine);
+  DoGotoLastEditedExecute;
 end;
 
 procedure TfrmMain.AboutLuaEdit1Click(Sender: TObject);
@@ -3260,8 +3972,8 @@ var
       pLuaUnit.pDebugInfos.iCurrentLineDebug := -1;
       pLuaUnit.pDebugInfos.iStackMarker := -1;
 
-      if Assigned(pCurrentSynEdit) then
-        pCurrentSynEdit.Refresh;
+      if Assigned(frmMain.jvUnitBar.SelectedTab.Data) then
+        TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
     end;
     
     Self.Pause := Pause;
@@ -3318,10 +4030,13 @@ begin
       NotifyModified := False;
     end;
 
-    actCheckSyntaxExecute(nil);
-    iDoLuaOpen := (LuaState=Nil);
-    if iDoLuaOpen
-    then LuaState := lua_open;
+    if not DoCheckSyntaxExecute then
+      Exit;
+
+    iDoLuaOpen := (LuaState = nil);
+
+    if iDoLuaOpen then
+      LuaState := lua_open;
 
     L := LuaState;
     OpenLibs(L);
@@ -3343,9 +4058,9 @@ begin
       Results.Clear;
 
     try
-      if Assigned(pCurrentSynEdit) then
+      if Assigned(jvUnitBar.SelectedTab.Data) then
       begin
-        pCurrentSynEdit.Refresh;
+        TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Refresh;
         frmMain.stbMain.Refresh;
       end;
 
@@ -3358,10 +4073,10 @@ begin
         CallStack.Clear;
         PrintStack;
 
-        if (pCurrentSynEdit.Text = '') then
+        if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Text = '' then
           Exit;
 
-        LuaLoadBuffer(L, pCurrentSynEdit.Text, pLuaUnit.sUnitPath);
+        LuaLoadBuffer(L, TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Text, pLuaUnit.sUnitPath);
       
         if (FuncName <> '') then
         begin
@@ -3433,7 +4148,7 @@ begin
           if (FileExists(FileName) and (E.Line > 0)) then
           begin
             pLuaUnit.pDebugInfos.iLineError := E.Line;
-            frmMain.GetAssociatedTab(pLuaUnit).Selected := True;
+            frmMain.jvUnitBar.SelectedTab := frmMain.GetAssociatedTab(pLuaUnit);
             pLuaUnit.synUnit.GotoLineAndCenter(E.Line);
           end;
         end;
@@ -3456,9 +4171,15 @@ begin
   CustomExecute(Pause, PauseICI, PauseFile, PauseLine, '', [], nil);
 end;
 
+function TfrmMain.DoRunScriptExecute(): Boolean;
+begin
+  Result := True;
+  ExecuteCurrent(False, 0, '', -1);
+end;
+
 procedure TfrmMain.actRunScriptExecute(Sender: TObject);
 begin
-  ExecuteCurrent(False, 0, '', -1);
+  DoRunScriptExecute;
 end;
 
 procedure HookCaller(L: Plua_State; AR: Plua_Debug); cdecl;
@@ -3502,7 +4223,7 @@ var
     pLuaUnit.pDebugInfos.iCurrentLineDebug := NextLine;
     pLuaUnit.synUnit.CaretY := NextLine;
     pLuaUnit.synUnit.EnsureCursorPosVisibleEx(True);
-    pCurrentSynEdit.Refresh;
+    TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Refresh;
 
     PrintLuaStack(L);
     PrintStack;
@@ -3625,57 +4346,78 @@ begin
 end;
 
 // Open the unit in the IDE if not already opened
-function TfrmMain.PopUpUnitToScreen(sFileName: String; iLine: Integer = -1; bCleanPrevUnit: Boolean = False): TLuaUnit;
+function TfrmMain.PopUpUnitToScreen(sFileName: String; iLine: Integer = -1; bCleanPrevUnit: Boolean = False; HighlightMode: Integer = -1): TLuaUnit;
 var
   pLuaUnit: TLuaUnit;
   x: Integer;
 begin
-  // if the current file is already the one selected then we exit this function
-  if TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).sUnitPath = sFileName then
-  begin
-    Result := TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data);
-    Exit;
-  end;
-
-  if bCleanPrevUnit then
-  begin
-    if Assigned(frmMain.jvUnitBar.SelectedTab) then
+  // Initialize some stuff...
+  Result := nil;
+  
+  try
+    // if the current file is already the one selected then we exit this function
+    if Assigned(jvUnitBar.SelectedTab) then
     begin
-      TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).pDebugInfos.iCurrentLineDebug := -1;
-      TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).pDebugInfos.iStackMarker := -1;
-      frmStack.lstCallStack.Items.BeginUpdate;
-
-      for x := 0 to frmStack.lstCallStack.Items.Count - 1 do
+      if TLuaUnit(jvUnitBar.SelectedTab.Data).sUnitPath = sFileName then
       begin
-        if x = 0 then
-          frmStack.lstCallStack.Items[x].ImageIndex := 0
-        else
-          frmStack.lstCallStack.Items[x].ImageIndex := -1;
+        Result := TLuaUnit(jvUnitBar.SelectedTab.Data);
+        Exit;
       end;
+    end;
 
-      frmStack.lstCallStack.Items.EndUpdate;
+    if bCleanPrevUnit then
+    begin
+      if Assigned(jvUnitBar.SelectedTab) then
+      begin
+        TLuaUnit(jvUnitBar.SelectedTab.Data).pDebugInfos.iCurrentLineDebug := -1;
+        TLuaUnit(jvUnitBar.SelectedTab.Data).pDebugInfos.iStackMarker := -1;
+        frmStack.lstCallStack.Items.BeginUpdate;
+
+        for x := 0 to frmStack.lstCallStack.Items.Count - 1 do
+        begin
+          if x = 0 then
+            frmStack.lstCallStack.Items[x].ImageIndex := 0
+          else
+            frmStack.lstCallStack.Items[x].ImageIndex := -1;
+        end;
+
+        frmStack.lstCallStack.Items.EndUpdate;
+      end;
+    end;
+
+    if not frmMain.FileIsInTree(sFileName) then
+    begin
+      pLuaUnit := TLuaUnit.Create(sFileName);
+      pLuaUnit := frmMain.AddFileInProject(sFileName, False, LuaSingleUnits);
+      pLuaUnit.IsLoaded := True;
+      frmMain.AddFileInTab(pLuaUnit);
+      frmProjectTree.BuildProjectTree;
+      frmMain.CheckButtons;
+      Result := pLuaUnit;
+    end
+    else
+    begin
+      pLuaUnit := frmMain.FindUnitInTabs(sFileName);
+      frmMain.jvUnitBar.SelectedTab := frmMain.GetAssociatedTab(pLuaUnit);
+      Result := pLuaUnit;
+    end;
+  finally
+    // Jump to specified line if we found the unit
+    if ((iLine > 0) and Assigned(Result)) then
+    begin
+      Result.synUnit.GotoLineAndCenter(iLine);
+
+      // Highlight the specified line if required
+      if HighlightMode > 0 then
+      begin
+        case HighlightMode of
+          HIGHLIGHT_STACK:      Result.pDebugInfos.iStackMarker := iLine;
+          HIGHLIGHT_ERROR:      Result.pDebugInfos.iLineError := iLine;
+          HIGHLIGHT_BREAKLINE:  Result.pDebugInfos.iCurrentLineDebug := iLine;
+        end;
+      end;
     end;
   end;
-
-  if not frmMain.FileIsInTree(sFileName) then
-  begin
-    pLuaUnit := TLuaUnit.Create(sFileName);
-    pLuaUnit := frmMain.AddFileInProject(sFileName, False, LuaSingleUnits);
-    pLuaUnit.IsLoaded := True;
-    frmMain.AddFileInTab(pLuaUnit);
-    frmProjectTree.BuildProjectTree;
-    frmMain.CheckButtons;
-    Result := pLuaUnit;
-  end
-  else
-  begin
-    pLuaUnit := frmMain.FindUnitInTabs(sFileName);
-    frmMain.GetAssociatedTab(pLuaUnit).Selected := True;
-    Result := pLuaUnit;
-  end;
-
-  if iLine <> -1 then
-    pLuaUnit.synUnit.GotoLineAndCenter(iLine);
 end;
 
 // print the call stack
@@ -3737,11 +4479,187 @@ end;
 // print watches list
 procedure TfrmMain.PrintWatch(L: Plua_State);
 var
-  I: Integer;
+  x, iLen: Integer;
+  sValue: String;
+  lstTable: TStringList;
+  pNode, pChildNode, pNodeToDel: PVirtualNode;
+  pData, pChildData, pNewData: PWatchNodeData;
+
+  // Subroutine wich parse a string to retreive fields and tables
+  procedure LuaStrTableToStringList(sTable: String; pStrLst: TStrings);
+  var
+    sTemp, sName, sValue: String;
+    Token: Char;
+    iPos, iLevel: Integer;
+  begin
+    if sTable[1] = '{' then
+    begin
+      pStrLst.Clear;
+      sTemp := Copy(sTable, 3, Length(sTable) - 2);
+      iLen := Length(sTemp);
+      iPos := 1;
+
+      while sTemp[iPos] <> '}' do
+      begin
+        sName := '';
+        sValue := '';
+        
+        // Retreive name part
+        while sTemp[iPos] <> '=' do
+        begin
+          sName := sName + sTemp[iPos];
+          Inc(iPos);
+        end;
+
+        // Retreive the value part
+        Inc(iPos);
+        Token := sTemp[iPos];
+
+        // Take different actions according to the token
+        case Token of
+          '"':
+          begin
+            sValue := sTemp[iPos];
+            Inc(iPos);
+
+            while sTemp[iPos] <> '"' do
+            begin
+              sValue := sValue + sTemp[iPos];
+              Inc(iPos);
+            end;
+
+            sValue := sValue + sTemp[iPos];
+            Inc(iPos);
+          end;
+          '{':
+          begin
+            iLevel := 1;
+            sValue := sTemp[iPos];
+            Inc(iPos);
+
+            repeat
+              sValue := sValue + sTemp[iPos];
+
+              if sTemp[iPos] = '{' then
+                Inc(iLevel);
+
+              if sTemp[iPos] = '}' then
+                Dec(iLevel);
+
+              Inc(iPos);
+            until iLevel = 0;
+          end;
+          else
+          begin
+            repeat
+              sValue := sValue + sTemp[iPos];
+              Inc(iPos);
+            until sTemp[iPos] = ' ';
+          end;
+        end;
+
+        pStrLst.Values[sName] := sValue;
+        Inc(iPos);
+      end;
+    end;
+  end;
 begin
-  for I := 1 to frmWatch.lvwWatch.RowCount - 1 do
-    if frmWatch.lvwWatch.Cells[0, I] <> '' then
-      frmWatch.lvwWatch.Cells[1, I] := GetValue(frmWatch.lvwWatch.Cells[0, I]);
+  // Initialize stuff
+  lstTable := TStringList.Create;
+  pNodeToDel := nil;
+
+  // Get first node to start
+  pNode := frmWatch.vstWatch.GetFirst;
+
+  // Go through all nodes
+  while pNode <> nil do
+  begin
+    // retreive current text
+    pData := frmWatch.vstWatch.GetNodeData(pNode);
+    sValue := '';
+
+    // A variable name must be assigned in order to make an association
+    if pData.Name <> '' then
+    begin
+      // Attempt to make the association
+      if pNode.Parent = frmWatch.vstWatch.RootNode then
+      begin
+        if lstLocals.Values[pData.Value] <> '' then
+          sValue := lstLocals.Values[pData.Value];
+
+        if ((sValue = '') and (lstGlobals.Values[pData.Name] <> '')) then
+          sValue := lstGlobals.Values[pData.Name];
+
+        if sValue = '' then
+          sValue := 'nil';
+      end
+      else
+        sValue := pData.Value;
+
+      // Parse table string if it is a table and initalize any required child
+      if sValue[1] = '{' then
+      begin
+        LuaStrTableToStringList(sValue, lstTable);
+        pData.Value := sValue;
+
+        // Get first child
+        pChildNode := frmWatch.vstWatch.GetFirstChild(pNode);
+
+        while pChildNode <> nil do
+        begin
+          // Get the current data of the current child
+          pChildData := frmWatch.vstWatch.GetNodeData(pChildNode);
+
+          if lstTable.Values[pChildData.Name] <> '' then
+          begin
+            pChildData.Value := lstTable.Values[pChildData.Name];
+            lstTable.Values[pChildData.Name] := '';
+            pNodeToDel := nil;
+          end
+          else
+            pNodeToDel := pChildNode;
+
+          // Get next sibling child
+          pChildNode := frmWatch.vstWatch.GetNextSibling(pChildNode);
+
+          // Delete the node if required
+          if Assigned(pNodeToDel) then
+          begin
+            frmWatch.vstWatch.DeleteNode(pNodeToDel);
+            pNodeToDel := nil;
+          end;
+        end;
+
+        // Assign child nodes
+        for x := 0 to lstTable.Count - 1 do
+        begin
+          if lstTable.Values[lstTable.Names[x]] <> '' then
+          begin
+            pNewData := frmWatch.vstWatch.GetNodeData(frmWatch.vstWatch.AddChild(pNode));
+            pNewData.Name := lstTable.Names[x];
+            pNewData.Value := lstTable.Values[pNewData.Name];
+          end;
+        end;
+      end
+      else
+        pData.Value := sValue;
+    end
+    else
+      pNodeToDel := pNode;
+
+    pNode := frmWatch.vstWatch.GetNext(pNode);
+
+    // Delete the node if required
+    if Assigned(pNodeToDel) then
+    begin
+      frmWatch.vstWatch.DeleteNode(pNodeToDel);
+      pNodeToDel := nil;
+    end;
+  end;
+
+  // Free stuff and call virtual treeview to repaint
+  lstTable.Free;
+  frmWatch.vstWatch.Refresh;
 end;
 
 // check if current debug line is a break one
@@ -3830,31 +4748,6 @@ begin
   end;
 end;
 
-// add selected data to watch list
-procedure TfrmMain.actAddWatchExecute(Sender: TObject);
-var
-  sTemp: string;
-  I: Integer;
-begin
-  if Assigned(pCurrentSynEdit) then
-  begin
-    sTemp := pCurrentSynEdit.SelText;
-
-    with (frmWatch.lvwWatch) do
-    begin
-      I := 0;
-      while (Cells[0, I] <> '') do
-      begin
-        Inc(I);
-        if (I = RowCount) then
-          RowCount := RowCount + 1;
-      end;
-      Cells[0, I] := sTemp;
-      PrintWatch(LuaState);
-    end;
-  end;
-end;
-
 procedure TfrmMain.LuaHelp1Click(Sender: TObject);
 begin
   if FileExists(ExtractFilePath(Application.ExeName)+'Help\refman-5.0.pdf') then
@@ -3906,10 +4799,36 @@ begin
   end;
 end;
 
-procedure TfrmMain.actAddBreakpointExecute(Sender: TObject);
+function TfrmMain.DoAddWatchExecute(): Boolean;
+var
+  sTemp: string;
+  pData: PWatchNodeData;
+  pNode: PVirtualNode;
+begin
+  Result := False;
+
+  if Assigned(jvUnitBar.SelectedTab.Data) then
+  begin
+    Result := True;
+    sTemp := TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelText;
+    pNode := frmWatch.vstWatch.AddChild(frmWatch.vstWatch.RootNode);
+    pData := frmWatch.vstWatch.GetNodeData(pNode);
+    pData.Name := sTemp;
+    frmMain.PrintWatch(frmMain.LuaState);
+  end;
+end;
+
+// add selected data to watch list
+procedure TfrmMain.actAddWatchExecute(Sender: TObject);
+begin
+  DoAddWatchExecute;
+end;
+
+function TfrmMain.DoToggleBreakpointExecute(): Boolean;
 var
   iCurrentLine: Integer;
 begin
+  Result := True;
   iCurrentLine := TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.CaretY;
 
   if not TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).pDebugInfos.IsBreakPointLine(iCurrentLine) then
@@ -3919,6 +4838,11 @@ begin
 
   TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
   frmBreakpoints.RefreshBreakpointList;
+end;
+
+procedure TfrmMain.actToggleBreakpointExecute(Sender: TObject);
+begin
+  DoToggleBreakpointExecute;
 end;
 
 procedure TfrmMain.stbMainDrawPanel(StatusBar: TStatusBar; Panel: TStatusPanel; const Rect: TRect);
@@ -4166,24 +5090,51 @@ begin
   // If action was not canceled
   if CanClose then
   begin
+    // Writes editor settings to make sure all settings are saved
+    // Note: Some settings may be changed by the user without going thtrough the
+    // Editor Settings window
+    frmEditorSettings.LoadEditorSettings;
+    frmEditorSettings.WriteEditorSettings;
+
     jvchnNotifier.Active := False;  // "Turn off" the changes notifier
     SaveDockTreeToFile(ExtractFilePath(Application.ExeName) + 'LuaEdit.dck');  // saves the dockable forms positions
   end;
 {$ifdef RTASSERT} RTAssert(0, true, ' TfrmMain.FormCloseQuery Done', '', 0); {$endif}
 end;
 
+function TfrmMain.DoStepOverExecute(): Boolean;
+begin
+  Result := True;
+
+  if (Pause) then
+  begin
+    Result := False;
+    Exit;
+  end;
+
+  ExecuteCurrent(False, CurrentICI, '', -1);
+end;
+
 procedure TfrmMain.actStepOverExecute(Sender: TObject);
 begin
+  DoStepOverExecute;
+end;
+
+function TfrmMain.DoStepIntoExecute(): Boolean;
+begin
+  Result := True;
+
   if (Pause) then
+  begin
+    Result := False;
     Exit;
-  ExecuteCurrent(False, CurrentICI, '', -1);
+  end;
+  ExecuteCurrent(True, 0, '', -1);
 end;
 
 procedure TfrmMain.actStepIntoExecute(Sender: TObject);
 begin
-  if (Pause) then
-    Exit;
-  ExecuteCurrent(True, 0, '', -1);
+  DoStepIntoExecute;
 end;
 
 procedure TfrmMain.synEditGutterClick(Sender: TObject; Button: TMouseButton; X, Y, Line: Integer; Mark: TSynEditMark);
@@ -4200,14 +5151,25 @@ begin
   TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Refresh;
 end;
 
-procedure TfrmMain.actPauseExecute(Sender: TObject);
+function TfrmMain.DoPauseExecute(): Boolean;
 begin
+  Result := False;
+
   if (ReStart) then
+  begin
+    Result := True;
     Pause := True;
+  end;
 end;
 
-procedure TfrmMain.actStopExecute(Sender: TObject);
+procedure TfrmMain.actPauseExecute(Sender: TObject);
 begin
+  DoPauseExecute;
+end;
+
+function TfrmMain.DoStopExecute(): Boolean;
+begin
+  Result := True;
   Running := False;
   if Running then
   begin
@@ -4216,34 +5178,52 @@ begin
   end;
 end;
 
+procedure TfrmMain.actStopExecute(Sender: TObject);
+begin
+  DoStopExecute;
+end;
+
+function TfrmMain.DoRunToCursorExecute(): Boolean;
+begin
+  Result := Assigned(jvUnitBar.SelectedTab);
+
+  if Result then
+    ExecuteCurrent(False, 0, '', TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.CaretY);
+end;
+
 procedure TfrmMain.actRunToCursorExecute(Sender: TObject);
 begin
-  if Assigned(jvUnitBar.SelectedTab) then
-    ExecuteCurrent(False, 0, '', TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.CaretY);
+  DoRunToCursorExecute;
 end;
 
 procedure TfrmMain.synEditMouseCursor(Sender: TObject; const aLineCharPos: TBufferCoord; var aCursor: TCursor);
 var
   sWord: String;
 begin
-  if ((IsRunning = False) and (TLuaUnit(jvUnitBar.SelectedTab.Data).pDebugInfos.iCurrentLineDebug <> -1)) then
+  if Assigned(jvUnitBar.SelectedTab) then
   begin
-    sWord := TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.GetWordAtRowCol(aLineCharPos);
-    if sWord <> '' then
+    if Assigned(jvUnitBar.SelectedTab.Data) then
     begin
-      if lstLocals.Values[sWord] <> '' then
+      if ((IsRunning = False) and (TLuaUnit(jvUnitBar.SelectedTab.Data).pDebugInfos.iCurrentLineDebug <> -1)) then
       begin
-        if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Hint <> sWord + ' = ' + lstLocals.Values[sWord] then
+        sWord := TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.GetWordAtRowCol(aLineCharPos);
+        if sWord <> '' then
         begin
-          Application.CancelHint;
-        end;
+          if lstLocals.Values[sWord] <> '' then
+          begin
+            if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Hint <> sWord + ' = ' + lstLocals.Values[sWord] then
+            begin
+              Application.CancelHint;
+            end;
 
-        TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Hint := sWord + ' = ' + lstLocals.Values[sWord];
+            TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Hint := sWord + ' = ' + lstLocals.Values[sWord];
+          end;
+        end
+        else
+        begin
+          TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Hint := '';
+        end;
       end;
-    end
-    else
-    begin
-      TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Hint := '';
     end;
   end;
 end;
@@ -4259,8 +5239,6 @@ begin
     if pLuaUnit.synUnit.Modified then
     begin
       pLuaUnit.HasChanged := True;
-      if Pos('*', jvUnitBar.SelectedTab.Caption) <> Length(jvUnitBar.SelectedTab.Caption) then
-        jvUnitBar.SelectedTab.Caption := jvUnitBar.SelectedTab.Caption + '*';
       jvUnitBar.SelectedTab.Modified := True;
       stbMain.Panels[3].Text := 'Modified';
       NotifyModified := True;
@@ -4270,8 +5248,6 @@ begin
       pLuaUnit.HasChanged := False;
       stbMain.Panels[3].Text := '';
       NotifyModified := False;
-      if Pos('*', jvUnitBar.SelectedTab.Caption) = Length(jvUnitBar.SelectedTab.Caption) then
-        jvUnitBar.SelectedTab.Caption := Copy(jvUnitBar.SelectedTab.Caption, 1, Length(jvUnitBar.SelectedTab.Caption) - 1);
       jvUnitBar.SelectedTab.Modified := False;
     end; 
 
@@ -4356,64 +5332,6 @@ begin
   end;
 end;
 
-procedure TfrmMain.UpdateWatch;
-var
-  x, y: Integer;
-  WasShown: Boolean;
-  tmpStr: String;
-begin
-  with frmWatch do
-  begin
-    for x := 1 to lvwWatch.RowCount - 1 do
-    begin
-      WasShown := False;
-      if lvwWatch.Rows[x].Strings[0] <> '' then
-      begin
-        for y := 0 to lstLocals.Count - 1 do
-        begin
-          if lstLocals.Values[lvwWatch.Rows[x].Strings[0]] <> '' then
-          begin
-            WasShown := True;
-            lvwWatch.Rows[x].Strings[1] := lstLocals.Values[lvwWatch.Rows[x].Strings[0]];
-          end;
-        end;
-
-        for y := 0 to lstGlobals.Count - 1 do
-        begin
-          if lstGlobals.Values[lvwWatch.Rows[x].Strings[0]] <> '' then
-          begin
-            WasShown := True;
-            lvwWatch.Rows[x].Strings[1] := lstGlobals.Values[lvwWatch.Rows[x].Strings[0]];
-          end
-          else
-          begin
-            tmpStr := lvwWatch.Rows[x].Strings[0];
-
-            while Pos('.', tmpStr) <> 0 do
-            begin
-              tmpStr := Copy(tmpStr, Pos('.', tmpStr) + 1, Length(tmpStr) - Pos('.', tmpStr));
-            end;
-
-            if tmpStr <> '' then
-            begin
-              if lstGlobals.Values[tmpStr] <> '' then
-              begin
-                WasShown := True;
-                lvwWatch.Rows[x].Strings[1] := lstGlobals.Values[tmpStr];
-              end;
-            end;
-          end;
-        end;
-      end;
-
-      if ((WasShown = False) and (lvwWatch.Rows[x].Strings[0] <> '')) then
-      begin
-        lvwWatch.Rows[x].Strings[1] := '[ERROR] Undeclared Identifier';
-      end;
-    end;
-  end;
-end;
-
 procedure TfrmMain.LuaGlobalsToStrings(L: PLua_State; Lines: TStrings; MaxTable: Integer = -1);
 begin
   lua_pushvalue(L, LUA_GLOBALSINDEX);
@@ -4421,18 +5339,15 @@ begin
   lua_pop(L, 1);
 end;
 
-procedure TfrmMain.UpdateFctList;
-begin
-  //Here should be algorithms for ctags...
-end;
-
-procedure TfrmMain.actAddToPrjExecute(Sender: TObject);
+function TfrmMain.DoAddToPrjExecute(): Boolean;
 var
   x, NewUnit: integer;
   pLuaUnit: TLuaUnit;
   FoundMatch: Boolean;
 begin
-  if frmAddToPrj.ShowModal = mrOk then
+  Result := (frmAddToPrj.ShowModal = mrOk);
+
+  if Result then
   begin
     if frmAddToPrj.chkExisting.Checked then
     begin
@@ -4478,11 +5393,18 @@ begin
   CheckButtons;
 end;
 
-procedure TfrmMain.actRemoveFromPrjExecute(Sender: TObject);
+procedure TfrmMain.actAddToPrjExecute(Sender: TObject);
+begin
+  DoAddToPrjExecute;
+end;
+
+function TfrmMain.DoRemoveFromPrjExecute(): Boolean;
 var
   pLuaUnit: TLuaUnit;
 begin
+  Result := False;
   frmRemoveFile.FillCombo(ActiveProject);
+  
   if frmRemoveFile.ShowModal = mrOk then
   begin
     pLuaUnit := TLuaUnit(frmRemoveFile.cboUnit.Items.Objects[frmRemoveFile.cboUnit.ItemIndex]);
@@ -4502,6 +5424,7 @@ begin
     begin
       GetAssociatedTab(pLuaUnit).Free;
       LuaOpenedUnits.Remove(pLuaUnit);
+      Result := True;
     end;
 
     ActiveProject.lstUnits.Remove(pLuaUnit);
@@ -4509,6 +5432,11 @@ begin
     ActiveProject.HasChanged := True;
     frmProjectTree.BuildProjectTree;
   end;
+end;
+
+procedure TfrmMain.actRemoveFromPrjExecute(Sender: TObject);
+begin
+  DoRemoveFromPrjExecute;
 end;
 
 procedure TfrmMain.Project1Click(Sender: TObject);
@@ -4956,9 +5884,14 @@ begin
   end;
 end;
 
+function TfrmMain.DoEditorSettingsExecute(): Boolean;
+begin
+  Result := (frmEditorSettings.ShowModal = mrOk);
+end;
+
 procedure TfrmMain.actEditorSettingsExecute(Sender: TObject);
 begin
-  frmEditorSettings.ShowModal;
+  DoEditorSettingsExecute;
 end;
 
 procedure TfrmMain.LoadEditorSettings;
@@ -4989,6 +5922,7 @@ begin
   SaveUnitsInc := pIniFile.ReadBool('General', 'SaveUnitsInc', False);
   SaveProjectsInc := pIniFile.ReadBool('General', 'SaveProjectsInc', False);
   ShowExSaveDlg := pIniFile.ReadBool('General', 'ShowExSaveDlg', True);
+  KeepSIFWindowOpened := pIniFile.ReadBool('General', 'KeepSIFWindowOpened', True);
 
   // Reading Environment settings
   LibrariesSearchPaths.CommaText := pIniFile.ReadString('Environement', 'LibrariesSearchPaths', ExtractFilePath(Application.ExeName)+'Libraries\Completion');
@@ -5068,7 +6002,7 @@ begin
   EditorColors.Add(TEditorColors.Create);
   TEditorColors(EditorColors.Items[9]).Background := pIniFile.ReadString('Valid Breakpoint', 'BackgroundColor', 'clMaroon');
   TEditorColors(EditorColors.Items[9]).Foreground := pIniFile.ReadString('Valid Breakpoint', 'ForegroundColor', 'clWhite');
-  
+
   pIniFile.Free;
 end;
 
@@ -5284,64 +6218,173 @@ begin
   ShellExecute(Self.Handle, 'open', PChar(ExtractFilePath(Application.ExeName) + '\Convert.exe'), nil, nil,  SW_SHOWNORMAL);
 end;
 
+function TfrmMain.DoBlockUnindentExecute(): Boolean;
+begin
+  Result := True;
+  TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.ExecuteCommand(ecBlockUnindent, #0, nil);
+end;
+
 procedure TfrmMain.actBlockUnindentExecute(Sender: TObject);
 begin
-  TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.ExecuteCommand(ecBlockUnindent, #0, nil);
+  DoBlockUnindentExecute;
+end;
+
+function TfrmMain.DoBlockIndentExecute(): Boolean;
+begin
+  Result := True;
+  TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.ExecuteCommand(ecBlockIndent, #0, nil);
 end;
 
 procedure TfrmMain.actBlockIndentExecute(Sender: TObject);
 begin
-  TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.ExecuteCommand(ecBlockIndent, #0, nil);
+  DoBlockIndentExecute;
 end;
 
-procedure TfrmMain.actBlockCommentExecute(Sender: TObject);
+function TfrmMain.DoBlockCommentExecute(): Boolean;
 var
   pLuaUnit: TLuaUnit;
   x: Integer;
 begin
+  Result := False;
   pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
 
   for x := pLuaUnit.synUnit.BlockBegin.Line to pLuaUnit.synUnit.BlockEnd.Line - 1 do
   begin
     if Copy(pLuaUnit.synUnit.Lines.Strings[x], 1, 2) <> '--' then
+    begin
+      Result := True;
       pLuaUnit.synUnit.Lines.Strings[x] := '--' + pLuaUnit.synUnit.Lines.Strings[x];
+    end;
   end;
 end;
 
-procedure TfrmMain.actBlockUncommentExecute(Sender: TObject);
+procedure TfrmMain.actBlockCommentExecute(Sender: TObject);
+begin
+  DoBlockCommentExecute;
+end;
+
+function TfrmMain.DoBlockUncommentExecute(): Boolean;
 var
   pLuaUnit: TLuaUnit;
   x: Integer;
 begin
+  Result := False;
   pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
 
   for x := pLuaUnit.synUnit.BlockBegin.Line - 1 to pLuaUnit.synUnit.BlockEnd.Line - 1 do
   begin
     if Copy(pLuaUnit.synUnit.Lines.Strings[x], 1, 2) = '--' then
+    begin
+      Result := True;
       pLuaUnit.synUnit.Lines.Strings[x] := Copy(pLuaUnit.synUnit.Lines.Strings[x], 3, Length(pLuaUnit.synUnit.Lines.Strings[x]) - 2);
+    end;
   end;
 end;
 
-procedure TfrmMain.actPrjSettingsExecute(Sender: TObject);
+procedure TfrmMain.actBlockUncommentExecute(Sender: TObject);
+begin
+  DoBlockUncommentExecute;
+end;
+
+function TfrmMain.DoUpperCaseExecute(): Boolean;
+var
+  pLuaUnit: TLuaUnit;
+  SelStart, SelLength: Integer;
+begin
+  Result := False;
+
+  if Assigned(jvUnitBar.SelectedTab) then
+  begin
+    pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
+
+    if pLuaUnit.synUnit.SelText <> '' then
+    begin
+      Result := True;
+      SelStart := pLuaUnit.synUnit.SelStart;
+      SelLength := pLuaUnit.synUnit.SelLength;
+      pLuaUnit.synUnit.SelText := UpperCase(pLuaUnit.synUnit.SelText);
+      pLuaUnit.synUnit.SelStart := SelStart;
+      pLuaUnit.synUnit.SelLength := SelLength;
+    end;
+  end;
+end;
+procedure TfrmMain.actUpperCaseExecute(Sender: TObject);
+begin
+  DoUpperCaseExecute;
+end;
+
+function TfrmMain.DoLowerCaseExecute(): Boolean;
+var
+  pLuaUnit: TLuaUnit;
+  SelStart, SelLength: Integer;
+begin
+  Result := False;
+
+  if Assigned(jvUnitBar.SelectedTab) then
+  begin
+    pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
+
+    if pLuaUnit.synUnit.SelText <> '' then
+    begin
+      Result := True;
+      SelStart := pLuaUnit.synUnit.SelStart;
+      SelLength := pLuaUnit.synUnit.SelLength;
+      pLuaUnit.synUnit.SelText := LowerCase(pLuaUnit.synUnit.SelText);
+      pLuaUnit.synUnit.SelStart := SelStart;
+      pLuaUnit.synUnit.SelLength := SelLength;
+    end;
+  end;
+end;
+
+procedure TfrmMain.actLowerCaseExecute(Sender: TObject);
+begin
+  DoLowerCaseExecute;
+end;
+
+function TfrmMain.DoPrjSettingsExecute(): Boolean;
 begin
   frmPrjOptions.GetLuaProjectOptions(ActiveProject);
-  if frmPrjOptions.ShowModal = mrOk then
+  Result := (frmPrjOptions.ShowModal = mrOk);
+  if Result then
   begin
     frmPrjOptions.SetLuaProjectOptions(ActiveProject);
     frmProjectTree.BuildProjectTree;
   end;
 end;
 
-procedure TfrmMain.actActiveSelPrjExecute(Sender: TObject);
+procedure TfrmMain.actPrjSettingsExecute(Sender: TObject);
 begin
-  if Assigned(frmProjectTree.trvProjectTree.Selected) then
+  DoPrjSettingsExecute;
+end;
+
+function TfrmMain.DoActiveSelPrjExecute(): Boolean;
+var
+  pNode: PVirtualNode;
+  pData: PProjectTreeData;
+begin
+  Result := False;
+  
+  // Retreive selected node if any
+  pNode := frmProjectTree.vstProjectTree.GetFirstSelected;
+
+  if Assigned(pNode) then
   begin
-    if frmProjectTree.trvProjectTree.Selected.ImageIndex = 0 then
+    // Retreive data from the selected node
+    pData := frmProjectTree.vstProjectTree.GetNodeData(pNode);
+
+    // Assign selected to the currently active project
+    if Assigned(pData.pLuaPrj) then
     begin
-      ActiveProject := TLuaProject(frmProjectTree.trvProjectTree.Selected.Data);
+      Result := True;
+      ActiveProject := pData.pLuaPrj;
       frmProjectTree.BuildProjectTree;
     end;
   end;
+end;
+
+procedure TfrmMain.actActiveSelPrjExecute(Sender: TObject);
+begin
+  DoActiveSelPrjExecute;
 end;
 
 function TfrmMain.ExecuteInitializer(sInitializer: String; L: PLua_State): Integer;
@@ -5387,28 +6430,36 @@ end;
 
 function TfrmMain.FileIsInTree(sFileName: String): Boolean;
 var
-  x: Integer;
+  pNode: PVirtualNode;
+  pData: PProjectTreeData;
 begin
+  // Initialize stuff before going
   Result := False;
+  pNode := frmProjectTree.vstProjectTree.GetFirst;
 
-  for x := 0 to frmProjectTree.trvProjectTree.Items.Count - 1 do
+  while pNode <> nil do
   begin
-    if ((frmProjectTree.trvProjectTree.Items[x].ImageIndex <> 0) or (frmProjectTree.trvProjectTree.Items[x].SelectedIndex <> 0)) then
+    // Retreive data from current node
+    pData := frmProjectTree.vstProjectTree.GetNodeData(pNode);
+    
+    if Assigned(pData.pLuaUnit) then
     begin
-      if TLuaUnit(frmProjectTree.trvProjectTree.Items[x].Data).pPrjOwner.sPrjName = '[@@SingleUnits@@]' then
+      if pData.pLuaUnit.pPrjOwner.sPrjName = '[@@SingleUnits@@]' then
       begin
-        if TLuaUnit(frmProjectTree.trvProjectTree.Items[x].Data).sUnitPath = sFileName then
+        if pData.pLuaUnit.sUnitPath = sFileName then
         begin
-          if LuaOpenedUnits.IndexOf(TLuaUnit(frmProjectTree.trvProjectTree.Items[x].Data)) <> -1 then
-            GetAssociatedTab(TLuaUnit(frmProjectTree.trvProjectTree.Items[x].Data)).Selected := True
+          if LuaOpenedUnits.IndexOf(pData.pLuaUnit) <> -1 then
+            jvUnitBar.SelectedTab := GetAssociatedTab(pData.pLuaUnit)
           else
-            AddFileInTab(TLuaUnit(frmProjectTree.trvProjectTree.Items[x].Data));
+            AddFileInTab(pData.pLuaUnit);
 
           Result := True;
           Break;
         end;
       end;
     end;
+
+    pNode := frmProjectTree.vstProjectTree.GetNext(pNode);
   end;
 end;
 
@@ -5422,7 +6473,7 @@ begin
   frmPrintSetup.ShowModal;
 end;
 
-procedure TfrmMain.actPrintExecute(Sender: TObject);
+function TfrmMain.DoPrintExecute(): Boolean;
 begin
   synEditPrint.SynEdit := TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit;
   synEditPrint.Title := TLuaUnit(jvUnitBar.SelectedTab.Data).sUnitPath;
@@ -5447,7 +6498,9 @@ begin
     pdlgPrint.Options := pdlgPrint.Options - [poSelection];
   end;
 
-  if pdlgPrint.Execute then
+  Result := pdlgPrint.Execute;
+
+  if Result then
   begin
     synEditPrint.Colors := PrintUseColor;
     synEditPrint.Highlight := PrintUseSyntax;
@@ -5470,6 +6523,11 @@ begin
       synEditPrint.Print;
     end;
   end;
+end;
+
+procedure TfrmMain.actPrintExecute(Sender: TObject);
+begin
+  DoPrintExecute;
 end;
 
 procedure TfrmMain.ctrlBarDockOver(Sender: TObject; Source: TDragDockObject; X, Y: Integer; State: TDragState; var Accept: Boolean);
@@ -5538,7 +6596,7 @@ begin
       Application.MessageBox('Invalid winsock version!', 'LuaEdit', MB_OK+MB_ICONERROR);
       EndThread(0);
     end;
-       
+
     try
       pLuaUnit := TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data);
       pSock := INVALID_SOCKET;
@@ -5999,7 +7057,6 @@ begin
         TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.GotoLineAndCenter(AR.currentline);
         TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).pDebugInfos.iCurrentLineDebug := AR.currentline;
         TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
-        frmMain.UpdateWatch;
         frmStack.lstCallStack.Items.Assign(Main.lstStack);
         lstLuaStack.Clear;
         lstLocals.Clear;
@@ -6072,7 +7129,6 @@ begin
         end;
 
         frmLuaStack.lstLuaStack.Items.Assign(Main.lstLuaStack);
-        frmMain.UpdateWatch;
 
         if PausePressed then
         begin
@@ -6176,7 +7232,8 @@ procedure TfrmMain.OpenFileatCursor1Click(Sender: TObject);
 var
   pLuaUnit: TLuaUnit;
   WordAtCursor: String;
-  x: Integer;
+  pNode: PVirtualNode;
+  pData: PProjectTreeData;
 begin
   if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelAvail then
     WordAtCursor := ExpandUNCFileName(TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelText);
@@ -6195,11 +7252,15 @@ begin
       end
       else
       begin
-        // Finding unit in the tree
-        for x := 0 to frmProjectTree.trvProjectTree.Items.Count - 1 do
-        begin
-          pLuaUnit := TLuaUnit(frmProjectTree.trvProjectTree.Items[x].Data);
+        // Get first node from the tree
+        pNode := frmProjectTree.vstProjectTree.GetFirst;
 
+        // Finding unit in the tree
+        while pNode <> nil do
+        begin
+          pData := frmProjectTree.vstProjectTree.GetNodeData(pNode);
+          pLuaUnit := pData.pLuaUnit;
+                                    
           // Check if unit is found
           if pLuaUnit.sUnitPath = WordAtCursor then
           begin
@@ -6210,7 +7271,7 @@ begin
             end
             else
             begin
-              frmMain.GetAssociatedTab(pLuaUnit).Selected := True;
+              frmMain.jvUnitBar.SelectedTab := frmMain.GetAssociatedTab(pLuaUnit);
 
               if pLuaUnit.HasChanged then
                 frmMain.stbMain.Panels[3].Text := 'Modified'
@@ -6222,6 +7283,8 @@ begin
             
             Break;
           end;
+
+          pNode := frmProjectTree.vstProjectTree.GetNext(pNode);
         end;
       end;
 
@@ -6277,21 +7340,15 @@ begin
   end;
 end;
 
-procedure TfrmMain.jvUnitBarTabSelected(Sender: TObject; Item: TJvTabBarItem);
+procedure TfrmMain.jvTabTabBarChange(Sender: TObject);
 var
   pLuaUnit: TLuaUnit;
 begin
-  if Assigned(Item) then
+  if Assigned(jvUnitBar.SelectedTab) then
   begin
-    if Assigned(Item.Data) then
+    if Assigned(jvUnitBar.SelectedTab.Data) then
     begin
-      pLuaUnit := TLuaUnit(Item.Data);
-
-      if Assigned(pCurrentSynEdit) then
-        pCurrentSynEdit.Visible := False;
-        
-      pCurrentSynEdit := pLuaUnit.synUnit;
-      pLuaUnit.synUnit.Visible := True;
+      pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
 
       if pLuaUnit.HasChanged then
         stbMain.Panels[3].Text := 'Modified'
@@ -6310,46 +7367,14 @@ begin
   end;
 end;
 
-procedure TfrmMain.jvUnitBarTabClosing(Sender: TObject; Item: TJvTabBarItem; var AllowClose: Boolean);
-var
-  x: Integer;
-begin
-  if Assigned(Item) then
-  begin
-    if Assigned(Item.Data) then
-    begin
-      if jvUnitBar.ClosingTab <> jvUnitBar.SelectedTab then
-      begin
-        ClosingUnit;
-
-        // Initialize stuff...
-        CheckButtons;
-        frmProjectTree.BuildProjectTree;
-        frmBreakpoints.RefreshBreakpointList;
-
-        if Assigned(jvUnitBar.SelectedTab) then
-        begin
-          if jvUnitBar.Tabs.Count = 1 then
-          begin
-            // Free previously created TFctInfo objects...
-            for x := 0 to frmFunctionList.lvwFunctions.Items.Count - 1 do
-              TFctInfo(frmFunctionList.lvwFunctions.Items[x].Data).Free;
-
-            frmFunctionList.lvwFunctions.Clear;
-          end;
-        end;
-      end;
-    end;
-  end;
-end;
-
-// check the syntax of the currently opened unit
-procedure TfrmMain.actCheckSyntaxExecute(Sender: TObject);
+function TfrmMain.DoCheckSyntaxExecute(): Boolean;
 var
   L: Plua_State;
   pLuaUnit: TLuaUnit;
   FileName: String;
 begin
+  Result := True;
+  
   if Assigned(jvUnitBar.SelectedTab) then
   begin
     if Assigned(jvUnitBar.SelectedTab.Data) then
@@ -6379,13 +7404,14 @@ begin
             if (FileExists(FileName) and (E.Line > 0)) then
             begin
               pLuaUnit.pDebugInfos.iLineError := E.Line;
-              frmMain.GetAssociatedTab(pLuaUnit).Selected := True;
+              frmMain.jvUnitBar.SelectedTab := frmMain.GetAssociatedTab(pLuaUnit);
               pLuaUnit.synUnit.GotoLineAndCenter(E.Line);
             end;
           end;
 
           if (E.Msg <> 'STOP') then
           begin
+            Result := False;
             frmLuaEditMessages.memMessages.Lines.Add('[ERROR]: '+E.Msg+' ('+IntToStr(E.Line)+') - '+DateTimeToStr(Now));
             raise;
           end;
@@ -6395,11 +7421,17 @@ begin
   end;
 end;
 
+// check the syntax of the currently opened unit
+procedure TfrmMain.actCheckSyntaxExecute(Sender: TObject);
+begin
+  DoCheckSyntaxExecute;
+end;
+
 // Return the value of a given local variable
 function TfrmMain.GetValue(Name: string): string;
 begin
   Result := '[ERROR] Undeclared Identifier';
-       
+
   if lstLocals.Values[Name] <> ''  then
     Result := lstLocals.Values[Name]
   else if lstGlobals.Values[Name] <> '' then
@@ -6489,6 +7521,25 @@ begin
   // Rebuild the project tree and initialize stuff
   frmProjectTree.BuildProjectTree;
   frmMain.CheckButtons;
+end;
+
+procedure TfrmMain.jvUnitBarTabClosed(Sender: TObject; Item: TJvTabBarItem);
+begin
+  if ClosingUnit then
+    Item.Free;
+end;
+
+procedure TfrmMain.jvUnitBarTabSelecting(Sender: TObject; Item: TJvTabBarItem; var AllowSelect: Boolean);
+begin
+  if Assigned(Item) then
+  begin
+    if Assigned(Item.Data) then
+    begin
+      frmFunctionList.RefreshList(TLuaUnit(Item.Data).sUnitPath);
+      TLuaUnit(Item.Data).synUnit.Visible := True;
+      synEditClick(TLuaUnit(Item.Data).synUnit);
+    end;
+  end;
 end;
 
 end.
