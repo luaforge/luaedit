@@ -8,6 +8,16 @@ uses
   StdCtrls, SHDocVW, ActnList, ExtCtrls, Registry, DateUtils, JvExControls,
   JvAnimatedImage, JvGIFCtrl, OleCtrls, ActiveX, JvOutlookBar;
 
+const
+  // Mouse click basic events
+  WM_XBUTTONDOWN  = $020B;
+  WM_XBUTTONUP    = $020C;
+  WM_XBUTTONDBLCLK= $020D;
+
+  // Extended mouse buttons
+  MOUSE_XBUTTONPREV  = $10000;
+  MOUSE_XBUTTONNEXT  = $20000;
+
 type
   TURLDateTime = class(TObject)
   public
@@ -157,7 +167,8 @@ end;
 procedure TfrmInternalBrowser.MsgHandler(var Msg: TMsg; var Handled: Boolean);
 const
   StdKeys = [VK_BACK, VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT];
-var IOIPAO: IOleInPlaceActiveObject;
+var
+  IOIPAO: IOleInPlaceActiveObject;
   Dispatch: IDispatch;
 begin
   if InternalBrowser = nil then
@@ -179,6 +190,15 @@ begin
     end;
     if FOleInPlaceActiveObject <> nil then
     begin
+      // Next/Previous mouse buttons handling
+      if Msg.message = WM_XBUTTONUP then
+      begin
+        if Msg.wParam = MOUSE_XBUTTONPREV then
+          actBackTo.Execute
+        else if Msg.wParam = MOUSE_XBUTTONNEXT then
+          actFowardTo.Execute;
+      end;
+
       if ((Msg.message = WM_KEYDOWN) or (Msg.message = WM_KEYUP)) and
         (Msg.wParam in StdKeys) then
         //nothing  -  do not pass on Backspace, Left, Right, Up, Down arrows

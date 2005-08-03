@@ -23,7 +23,7 @@ object frmLuaEditMessages: TfrmLuaEditMessages
     Left = 0
     Top = 0
     Width = 460
-    Height = 169
+    Height = 176
     Align = alClient
     Font.Charset = ANSI_CHARSET
     Font.Color = clWindowText
@@ -34,7 +34,6 @@ object frmLuaEditMessages: TfrmLuaEditMessages
     ReadOnly = True
     ScrollBars = ssBoth
     TabOrder = 0
-    OnChange = memMessagesChange
   end
   object JvDockClient1: TJvDockClient
     LRDockWidth = 100

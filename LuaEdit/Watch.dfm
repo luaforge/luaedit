@@ -8,6 +8,9 @@ object frmWatch: TfrmWatch
   Color = clBtnFace
   Constraints.MinHeight = 200
   Constraints.MinWidth = 300
+  DockSite = True
+  DragKind = dkDock
+  DragMode = dmAutomatic
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -34,7 +37,7 @@ object frmWatch: TfrmWatch
     Width = 292
     Height = 149
     Align = alClient
-    EditDelay = 200
+    EditDelay = 20
     Header.AutoSizeIndex = 1
     Header.Font.Charset = DEFAULT_CHARSET
     Header.Font.Color = clWindowText
@@ -49,6 +52,7 @@ object frmWatch: TfrmWatch
     TreeOptions.MiscOptions = [toEditable, toFullRepaintOnResize, toInitOnSave, toReportMode, toToggleOnDblClick, toWheelPanning]
     TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowHorzGridLines, toShowRoot, toShowTreeLines, toShowVertGridLines, toThemeAware, toUseBlendedImages]
     OnAfterItemPaint = vstWatchAfterItemPaint
+    OnChange = vstWatchChange
     OnCreateEditor = vstWatchCreateEditor
     OnDragOver = vstWatchDragOver
     OnDragDrop = vstWatchDragDrop
@@ -102,6 +106,15 @@ object frmWatch: TfrmWatch
       ImageIndex = 1
       OnClick = tbtnRefreshWatchClick
     end
+  end
+  object FEdit: TEdit
+    Left = 56
+    Top = 96
+    Width = 121
+    Height = 21
+    TabOrder = 3
+    Visible = False
+    OnKeyDown = FEditKeyDown
   end
   object ppmWatch: TPopupMenu
     Images = frmMain.imlActions

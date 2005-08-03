@@ -8,6 +8,10 @@ uses
   JvComponent, JvDockControlForm, JvDragDrop, VirtualTrees, ActiveX,
   ImgList, ToolWin;
 
+const
+  // Helper message to decouple node change handling from edit handling.
+  WM_STARTEDITING = WM_USER + 778;
+
 type
   PWatchNodeData = ^TWatchNodeData;
   TWatchNodeData = record
@@ -19,13 +23,11 @@ type
   // Our own edit link to implement several different node editors.
   TEditLinker = class(TInterfacedObject, IVTEditLink)
   private
-    FEdit: TWinControl;        // One of the property editor classes.
     FTree: TVirtualStringTree; // A back reference to the tree calling.
     FNode: PVirtualNode;       // The node being edited.
     FColumn: Integer;          // The column of the node being edited.
-  protected
-    procedure EditKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   public
+    constructor Create;
     destructor Destroy; override;
 
     function BeginEdit: Boolean; stdcall;
@@ -47,6 +49,7 @@ type
     ToolButton1: TToolButton;
     tbtnRefreshWatch: TToolButton;
     imlWatch: TImageList;
+    FEdit: TEdit;
     procedure vstWatchGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: WideString);
     procedure vstWatchEditing(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean);
     procedure vstWatchCreateEditor(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; out EditLink: IVTEditLink);
@@ -56,10 +59,13 @@ type
     procedure vstWatchDragOver(Sender: TBaseVirtualTree; Source: TObject; Shift: TShiftState; State: TDragState; Pt: TPoint; Mode: TDropMode; var Effect: Integer; var Accept: Boolean);
     procedure tbtnRefreshWatchClick(Sender: TObject);
     procedure tbtnAddWatchClick(Sender: TObject);
-    procedure vstWatchEdited(Sender: TBaseVirtualTree; Node: PVirtualNode;
-      Column: TColumnIndex);
+    procedure vstWatchEdited(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex);
+    procedure vstWatchChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
+    procedure FEditKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
   private
     { Private declarations }
+    procedure WMStartEditing(var Message: TMessage); message WM_STARTEDITING;
   public
     { Public declarations }
   end;
@@ -69,79 +75,48 @@ var
 
 implementation
 
-uses Main;
+uses Main, Types;
 
 {$R *.dfm}
 
 ////////////////////////////////////// TEditLinker implementation //////////////////////////////////////
 
+constructor TEditLinker.Create;
+begin
+  FTree := nil;
+  FNode := nil;
+  FColumn := 0;
+end;
+
 destructor TEditLinker.Destroy;
 
 begin
-  FreeAndNil(FEdit);
+  // nothing for now...
   inherited;
-end;
-
-procedure TEditLinker.EditKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-var
-  CanAdvance: Boolean;
-begin
-  CanAdvance := true;
-
-  case Key of
-    VK_ESCAPE:
-      if CanAdvance then
-      begin
-        FTree.CancelEditNode;
-        Key := 0;
-      end;
-    VK_RETURN:
-      if CanAdvance then
-      begin
-        FTree.EndEditNode;
-        Key := 0;
-      end;
-
-    VK_UP,
-    VK_DOWN:
-      begin
-        // Consider special cases before finishing edit mode.
-        CanAdvance := Shift = [];
-
-        if CanAdvance then
-        begin
-          // Forward the keypress to the tree. It will asynchronously change the focused node.
-          PostMessage(FTree.Handle, WM_KEYDOWN, Key, 0);
-          Key := 0;
-        end;
-      end;
-  end;
 end;
 
 function TEditLinker.BeginEdit: Boolean;
 begin
   Result := True;
-  FEdit.Show;
-  FEdit.SetFocus;
+  frmWatch.FEdit.Show;
+  frmWatch.FEdit.SetFocus;
 end;
 
 function TEditLinker.CancelEdit: Boolean;
 begin
   Result := True;
-  FEdit.Hide;
+  frmWatch.FEdit.Hide;
 end;
 
 function TEditLinker.EndEdit: Boolean;
 var
   Data: PWatchNodeData;
-  Buffer: array[0..1024] of Char;
   S: String;
 begin
   Result := True;
 
   Data := FTree.GetNodeData(FNode);
-  GetWindowText(FEdit.Handle, Buffer, 1024);
-  S := Buffer;
+  S := frmWatch.FEdit.Text;
 
   if S <> Data.Name then
   begin
@@ -149,7 +124,7 @@ begin
     FTree.InvalidateNode(FNode);
   end;
 
-  FEdit.Hide;
+  frmWatch.FEdit.Hide;
   FTree.SetFocus;
 end;
 
@@ -160,12 +135,12 @@ begin
   // Since we don't want to activate grid extensions in the tree (this would influence how the selection is drawn)
   // we have to set the edit's width explicitly to the width of the column.
   FTree.Header.Columns.GetColumnBounds(FColumn, Dummy, R.Right);
-  FEdit.BoundsRect := R;
+  frmWatch.FEdit.BoundsRect := R;
 end;
 
 function TEditLinker.GetBounds: TRect;
 begin
-  Result := FEdit.BoundsRect;
+  Result := frmWatch.FEdit.BoundsRect;
 end;
 
 function TEditLinker.PrepareEdit(Tree: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex): Boolean;
@@ -176,26 +151,22 @@ begin
   FTree := Tree as TVirtualStringTree;
   FNode := Node;
   FColumn := Column;
-
-  // determine what edit type actually is needed
-  FreeAndNil(FEdit);
+    
   Data := FTree.GetNodeData(Node);
-  FEdit := TEdit.Create(Tree);
-  with FEdit as TEdit do
+  with frmWatch.FEdit do
   begin
     Visible := False;
-    Parent := Tree;
+    Parent := FTree;
     AutoSize := False;
     MaxLength := 1000;
     Ctl3D := False;
     Text := Data.Name;
-    OnKeyDown := EditKeyDown;
   end;
 end;
 
 procedure TEditLinker.ProcessMessage(var Message: TMessage);
 begin
-  // Do nothing
+  frmWatch.FEdit.WindowProc(Message);
 end;
 
 ////////////////////////////////////// TfrmWatch implementation //////////////////////////////////////
@@ -306,8 +277,9 @@ var
   pData: PWatchNodeData;
   sVarName: String;
 begin
-  sVarName := InputBox('Add Watch', 'Enter the name of the variable to watch:', 'VarName');
-  if 'VarName' <> sVarName then
+  sVarName := 'VarName';
+
+  if InputQuery('Add Watch', 'Enter the name of the variable to watch:', sVarName) then
   begin
     vstWatch.RootNodeCount := vstWatch.RootNodeCount + 1;
     pNode := vstWatch.GetLast;
@@ -319,6 +291,71 @@ end;
 procedure TfrmWatch.vstWatchEdited(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex);
 begin
   frmMain.PrintWatch(frmMain.LuaState);
+end;
+
+procedure TfrmWatch.WMStartEditing(var Message: TMessage);
+// This message was posted by ourselves from the node change handler above to decouple that change event and our
+// intention to start editing a node. This is necessary to avoid interferences between nodes editors potentially created
+// for an old edit action and the new one we start here.
+var
+  Node: PVirtualNode;
+begin
+  Node := Pointer(Message.WParam);
+  // Note: the test whether a node can really be edited is done in the OnEditing event.
+  vstWatch.EditNode(Node, 1);
+end;
+
+procedure TfrmWatch.vstWatchChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
+begin
+  with Sender do
+  begin
+    // Start immediate editing as soon as another node gets focused.
+    if Assigned(Node) and (Node.Parent <> RootNode) then
+    begin
+      // We want to start editing the currently selected node. However it might well happen that this change event
+      // here is caused by the node editor if another node is currently being edited. It causes trouble
+      // to start a new edit operation if the last one is still in progress. So we post us a special message and
+      // in the message handler we then can start editing the new node. This works because the posted message
+      // is first executed *after* this event and the message, which triggered it is finished.
+      PostMessage(Self.Handle, WM_STARTEDITING, Integer(Node), 0);
+    end;
+  end;
+end;
+
+procedure TfrmWatch.FEditKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+var
+  CanAdvance: Boolean;
+begin
+  CanAdvance := True;
+
+  case Key of
+    VK_ESCAPE:
+      if CanAdvance then
+      begin
+        vstWatch.CancelEditNode;
+        Key := 0;
+      end;
+    VK_RETURN:
+      if CanAdvance then
+      begin
+        vstWatch.EndEditNode;
+        Key := 0;
+      end;
+
+    VK_UP,
+    VK_DOWN:
+      begin
+        // Consider special cases before finishing edit mode.
+        CanAdvance := Shift = [];
+
+        if CanAdvance then
+        begin
+          // Forward the keypress to the tree. It will asynchronously change the focused node.
+          PostMessage(vstWatch.Handle, WM_KEYDOWN, Key, 0);
+          Key := 0;
+        end;
+      end;
+  end;
 end;
 
 end.

@@ -39,6 +39,7 @@ object frmFindWindow1: TfrmFindWindow1
         AutoSize = True
         Caption = 'Snipset'
       end>
+    ColumnClick = False
     ReadOnly = True
     RowSelect = True
     TabOrder = 0
@@ -46,6 +47,7 @@ object frmFindWindow1: TfrmFindWindow1
     OnCustomDrawSubItem = lvwResultCustomDrawSubItem
     OnDblClick = lvwResultDblClick
     ColumnsOrder = '0=100,1=50,2=188'
+    SortOnClick = False
   end
   object JvDockClient1: TJvDockClient
     LRDockWidth = 100

@@ -127,7 +127,7 @@ end;
 procedure TfrmFunctionList.tbtnGotoDefClick(Sender: TObject);
 begin
   if Assigned(lvwFunctions.Selected) then
-    TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.GotoLineAndCenter(TFctInfo(lvwFunctions.Selected.Data).Line);
+    frmMain.PopUpUnitToScreen(TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).sUnitPath, TFctInfo(lvwFunctions.Selected.Data).Line, False, HIGHLIGHT_STACK)
 end;
 
 end.

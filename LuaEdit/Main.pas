@@ -14,7 +14,7 @@ uses
   JvChangeNotify, JvClipboardMonitor, JvMenus, JvExComCtrls, JvToolBar,
   JvInspector, XPStyleActnCtrls, ActnMan, ActnCtrls, CustomizeDlg,
   ActnMenus, ActnColorMaps, StdStyleActnCtrls, XPMenu, Clipbrd, JvLookOut,
-  JvExControls, FileCtrl, MiscClasses, VirtualTrees
+  JvExControls, FileCtrl, VirtualTrees
   {$ifdef RTASSERT}  , RTDebug  {$endif}
   , JvDragDrop, JvAppEvent, JvExStdCtrls, JvButton, JvCtrls, JvComCtrls;
 
@@ -84,6 +84,7 @@ type
 
   TDebugSupportPlugin = class(TSynEditPlugin)
   protected
+    procedure PaintDebugGlyphs(ACanvas: TCanvas; AClip: TRect; FirstLine, LastLine: integer);
     procedure AfterPaint(ACanvas: TCanvas; const AClip: TRect; FirstLine, LastLine: integer); override;
     procedure LinesInserted(FirstLine, Count: integer); override;
     procedure LinesDeleted(FirstLine, Count: integer); override;
@@ -541,8 +542,7 @@ type
     procedure actUpperCaseExecute(Sender: TObject);
     procedure actLowerCaseExecute(Sender: TObject);
     procedure actShowInternalBrowserExecute(Sender: TObject);
-    procedure jvUnitBarTabSelecting(Sender: TObject; Item: TJvTabBarItem;
-      var AllowSelect: Boolean);
+    procedure jvUnitBarTabSelecting(Sender: TObject; Item: TJvTabBarItem; var AllowSelect: Boolean);
     procedure jvUnitBarTabClosed(Sender: TObject; Item: TJvTabBarItem);
     procedure actPrjSettingsExecute(Sender: TObject);
     procedure actStopExecute(Sender: TObject);
@@ -604,7 +604,6 @@ type
     procedure btnXClipboardClick(Sender: TObject);
     function IsProjectOpened(sProjectPath: String): Boolean;
     procedure SynEditReplaceText(Sender: TObject; const ASearch, AReplace: String; Line, Column: Integer; var Action: TSynReplaceAction);
-    procedure PaintDebugGlyphs(ACanvas: TCanvas; AClip: TRect; FirstLine, LastLine: integer);
     procedure synEditSpecialLineColors(Sender: TObject; Line: Integer; var Special: Boolean; var FG, BG: TColor);
     procedure synEditGutterClick(Sender: TObject; Button: TMouseButton; X, Y, Line: Integer; Mark: TSynEditMark);
     procedure synEditMouseCursor(Sender: TObject; const aLineCharPos: TBufferCoord; var aCursor: TCursor);
@@ -612,6 +611,7 @@ type
     procedure synEditClick(Sender: TObject);
     procedure synEditDblClick(Sender: TObject);
     procedure synEditMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+    procedure synEditScroll(Sender: TObject; ScrollBar: TScrollBarKind);
     procedure synCompletionExecute(Kind: SynCompletionType; Sender: TObject; var CurrentInput: String; var x, y: Integer; var CanExecute: Boolean);
     function GetBaseCompletionProposal: TSynCompletionProposal;
     function GetBaseParamsProposal: TSynCompletionProposal;
@@ -752,7 +752,6 @@ var
   lstStack: TStringList;
   lstLuaStack: TStringList;
   IsCompiledComplete: Boolean;
-  LastMessage: String;
   IsRunning: Boolean;
   FirstLineStop: Boolean;
   StepOverPressed: Boolean;
@@ -784,7 +783,7 @@ function GetFileLastTimeModified(const sFileName: PChar): TDateTime; cdecl; exte
 function GetFileReadOnlyAttr(const sFileName: PChar): Boolean; cdecl; external 'LuaEditSys.dll';
 procedure ToggleFileReadOnlyAttr(const sFileName: PChar); cdecl; external 'LuaEditSys.dll';
 
-function FunctionHeaderBuilder(OwnerAppHandle: HWND; sLine: PChar): PChar; cdecl; external 'HdrBld.dll';
+//function FunctionHeaderBuilder(OwnerAppHandle: HWND; sLine: PChar): PChar; cdecl; external 'HdrBld.dll';
 
 implementation
 
@@ -955,7 +954,50 @@ end;
 ///////////////////////////////////////////////////////////////////
 procedure TDebugSupportPlugin.AfterPaint(ACanvas: TCanvas; const AClip: TRect; FirstLine, LastLine: integer);
 begin
-  frmMain.PaintDebugGlyphs(ACanvas, AClip, FirstLine, LastLine);
+  PaintDebugGlyphs(ACanvas, AClip, FirstLine, LastLine);
+end;
+
+procedure TDebugSupportPlugin.PaintDebugGlyphs(ACanvas: TCanvas; AClip: TRect; FirstLine, LastLine: integer);
+var
+  LH, X, Y: integer;
+  ImgIndex: integer;
+  pLuaUnit: TLuaUnit;
+begin
+  pLuaUnit := TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data);
+
+  FirstLine := pLuaUnit.synUnit.RowToLine(FirstLine);
+  LastLine := pLuaUnit.synUnit.RowToLine(LastLine);
+  X := 14;
+  LH := pLuaUnit.synUnit.LineHeight;
+  while FirstLine <= LastLine do
+  begin
+    ImgIndex := -1;
+    Y := (LH - frmMain.imlActions.Height) div 2 + LH * (pLuaUnit.synUnit.LineToRow(FirstLine) - pLuaUnit.synUnit.TopLine);
+
+    if pLuaUnit.pDebugInfos.IsBreakPointLine(FirstLine) then
+    begin
+      if pLuaUnit.pDebugInfos.GetBreakpointStatus(FirstLine) = BKPT_ENABLED then
+        ImgIndex := 27
+      else
+        ImgIndex := 28;
+    end;
+
+    if TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).pDebugInfos.iCurrentLineDebug = FirstLine then
+      ImgIndex := 29;
+
+    if ((pLuaUnit.pDebugInfos.IsBreakPointLine(FirstLine)) and (TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).pDebugInfos.iCurrentLineDebug = FirstLine)) then
+    begin
+      if pLuaUnit.pDebugInfos.GetBreakpointStatus(FirstLine) = BKPT_ENABLED then
+        ImgIndex := 30
+      else
+        ImgIndex := 43;
+    end;
+
+    if ImgIndex > 0 then
+      frmMain.imlActions.Draw(ACanvas, X, Y, ImgIndex);
+
+    Inc(FirstLine);
+  end;
 end;
 
 procedure TDebugSupportPlugin.LinesInserted(FirstLine, Count: integer);
@@ -1503,7 +1545,6 @@ begin
 
     // Reinitialize stuff...
     frmMain.RefreshOpenedUnits;
-    LastMessage := '';
     frmProjectTree.BuildProjectTree;
     frmMain.stbMain.Panels[5].Text := '';
     frmMain.stbMain.Refresh;
@@ -1594,7 +1635,6 @@ begin
 
     // Initialize stuff...
     frmMain.RefreshOpenedUnits;
-    LastMessage := '';
     frmProjectTree.BuildProjectTree;
     frmMain.stbMain.Panels[5].Text := '';
     frmMain.stbMain.Refresh;
@@ -1888,11 +1928,13 @@ var
   pJvTab: TJvTabBarItem;
 begin
   Screen.Cursor := crHourGlass;
-  
+
+  // Create the tab and associate the synedit control to its data property
   pJvTab := jvUnitBar.AddTab(pLuaUnit.sName);
   pJvTab.Data := pLuaUnit;
   pJvTab.Visible := False;
 
+  // Set some properties
   synEdit := TSynEdit.Create(pnlMain);
   synEdit.Parent := pnlMain;
   synEdit.Visible := True;
@@ -1902,7 +1944,9 @@ begin
   synEdit.ShowHint := True;
   synEdit.PopupMenu := ppmEditor;
 
+  // Set event handlers
   synEdit.OnChange := synEditChange;
+  synEdit.OnScroll := synEditScroll;
   synEdit.OnDblClick := synEditDblClick;
   synEdit.OnMouseMove := synEditMouseMove;
   synEdit.OnMouseCursor := synEditMouseCursor;
@@ -1912,12 +1956,15 @@ begin
   synEdit.OnSpecialLineColors := synEditSpecialLineColors;
   synEdit.OnGutterClick := synEditGutterClick;
 
+  // Initialize lua highlighter engine
   HR := TSynLuaSyn.Create(nil);
   synEdit.Highlighter := HR;
-  
+
+  // Load content in the synedit control if required
   if not pLuaUnit.IsNew then
     synEdit.Lines.LoadFromFile(pLuaUnit.sUnitPath);
 
+  // Initialize some stuff in the TLuaUnit class members
   pLuaUnit.pDebugPlugin := TDebugSupportPlugin.Create(synEdit);
   pLuaUnit.pDebugInfos.iCurrentLineDebug := -1;
   pLuaUnit.PrevLineNumber := synEdit.Lines.Count;
@@ -1929,12 +1976,12 @@ begin
   pLuaUnit.synCompletion.Editor := pLuaUnit.synUnit;
   LuaOpenedUnits.Add(pLuaUnit);
 
+  // Initialize visually the synedit control and other stuff
   synEditClick(synEdit);
   jvTabTabBarChange(jvUnitBar);
   jvUnitBar.SelectedTab := pJvTab;
   ApplyValuesToEditor(pLuaUnit.synUnit, EditorColors);
   pJvTab.Visible := True;
-
   pLuaUnit.GetBreakpoints();
   frmBreakpoints.RefreshBreakpointList;
 
@@ -1991,7 +2038,7 @@ begin
     if FindFirst(Dir+'\*.*', faAnyFile, srSearchRec) = 0 then
     begin
       bNeedPrjTreeRebuild := False;
-         
+
       repeat
         sFileName := Dir+'\'+srSearchRec.Name;
 
@@ -3688,6 +3735,9 @@ begin
       end
       else
       begin
+        // Initialize actions before executing
+        DoMainMenuViewExecute;
+        
         // Popup the corresponding find window if not already opened
         if srSearchInFilesOutput = 0 then
         begin
@@ -4155,6 +4205,7 @@ begin
 
         if (E.Msg <> 'STOP') then
         begin
+          stbMain.Panels[5].Text := '[ERROR]: '+E.Msg+' ('+IntToStr(E.Line)+') - '+DateTimeToStr(Now);
           frmLuaEditMessages.memMessages.Lines.Add('[ERROR]: '+E.Msg+' ('+IntToStr(E.Line)+') - '+DateTimeToStr(Now));
           frmLuaEditMessages.memMessages.Lines.Add('[HINT]:  End of Script - '+DateTimeToStr(Now));
           raise;
@@ -4408,7 +4459,7 @@ begin
       Result.synUnit.GotoLineAndCenter(iLine);
 
       // Highlight the specified line if required
-      if HighlightMode > 0 then
+      if HighlightMode >= 0 then
       begin
         case HighlightMode of
           HIGHLIGHT_STACK:      Result.pDebugInfos.iStackMarker := iLine;
@@ -4416,6 +4467,8 @@ begin
           HIGHLIGHT_BREAKLINE:  Result.pDebugInfos.iCurrentLineDebug := iLine;
         end;
       end;
+
+      Result.synUnit.Refresh;
     end;
   end;
 end;
@@ -4756,49 +4809,6 @@ begin
     Application.MessageBox(PChar('The file "'+ExtractFilePath(Application.ExeName)+'Help\refman-5.0.pdf" does not exists!'), 'LuaEdit', MB_OK+MB_ICONERROR);
 end;
 
-procedure TfrmMain.PaintDebugGlyphs(ACanvas: TCanvas; AClip: TRect; FirstLine, LastLine: integer);
-var
-  LH, X, Y: integer;
-  ImgIndex: integer;
-  pLuaUnit: TLuaUnit;
-begin
-  pLuaUnit := TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data);
-
-  FirstLine := pLuaUnit.synUnit.RowToLine(FirstLine);
-  LastLine := pLuaUnit.synUnit.RowToLine(LastLine);
-  X := 14;
-  LH := pLuaUnit.synUnit.LineHeight;
-  while FirstLine <= LastLine do
-  begin
-    ImgIndex := -1;
-    Y := (LH - frmMain.imlActions.Height) div 2 + LH * (pLuaUnit.synUnit.LineToRow(FirstLine) - pLuaUnit.synUnit.TopLine);
-
-    if pLuaUnit.pDebugInfos.IsBreakPointLine(FirstLine) then
-    begin
-      if pLuaUnit.pDebugInfos.GetBreakpointStatus(FirstLine) = BKPT_ENABLED then
-        ImgIndex := 27
-      else
-        ImgIndex := 28;
-    end;
-
-    if TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).pDebugInfos.iCurrentLineDebug = FirstLine then
-      ImgIndex := 29;
-
-    if ((pLuaUnit.pDebugInfos.IsBreakPointLine(FirstLine)) and (TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).pDebugInfos.iCurrentLineDebug = FirstLine)) then
-    begin
-      if pLuaUnit.pDebugInfos.GetBreakpointStatus(FirstLine) = BKPT_ENABLED then
-        ImgIndex := 30
-      else
-        ImgIndex := 43;
-    end;
-
-    if ImgIndex > 0 then
-      frmMain.imlActions.Draw(ACanvas, X, Y, ImgIndex);
-
-    Inc(FirstLine);
-  end;
-end;
-
 function TfrmMain.DoAddWatchExecute(): Boolean;
 var
   sTemp: string;
@@ -4849,15 +4859,21 @@ procedure TfrmMain.stbMainDrawPanel(StatusBar: TStatusBar; Panel: TStatusPanel; 
 var
   InflatedRect: TRect;
 begin
-  if not IsCompiledComplete then
+  if ((Panel.Text <> '') and (Panel.Index = 5)) then
   begin
+    // Special handling for error messages
     StatusBar.Canvas.Font.Color := clWhite;
     StatusBar.Canvas.Brush.Color := clNavy;
     StatusBar.Canvas.FillRect(Rect);
-    StatusBar.Canvas.TextRect(Rect, Rect.Left, rect.Top, '  '+LastMessage);
+    InflatedRect := Rect;
+    DrawText(StatusBar.Canvas.Handle, PChar('  '+Panel.Text), Length('  '+Panel.Text), InflatedRect, DT_VCENTER or DT_LEFT or DT_SINGLELINE or DT_END_ELLIPSIS);
+    InflateRect(InflatedRect, 1, 1);
+    StatusBar.Canvas.Brush.Color := clGrayText;
+    StatusBar.Canvas.FrameRect(Rect);
   end
   else
   begin
+    // Regualar handling
     StatusBar.Canvas.Font.Color := clBlack;
     StatusBar.Canvas.FillRect(Rect);
     StatusBar.Canvas.TextRect(Rect, Rect.Left, Rect.Top, '  '+Panel.Text);
@@ -4865,45 +4881,6 @@ begin
     InflateRect(InflatedRect, 1, 1);
     StatusBar.Canvas.Brush.Color := clGrayText;
     StatusBar.Canvas.FrameRect(Rect);
-  end;
-end;
-
-procedure TfrmMain.synEditSpecialLineColors(Sender: TObject; Line: Integer; var Special: Boolean; var FG, BG: TColor);
-var
-  pLuaUnit: TLuaUnit;
-begin
-  if Assigned(jvUnitBar.SelectedTab) then
-  begin
-    pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
-    Special := False;
-
-    if pLuaUnit.pDebugInfos.IsBreakPointLine(Line) then
-    begin
-      Special := True;
-      BG := StringToColor(TEditorColors(EditorColors.Items[9]).Background);
-      FG := StringToColor(TEditorColors(EditorColors.Items[9]).Foreground);
-    end;
-
-    if TLuaUnit(jvUnitBar.SelectedTab.Data).pDebugInfos.iCurrentLineDebug = Line then
-    begin
-      Special := True;
-      BG := StringToColor(TEditorColors(EditorColors.Items[3]).Background);
-      FG := StringToColor(TEditorColors(EditorColors.Items[3]).Foreground);
-    end;
-
-    if TLuaUnit(jvUnitBar.SelectedTab.Data).pDebugInfos.iLineError = Line then
-    begin
-      Special := True;
-      BG := StringToColor(TEditorColors(EditorColors.Items[2]).Background);
-      FG := StringToColor(TEditorColors(EditorColors.Items[2]).Foreground);
-    end;
-
-    if TLuaUnit(jvUnitBar.SelectedTab.Data).pDebugInfos.iStackMarker = Line then
-    begin
-      Special := True;
-      BG := clNavy;
-      FG := clWhite;
-    end;
   end;
 end;
 
@@ -5228,6 +5205,61 @@ begin
   end;
 end;
 
+procedure TfrmMain.synEditScroll(Sender: TObject; ScrollBar: TScrollBarKind);
+var
+  pLuaUnit: TLuaUnit;
+begin
+  if Assigned(jvUnitBar.SelectedTab.Data) then
+  begin
+    pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
+
+    // Reset line painting variables
+    pLuaUnit.pDebugInfos.iLineError := -1;
+    pLuaUnit.pDebugInfos.iStackMarker := -1;
+    stbMain.Panels[5].Text := '';
+    pLuaUnit.synUnit.Refresh;
+  end;
+end;
+
+procedure TfrmMain.synEditSpecialLineColors(Sender: TObject; Line: Integer; var Special: Boolean; var FG, BG: TColor);
+var
+  pLuaUnit: TLuaUnit;
+begin
+  if Assigned(jvUnitBar.SelectedTab) then
+  begin
+    pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
+    Special := False;
+
+    if pLuaUnit.pDebugInfos.IsBreakPointLine(Line) then
+    begin
+      Special := True;
+      BG := StringToColor(TEditorColors(EditorColors.Items[9]).Background);
+      FG := StringToColor(TEditorColors(EditorColors.Items[9]).Foreground);
+    end;
+
+    if TLuaUnit(jvUnitBar.SelectedTab.Data).pDebugInfos.iCurrentLineDebug = Line then
+    begin
+      Special := True;
+      BG := StringToColor(TEditorColors(EditorColors.Items[3]).Background);
+      FG := StringToColor(TEditorColors(EditorColors.Items[3]).Foreground);
+    end;
+
+    if TLuaUnit(jvUnitBar.SelectedTab.Data).pDebugInfos.iLineError = Line then
+    begin
+      Special := True;
+      BG := StringToColor(TEditorColors(EditorColors.Items[2]).Background);
+      FG := StringToColor(TEditorColors(EditorColors.Items[2]).Foreground);
+    end;
+
+    if TLuaUnit(jvUnitBar.SelectedTab.Data).pDebugInfos.iStackMarker = Line then
+    begin
+      Special := True;
+      BG := clNavy;
+      FG := clWhite;
+    end;
+  end;
+end;
+
 procedure TfrmMain.synEditChange(Sender: TObject);
 var
   pLuaUnit: TLuaUnit;
@@ -5255,8 +5287,11 @@ begin
       stbMain.Panels[4].Text := 'Read Only'
     else
       stbMain.Panels[4].Text := '';
-      
+
+    // Reset line painting variables and other stuff
     pLuaUnit.pDebugInfos.iLineError := -1;
+    pLuaUnit.pDebugInfos.iStackMarker := -1;
+    stbMain.Panels[5].Text := '';
     HasChangedWhileCompiled := True;
     pLuaUnit.LastEditedLine := pLuaUnit.synUnit.CaretY;
     pLuaUnit.PrevLineNumber := pLuaUnit.synUnit.Lines.Count;
@@ -7475,7 +7510,7 @@ begin
     if Assigned(jvUnitBar.SelectedTab.Data) then
     begin
       sLine := TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Lines[TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.CaretY - 1];
-      FunctionHeaderBuilder(Application.Handle, PChar(sLine));
+      //FunctionHeaderBuilder(Application.Handle, PChar(sLine));
     end;
   end;
 end;

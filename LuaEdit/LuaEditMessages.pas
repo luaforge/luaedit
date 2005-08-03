@@ -10,7 +10,6 @@ type
   TfrmLuaEditMessages = class(TForm)
     memMessages: TMemo;
     JvDockClient1: TJvDockClient;
-    procedure memMessagesChange(Sender: TObject);
   private
     { Private declarations }
   public
@@ -25,11 +24,5 @@ implementation
 uses Main;
 
 {$R *.dfm}
-
-procedure TfrmLuaEditMessages.memMessagesChange(Sender: TObject);
-begin
-  LastMessage := memMessages.Lines.Strings[memMessages.Lines.Count - 1];
-  frmMain.stbMain.Refresh;
-end;
 
 end.
