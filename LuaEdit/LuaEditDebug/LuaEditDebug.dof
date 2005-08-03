@@ -94,14 +94,14 @@ OutputDir=..\bin
 UnitOutputDir=
 PackageDLLOutputDir=
 PackageDCPOutputDir=
-SearchPath=C:\Prog\Delphi\Component\JEDI\jcl\packages\d7;C:\Prog\Delphi\Component\JEDI\jvcl\packages\d7;C:\Prog\Delphi\Component\SynEdit\Packages;C:\Prog\Delphi\LuaEdit\LuaCore;C:\Prog\Delphi\LuaEdit\RunTimeDebug
+SearchPath=C:\Prog\Delphi\Component\JEDI\jcl\packages\d7;C:\Prog\Delphi\Component\JEDI\jvcl\packages\d7;C:\Prog\Delphi\Component\SynEdit\Packages;C:\Prog\Delphi\LuaEdit\LuaCore;C:\Prog\Delphi\LuaEdit\RunTimeDebug;C:\Prog\Delphi\LuaEdit\Syntax
 Packages=vcl;rtl;vclx;indy;inet;xmlrtl;vclie;inetdbbde;inetdbxpress;dbrtl;dsnap;dsnapcon;vcldb;soaprtl;VclSmp;dbexpress;dbxcds;inetdb;bdertl;vcldbx;webdsnap;websnap;adortl;ibxpress;teeui;teedb;tee;dss;visualclx;visualdbclx;vclactnband;vclshlctrls;IntrawebDB_50_70;Intraweb_50_70;Rave50CLX;Rave50VCL;dclOfficeXP;ZMstr7R178
 Conditionals=DELPHI_7
 DebugSourceDirs=
 UsePackages=0
 [Parameters]
 RunParams=
-HostApplication=
+HostApplication=C:\Prog\Delphi\Tests\Maxm\Test\DB_Op.exe
 Launcher=
 UseLauncher=0
 DebugCWD=
@@ -141,11 +141,12 @@ Item0=DELPHI_7
 Count=1
 Item0=WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;
 [HistoryLists\hlSearchPath]
-Count=4
-Item0=C:\Prog\Delphi\Component\JEDI\jcl\packages\d7;C:\Prog\Delphi\Component\JEDI\jvcl\packages\d7;C:\Prog\Delphi\Component\SynEdit\Packages;C:\Prog\Delphi\LuaEdit\LuaCore;C:\Prog\Delphi\LuaEdit\RunTimeDebug
-Item1=C:\Prog\Delphi\Component\JEDI\jcl\packages\d7;C:\Prog\Delphi\Component\JEDI\jvcl\packages\d7;C:\Prog\Delphi\Component\SynEdit\Packages;C:\Prog\Delphi\LuaEdit\LuaCore
-Item2=C:\Prog\Delphi\Component\JEDI\jcl\packages\d7;C:\Prog\Delphi\Component\JEDI\jvcl\packages\d7;C:\Prog\Delphi\Component\SynEdit\Packages
-Item3=E:\Programming\Borland\Comuni;E:\Programming\Borland\Comuni\LUA;E:\Programming\Borland\Delphi\Packages\PropEditors;E:\Programming\Borland\Delphi\Packages\ActiveX;E:\Programming\Borland\Delphi\Packages\Altri;E:\Programming\Borland\Delphi\Packages\Compress;E:\Programming\Borland\Delphi\Packages\MaxMBeppeG;E:\Programming\Borland\Delphi\Packages\MaxMBeppeG\Printset;E:\Programming\Borland\Delphi\Packages\Database;E:\Programming\Borland\Delphi\Packages\Inspector;E:\Programming\Borland\Delphi\Packages\Internet;E:\Programming\Borland\Delphi\Packages\Multimedia;E:\Programming\Borland\Delphi\Packages\Special;E:\Programming\Borland\Delphi\Packages\ui;E:\Programming\Borland\Delphi\Packages\ImageLib;E:\Programming\Borland\Delphi7\Packages\Indy 9;E:\Programming\Borland\Delphi7\Packages\DIB;E:\Programming\Borland\Delphi7\Packages\fpiette\ics\Delphi\Vc32;E:\Programming\Borland\Delphi7\Packages\Graphics;E:\Programming\Borland\Delphi7\Libs\Pal_dcp;E:\Programming\Borland\Delphi7\Libs\Pal_bpl;E:\Programming\Borland\Delphi7\Packages\ZipMaster\vcl;E:\Programming\Borland\Delphi\Packages\KOL;E:\Programming\Borland\Delphi7\Packages\synedit\Source;E:\Programming\Borland\Delphi7\Libs\DCU;E:\Programming\Borland\Delphi\Packages\Jedi\jcl\source;E:\Programming\Borland\Delphi\Packages\Jedi\jcl\source\common;E:\Programming\Borland\Delphi\Packages\Jedi\jcl\source\vcl;E:\Programming\Borland\Delphi\Packages\Jedi\jcl\source\windows;E:\Programming\Borland\Delphi\Packages\Jedi\jcl\source\visclx;E:\Programming\Borland\Delphi\Packages\Jedi\jvcl\common;E:\Programming\Borland\Delphi\Packages\Jedi\jvcl\Resources;E:\Programming\Borland\Delphi\Packages\Jedi\jvcl\run
+Count=5
+Item0=C:\Prog\Delphi\Component\JEDI\jcl\packages\d7;C:\Prog\Delphi\Component\JEDI\jvcl\packages\d7;C:\Prog\Delphi\Component\SynEdit\Packages;C:\Prog\Delphi\LuaEdit\LuaCore;C:\Prog\Delphi\LuaEdit\RunTimeDebug;C:\Prog\Delphi\LuaEdit\Syntax
+Item1=C:\Prog\Delphi\Component\JEDI\jcl\packages\d7;C:\Prog\Delphi\Component\JEDI\jvcl\packages\d7;C:\Prog\Delphi\Component\SynEdit\Packages;C:\Prog\Delphi\LuaEdit\LuaCore;C:\Prog\Delphi\LuaEdit\RunTimeDebug
+Item2=C:\Prog\Delphi\Component\JEDI\jcl\packages\d7;C:\Prog\Delphi\Component\JEDI\jvcl\packages\d7;C:\Prog\Delphi\Component\SynEdit\Packages;C:\Prog\Delphi\LuaEdit\LuaCore
+Item3=C:\Prog\Delphi\Component\JEDI\jcl\packages\d7;C:\Prog\Delphi\Component\JEDI\jvcl\packages\d7;C:\Prog\Delphi\Component\SynEdit\Packages
+Item4=E:\Programming\Borland\Comuni;E:\Programming\Borland\Comuni\LUA;E:\Programming\Borland\Delphi\Packages\PropEditors;E:\Programming\Borland\Delphi\Packages\ActiveX;E:\Programming\Borland\Delphi\Packages\Altri;E:\Programming\Borland\Delphi\Packages\Compress;E:\Programming\Borland\Delphi\Packages\MaxMBeppeG;E:\Programming\Borland\Delphi\Packages\MaxMBeppeG\Printset;E:\Programming\Borland\Delphi\Packages\Database;E:\Programming\Borland\Delphi\Packages\Inspector;E:\Programming\Borland\Delphi\Packages\Internet;E:\Programming\Borland\Delphi\Packages\Multimedia;E:\Programming\Borland\Delphi\Packages\Special;E:\Programming\Borland\Delphi\Packages\ui;E:\Programming\Borland\Delphi\Packages\ImageLib;E:\Programming\Borland\Delphi7\Packages\Indy 9;E:\Programming\Borland\Delphi7\Packages\DIB;E:\Programming\Borland\Delphi7\Packages\fpiette\ics\Delphi\Vc32;E:\Programming\Borland\Delphi7\Packages\Graphics;E:\Programming\Borland\Delphi7\Libs\Pal_dcp;E:\Programming\Borland\Delphi7\Libs\Pal_bpl;E:\Programming\Borland\Delphi7\Packages\ZipMaster\vcl;E:\Programming\Borland\Delphi\Packages\KOL;E:\Programming\Borland\Delphi7\Packages\synedit\Source;E:\Programming\Borland\Delphi7\Libs\DCU;E:\Programming\Borland\Delphi\Packages\Jedi\jcl\source;E:\Programming\Borland\Delphi\Packages\Jedi\jcl\source\common;E:\Programming\Borland\Delphi\Packages\Jedi\jcl\source\vcl;E:\Programming\Borland\Delphi\Packages\Jedi\jcl\source\windows;E:\Programming\Borland\Delphi\Packages\Jedi\jcl\source\visclx;E:\Programming\Borland\Delphi\Packages\Jedi\jvcl\common;E:\Programming\Borland\Delphi\Packages\Jedi\jvcl\Resources;E:\Programming\Borland\Delphi\Packages\Jedi\jvcl\run
 [HistoryLists\hlUnitOutputDirectory]
 Count=1
 Item0=E:\Programming\Borland\Delphi7\Libs\DCU

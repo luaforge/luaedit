@@ -4,9 +4,12 @@ library LuaEditDebug;
 
 uses
   SysUtils,
+  Messages,
+  Dialogs,
   Classes,
   Windows,
   Controls,
+  Registry,
   Forms,
   lua,
   LuaUtils,
@@ -46,11 +49,19 @@ uses
   ExSaveExit in '..\ExSaveExit.pas' {frmExSaveExit},
   AsciiTable in '..\AsciiTable.pas' {frmAsciiTable},
   ReadOnlyMsgBox in '..\ReadOnlyMsgBox.pas' {frmReadOnlyMsgBox},
-  Rings in '..\Rings.pas' {frmRings};
+  Rings in '..\Rings.pas' {frmRings},
+  FindInFiles in '..\FindInFiles.pas' {frmFindInFiles},
+  FindWindow1 in '..\FindWindow1.pas' {frmFindWindow1},
+  FindWindow2 in '..\FindWindow2.pas' {frmFindWindow2},
+  InternalBrowser in '..\InternalBrowser.pas' {frmInternalBrowser},
+  SearchPath in '..\SearchPath.pas' {frmSearchPath},
+  SIFReport in '..\SIFReport.pas' {frmSIFReport};
 
 {$R *.res}
 
-function InitForms :TfrmMain;
+function InitForms: TfrmMain;
+var
+  pReg: TRegistry;
 begin
   RTAssert(0, true, 'LuaEditDebug Application='+IntToHex(Integer(Application), 8), '', 0);
   RTAssert(0, true, 'Creating...', '', 0);
@@ -79,20 +90,38 @@ begin
   Application.CreateForm(TfrmAddBreakpoint, frmAddBreakpoint);
   Application.CreateForm(TfrmEditorSettings, frmEditorSettings);
   Application.CreateForm(TfrmAsciiTable, frmAsciiTable);
+  Application.CreateForm(TfrmFindInFiles, frmFindInFiles);
+  Application.CreateForm(TfrmFindWindow1, frmFindWindow1);
+  Application.CreateForm(TfrmFindWindow2, frmFindWindow2);
+  Application.CreateForm(TfrmInternalBrowser, frmInternalBrowser);
+  Application.CreateForm(TfrmSearchPath, frmSearchPath);
+  Application.CreateForm(TfrmSIFReport, frmSIFReport);
+  
+  if (Application.MainForm = nil) then
+    RTAssert(0, true, 'Creating done Nil', '', 0)
+  else
+    RTAssert(0, (frmMain = Application.MainForm), 'Creating done frmMain', 'Creating done '+Application.MainForm.Name, 0);
 
-  if (Application.MainForm=Nil)
-  then RTAssert(0, true, 'Creating done Nil', '', 0)
-  else RTAssert(0, (frmMain=Application.MainForm), 'Creating done frmMain', 'Creating done '+Application.MainForm.Name, 0);
+  // Initialize a few things
   frmMain.CheckButtons;
   frmMain.LoadEditorSettings;
-  LoadDockTreeFromFile(ExtractFilePath(Application.ExeName) + 'LuaEdit.dck');
+
+  // Create registry class and switching root key to local machine
+  pReg := TRegistry.Create;
+  pReg.RootKey := HKEY_LOCAL_MACHINE;
+
+  if pReg.OpenKey('\Software\LuaEdit', False) then
+    LoadDockTreeFromFile(pReg.ReadString('ApplicationPath') + 'LuaEdit.dck');
+
+  // Free registry class and return main form
+  pReg.Free;
   Result :=frmMain;
 end;
 
 procedure UnInitForms;
 Var
-   MainFormHandle :HWnd;
-   i              :Integer;
+   MainFormHandle: HWnd;
+   i: Integer;
 
 begin
 try
