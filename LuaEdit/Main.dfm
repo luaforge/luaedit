@@ -126,6 +126,7 @@ object frmMain: TfrmMain
             Painter = jvModernUnitBarPainter
             OnTabClosed = jvUnitBarTabClosed
             OnTabSelecting = jvUnitBarTabSelecting
+            OnChange = jvUnitBarChange
           end
         end
       end

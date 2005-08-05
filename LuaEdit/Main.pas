@@ -511,7 +511,6 @@ type
     procedure OpenFileatCursor1Click(Sender: TObject);
     procedure Conversions1Click(Sender: TObject);
     procedure ppmEditorPopup(Sender: TObject);
-    procedure jvTabTabBarChange(Sender: TObject);
     procedure actAddWatchExecute(Sender: TObject);
     procedure ppmUnitsPopup(Sender: TObject);
     procedure jvchnNotifierChangeNotify(Sender: TObject; Dir: String; Actions: TJvChangeActions);
@@ -551,6 +550,7 @@ type
     procedure actFindInFilesExecute(Sender: TObject);
     procedure actShowFindWindow1Execute(Sender: TObject);
     procedure actShowFindWindow2Execute(Sender: TObject);
+    procedure jvUnitBarChange(Sender: TObject);
     //procedure actFunctionHeaderExecute(Sender: TObject);
   private
     { Private declarations }
@@ -1977,11 +1977,11 @@ begin
   LuaOpenedUnits.Add(pLuaUnit);
 
   // Initialize visually the synedit control and other stuff
-  synEditClick(synEdit);
-  jvTabTabBarChange(jvUnitBar);
-  jvUnitBar.SelectedTab := pJvTab;
-  ApplyValuesToEditor(pLuaUnit.synUnit, EditorColors);
   pJvTab.Visible := True;
+  synEditClick(synEdit);
+  jvUnitBar.SelectedTab := pJvTab;
+  jvUnitBarChange(jvUnitBar);
+  ApplyValuesToEditor(pLuaUnit.synUnit, EditorColors);
   pLuaUnit.GetBreakpoints();
   frmBreakpoints.RefreshBreakpointList;
 
@@ -2525,14 +2525,18 @@ end;
 function TfrmMain.DoCloseExecute(): Boolean;
 var
   TabIndex: Integer;
+  pTab: TJvTabBarItem;
 begin
   Screen.Cursor := crHourGlass;
+  pTab := jvUnitBar.SelectedTab.GetPreviousVisible;
   Result := ClosingUnit;
 
   // Close the tab, free data...
   if Result then
   begin
     jvUnitBar.SelectedTab.Free;
+    if Assigned(pTab) then
+      jvUnitBar.SelectedTab := pTab;
   end;
 
   Screen.Cursor := crDefault;
@@ -3740,15 +3744,9 @@ begin
         
         // Popup the corresponding find window if not already opened
         if srSearchInFilesOutput = 0 then
-        begin
-          if not frmFindWindow1.Visible then
-            DoShowFindWindow1Execute;
-        end
+          ShowDockForm(frmFindWindow1)
         else
-        begin
-          if not frmFindWindow2.Visible then
-            DoShowFindWindow2Execute;
-        end;
+          ShowDockForm(frmFindWindow2);
       end;
     end;
   end;
@@ -4637,8 +4635,8 @@ begin
       // Attempt to make the association
       if pNode.Parent = frmWatch.vstWatch.RootNode then
       begin
-        if lstLocals.Values[pData.Value] <> '' then
-          sValue := lstLocals.Values[pData.Value];
+        if lstLocals.Values[pData.Name] <> '' then
+          sValue := lstLocals.Values[pData.Name];
 
         if ((sValue = '') and (lstGlobals.Values[pData.Name] <> '')) then
           sValue := lstGlobals.Values[pData.Name];
@@ -5960,7 +5958,7 @@ begin
   KeepSIFWindowOpened := pIniFile.ReadBool('General', 'KeepSIFWindowOpened', True);
 
   // Reading Environment settings
-  LibrariesSearchPaths.CommaText := pIniFile.ReadString('Environement', 'LibrariesSearchPaths', ExtractFilePath(Application.ExeName)+'Libraries\Completion');
+  LibrariesSearchPaths.CommaText := pIniFile.ReadString('Environement', 'LibrariesSearchPaths', ExtractFilePath(Application.ExeName)+'Libraries');
   
   //Reading display settings
   ShowGutter := pIniFile.ReadBool('Display', 'ShowGutter', True);
@@ -7375,7 +7373,7 @@ begin
   end;
 end;
 
-procedure TfrmMain.jvTabTabBarChange(Sender: TObject);
+procedure TfrmMain.jvUnitBarChange(Sender: TObject);
 var
   pLuaUnit: TLuaUnit;
 begin
@@ -7423,6 +7421,8 @@ begin
           L := lua_open();
           LuaLoadBuffer(L, pLuaUnit.synUnit.Text, pLuaUnit.sUnitPath);
           frmLuaEditMessages.memMessages.Lines.Add('[HINT]:  Syntax Checked - '+DateTimeToStr(Now));
+          stbMain.Panels[5].Text := '[HINT]:  Syntax Checked - '+DateTimeToStr(Now);
+          pLuaUnit.synUnit.Refresh;
         end;
       except
         on E: ELuaException do
@@ -7439,7 +7439,7 @@ begin
             if (FileExists(FileName) and (E.Line > 0)) then
             begin
               pLuaUnit.pDebugInfos.iLineError := E.Line;
-              frmMain.jvUnitBar.SelectedTab := frmMain.GetAssociatedTab(pLuaUnit);
+              jvUnitBar.SelectedTab := frmMain.GetAssociatedTab(pLuaUnit);
               pLuaUnit.synUnit.GotoLineAndCenter(E.Line);
             end;
           end;
@@ -7454,6 +7454,8 @@ begin
       end;
     end;
   end;
+
+  ShowDockForm(frmLuaEditMessages);
 end;
 
 // check the syntax of the currently opened unit
@@ -7559,9 +7561,16 @@ begin
 end;
 
 procedure TfrmMain.jvUnitBarTabClosed(Sender: TObject; Item: TJvTabBarItem);
+var
+  pTab: TJvTabBarItem;
 begin
+  pTab := jvUnitBar.SelectedTab.GetPreviousVisible;
+
   if ClosingUnit then
     Item.Free;
+
+  if Assigned(pTab) then
+    jvUnitBar.SelectedTab := pTab;
 end;
 
 procedure TfrmMain.jvUnitBarTabSelecting(Sender: TObject; Item: TJvTabBarItem; var AllowSelect: Boolean);
@@ -7573,6 +7582,9 @@ begin
       frmFunctionList.RefreshList(TLuaUnit(Item.Data).sUnitPath);
       TLuaUnit(Item.Data).synUnit.Visible := True;
       synEditClick(TLuaUnit(Item.Data).synUnit);
+      
+      if Assigned(jvUnitBar.SelectedTab) then
+        TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Visible := False;
     end;
   end;
 end;

@@ -115,7 +115,7 @@ AutoIncBuild=1
 MajorVer=2
 MinorVer=2
 Release=1
-Build=868
+Build=878
 Debug=0
 PreRelease=0
 Special=0
@@ -126,7 +126,7 @@ CodePage=1252
 [Version Info Keys]
 CompanyName=Open Source
 FileDescription=IDE for Lua 5.0.2
-FileVersion=2.2.1.868
+FileVersion=2.2.1.878
 InternalName=LuaEdit
 LegalCopyright=LuaEdit Copyright 2004-2005 ©
 LegalTrademarks=

@@ -285,6 +285,7 @@ begin
     pNode := vstWatch.GetLast;
     pData := vstWatch.GetNodeData(pNode);
     pData.Name := sVarName;
+    frmMain.PrintWatch(frmMain.LuaState);
   end;
 end;
 
