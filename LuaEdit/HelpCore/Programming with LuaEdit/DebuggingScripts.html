@@ -64,13 +64,25 @@
 							 <b>Manipulating Breakpoints</b><br> 
 							 Breakpoins are very useful	when debugging. To insert a breakpoint at the line where the cursor is, press the "Toggle Breakpoint"
 							 (F9) button from the debug toolbar (Picture 1.2). When debugging a script, the execution should break on a line where a breakpoint			
-							 <img width="363" height="128" src="../Medias/Breakpoints.jpg" align="right" hspace="15" vspace="15">
+							 <img width="363" height="128" src="../Medias/Breakpoints.jpg" alt="Picture 1.3" align="right" hspace="15" vspace="15">
 							 has been detected. Advanced manipulation and features for breakpoint are available through the "Breakpoints Window" (Picture 1.3)
 							 such as disabling/enabling breakpoints. A disabled breakpoint won't break the execution of the script but will leave the breakpoint marker 
 							 (maroon/grayed) on the code editor. To disable/enable a breakpoint, simply check/uncheck the checkbox on the left of the breakpoint name
 							 in the "Breakpoints Window". You can also set a condition on a breakpoint wich will be evaluated when the scipt is runnning
 							 to determine whether or not it will break on this breakpoint. The evaluation of the condition should always return "true" or "false".
 							 You can also remove, add and goto breakpoints through the "Breakpoints Window".
+							 <img width="360" height="250" src="../Medias/Watch.jpg" alt="Picture 1.4" align="right" hspace="15" vspace="15">
+							 <br>
+							 <br>
+							 <b>Watching Variables</b><br>
+							 In Lua, just like other languages, variables are very important for the code to be working. Variables in programming are abstract concept
+							 since they are located in the RAM and that their content may change several times in a few operations. That's why the "Watch" window (Picture 1.4)
+							 becomes a useful tool for the programmer. Since Lua logic is based on tables, LuaEdit has adapted a watch window wich act like the MS Visual Studio .Net<sup>®</sup>
+							 one. This means that all the content of any tables (variables and nested tables) can be explored in a hierarchic way. This can be extremely useful when
+							 complex tables are part of your code. The watch window also display regular variables content. 
+							 <br>
+							 <br>
+							 <b>NOTE:</b> Any complex data such as user data and functions will be displayed as a pointer address. See picture 1.4 for details.
 							 <br>
 							 <br>
 							 <b>Using the Initializer</b><br>
@@ -84,7 +96,45 @@
 							 	  <li>Delphi: <b style="color: navy">&nbsp;LuaDebug_Initializer(L: PLua_State): Integer; cdecl;&nbsp;</b></li>
 								  <li>C/C++: <b style="color: navy">&nbsp;int LuaDebug_Initializer(lua_State *L);&nbsp;</b></li>
 							 </ul>
-							 <b>NOTE:</b> The initializer property is only available when the unit is part of a project. 
+							 <b>NOTE:</b> The initializer property is only available when the unit is part of a project.
+							 <br>
+							 <br>
+							 <b>Using LuaEditDebug.dll</b><br>
+							 LuaEdit has been compiled and adapted into a Dynamic-Link Library (DLL) file. This now allowing embedded lua code in executable files (EXE)
+							 to be debug in LuaEdit. First of all, in order to use it, the lua state structure must be opened AND closed by the dll. To do so, here are
+							 the two function prototypes to declare in your application code:
+							 <ul type="square"> 
+							 	  <li>Delphi:
+								    <ul type="square">
+								  	  <li><b style="color: navy">&nbsp;function LuaEditDebugOpen: Plua_State;&nbsp;&nbsp;&nbsp;</b><b style="color: green">// Function to open the lua_state structure with LuaEdit</b></li>
+									  <li><b style="color: navy">&nbsp;procedure LuaEditDebugClose(LuaState: Plua_State);&nbsp;&nbsp;&nbsp;</b><b style="color: green">// Function to close the lua_state structure with LuaEdit</b></li>
+									</ul>
+								  </li>
+								  <li>C/C++:
+								    <ul type="square">
+								  	  <li><b style="color: navy">&nbsp;lua_State *LuaEditDebugOpen(void);&nbsp;&nbsp;&nbsp;</b><b style="color: green">// Function to open the lua_state structure with LuaEdit</b></li>
+									  <li><b style="color: navy">&nbsp;void LuaEditDebugClose(lua_State *LuaState);&nbsp;&nbsp;&nbsp;</b><b style="color: green">// Function to close the lua_state structure with LuaEdit</b></li>
+									</ul>
+								  </li>
+							 </ul>
+							 By calling the LuaEditDebugOpen function, LuaEdit will perform a call to the lua_open Lua API function and return the state as a pointer. By calling the LuaEditDebugClose function, LuaEdit will perform
+							 a call to the lua_close Lua API function. Make sure that only LuaEdit is opening AND closing the state structure. If you intend to use LuaEdit for this purpose, your application should never open or close
+							 the state. To begin the debug session in LuaEdit, two way are available. The first one is by specifying a file name and the second one is by giving the lua code. Once called, both functions will immediately 
+							 start debuging the code in LuaEdit. Here are their prototypes:
+							 <ul type="square"> 
+							 	  <li>Delphi:
+								    <ul type="square">
+								  	  <li><b style="color: navy">&nbsp;function LuaEditDebugStart(LuaState: Plua_State; Code: PChar): Integer;&nbsp;</b></li>
+									  <li><b style="color: navy">&nbsp;function LuaEditDebugStartFile(LState: Plua_State; Filename: PChar): Integer;&nbsp;</b></li>
+									</ul>
+								  </li>
+								  <li>C/C++:
+								    <ul type="square">
+								  	  <li><b style="color: navy">&nbsp;int LuaEditDebugStart(lua_State *LuaState, char *Code);&nbsp;</b></li>
+									  <li><b style="color: navy">&nbsp;int LuaEditDebugStartFile(lua_State *LState, char *Filename);&nbsp;</b></li>
+									</ul>
+								  </li>
+							 </ul>
 						  </p> 
 						  <br> 
 						  </font>

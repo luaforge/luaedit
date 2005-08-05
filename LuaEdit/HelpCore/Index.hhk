@@ -7,182 +7,202 @@
 <UL>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Activate Selected Project">
-		<param name="Name" value="		  		 Working with Projects		  ">
+		<param name="Name" value="Working with Projects		  ">
 		<param name="Local" value="Programming with LuaEdit\WorkingWithProjects.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Active Project">
-		<param name="Name" value="		  		 Working with Projects		  ">
+		<param name="Name" value="Working with Projects		  ">
 		<param name="Local" value="Programming with LuaEdit\WorkingWithProjects.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Add Breakpoint">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Add File to Project">
-		<param name="Name" value="		  		 Working with Projects		  ">
+		<param name="Name" value="Working with Projects		  ">
 		<param name="Local" value="Programming with LuaEdit\WorkingWithProjects.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Add Unit to Project">
-		<param name="Name" value="		  		 Working with Projects		  ">
+		<param name="Name" value="Working with Projects		  ">
 		<param name="Local" value="Programming with LuaEdit\WorkingWithProjects.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Associate Files With LuaEdit">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Auto Indent">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Background">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Basics">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Bold">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Bookmarks">
-		<param name="Name" value="		  		 Editing Code		  ">
+		<param name="Name" value="Editing Code		  ">
 		<param name="Local" value="Programming with LuaEdit\EditingCode.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Breakpoints">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Call Stack">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Check Syntax">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Close Unit">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Colors">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Comment Selection">
+		<param name="Name" value="		  		 Basics		  ">
+		<param name="Local" value="Programming with LuaEdit\Basics.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Completion Proposal">
-		<param name="Name" value="		  		 Editing Code		  ">
+		<param name="Name" value="Editing Code		  ">
 		<param name="Local" value="Programming with LuaEdit\EditingCode.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Condition">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Convert Tabs to Spaces">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Copy">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Cut">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Debug">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Debug DLL">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Debug Initializer">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Debugging">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Editor Settings">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Elements">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Embedded Code">
+		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Enhance Home Key">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Extended Save Dialog">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="File Association">
+		<param name="Name" value="Editor Settings		  ">
+		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Find in Files">
+		<param name="Name" value="		  		 Basics		  ">
+		<param name="Local" value="Programming with LuaEdit\Basics.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Find in Files Report">
 		<param name="Name" value="		  		 Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Font Size">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Fonts">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Foreground">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Function List">
-		<param name="Name" value="		  		 Editing Code		  ">
+		<param name="Name" value="Editing Code		  ">
 		<param name="Local" value="Programming with LuaEdit\EditingCode.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="General Public License">
-		<param name="Name" value="		  		 Legal Aspect		  ">
+		<param name="Name" value="Legal Aspect		  ">
 		<param name="Local" value="Legal.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Globals">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
@@ -192,105 +212,115 @@
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Go to Line">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Goto Bookmark">
-		<param name="Name" value="		  		 Editing Code		  ">
+		<param name="Name" value="Editing Code		  ">
 		<param name="Local" value="Programming with LuaEdit\EditingCode.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Group Undo">
-		<param name="Name" value="		  		 Editor Settings		  ">
-		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Gutter">
-		<param name="Name" value="		  		 Editor Settings		  ">
-		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Gutter Color">
-		<param name="Name" value="		  		 Editor Settings		  ">
-		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Gutter Width">
-		<param name="Name" value="		  		 Editor Settings		  ">
-		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Hide Gutter">
-		<param name="Name" value="		  		 Editor Settings		  ">
-		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Hide Scroll Bars When Useless">
-		<param name="Name" value="		  		 Editor Settings		  ">
-		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Highlighter">
-		<param name="Name" value="		  		 Editor Settings		  ">
-		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
-		<param name="Name" value="		  		 Editing Code		  ">
-		<param name="Local" value="Programming with LuaEdit\EditingCode.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="IDE">
-		<param name="Name" value="		  		 The Integrated Development Environment		  ">
-		<param name="Local" value="Programming with LuaEdit\IDE.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Incremental Saving">
-		<param name="Name" value="		  		 Editor Settings		  ">
-		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Incrementally">
-		<param name="Name" value="		  		 Editor Settings		  ">
-		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Indent Selection">
+		<param name="Name" value="Goto Last Edited">
 		<param name="Name" value="		  		 Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Group Undo">
+		<param name="Name" value="Editor Settings		  ">
+		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Gutter">
+		<param name="Name" value="Editor Settings		  ">
+		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Gutter Color">
+		<param name="Name" value="Editor Settings		  ">
+		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Gutter Width">
+		<param name="Name" value="Editor Settings		  ">
+		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Hide Gutter">
+		<param name="Name" value="Editor Settings		  ">
+		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Hide Scroll Bars When Useless">
+		<param name="Name" value="Editor Settings		  ">
+		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Highlighter">
+		<param name="Name" value="Editor Settings		  ">
+		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
+		<param name="Name" value="Editing Code		  ">
+		<param name="Local" value="Programming with LuaEdit\EditingCode.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="IDE">
+		<param name="Name" value="The Integrated Development Environment		  ">
+		<param name="Local" value="Programming with LuaEdit\IDE.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Incremental Saving">
+		<param name="Name" value="Editor Settings		  ">
+		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Incrementally">
+		<param name="Name" value="Editor Settings		  ">
+		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Indent Selection">
+		<param name="Name" value="Basics		  ">
+		<param name="Local" value="Programming with LuaEdit\Basics.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Integrated Development Environment">
-		<param name="Name" value="		  		 The Integrated Development Environment		  ">
+		<param name="Name" value="The Integrated Development Environment		  ">
 		<param name="Local" value="Programming with LuaEdit\IDE.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Italic">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Keep Trailing Blanks">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Leading Zeros">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Legal Aspect">
-		<param name="Name" value="		  		 Legal Aspect		  ">
+		<param name="Name" value="Legal Aspect		  ">
 		<param name="Local" value="Legal.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Licenses">
-		<param name="Name" value="		  		 Legal Aspect		  ">
+		<param name="Name" value="Legal Aspect		  ">
 		<param name="Local" value="Legal.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Locals">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Lowercase Selection">
+		<param name="Name" value="		  		 Basics		  ">
+		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Lua">
@@ -309,12 +339,12 @@
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Lua Globals">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Lua Locals">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
@@ -324,12 +354,12 @@
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Lua Output">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Lua Stack">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
@@ -339,336 +369,361 @@
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="LuaEdit">
-		<param name="Name" value="		  		 What is LuaEdit?		  ">
+		<param name="Name" value="What is LuaEdit?		  ">
 		<param name="Local" value="Welcome.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Messages">
+		<param name="Name" value="LuaEditDebug">
 		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Messages">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Minimum Requirements">
-		<param name="Name" value="		  		 Minimum Requirements		  ">
+		<param name="Name" value="Minimum Requirements		  ">
 		<param name="Local" value="MinimumRequirements.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Move Caret on Right Click">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="New">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
-		<param name="Name" value="		  		 Working with Projects		  ">
+		<param name="Name" value="Working with Projects		  ">
 		<param name="Local" value="Programming with LuaEdit\WorkingWithProjects.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="New Project">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="New Unit">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="On Exit">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Open">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Open Project">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Open Unit">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Output">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Parameters Proposition">
-		<param name="Name" value="		  		 Editing Code		  ">
+		<param name="Name" value="Editing Code		  ">
 		<param name="Local" value="Programming with LuaEdit\EditingCode.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Paste">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Pause Script">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Print">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Print Setup">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Project Settings">
-		<param name="Name" value="		  		 Working with Projects		  ">
+		<param name="Name" value="Working with Projects		  ">
 		<param name="Local" value="Programming with LuaEdit\WorkingWithProjects.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Project Tree">
-		<param name="Name" value="		  		 Working with Projects		  ">
+		<param name="Name" value="Working with Projects		  ">
 		<param name="Local" value="Programming with LuaEdit\WorkingWithProjects.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Projects">
-		<param name="Name" value="		  		 Working with Projects		  ">
+		<param name="Name" value="Working with Projects		  ">
 		<param name="Local" value="Programming with LuaEdit\WorkingWithProjects.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Redo">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Remove Unit from Project">
-		<param name="Name" value="		  		 Working with Projects		  ">
+		<param name="Name" value="Working with Projects		  ">
 		<param name="Local" value="Programming with LuaEdit\WorkingWithProjects.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Replace">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Report">
+		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Requirements">
-		<param name="Name" value="		  		 Minimum Requirements		  ">
+		<param name="Name" value="Minimum Requirements		  ">
 		<param name="Local" value="MinimumRequirements.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Run Script">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Run Script to Cursor">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Save">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Save All">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Save As">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Save Breakpoints">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Save Project As">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Save Projects Incrementally">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Save Units Incrementally">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Scroll Past EOF">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Scroll Past EOL">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Search">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Search Again">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Seek Caret X">
+		<param name="Name" value="Search Paths">
 		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Seek Caret X">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Select All">
-		<param name="Name" value="		  		 Basics		  ">
+		<param name="Name" value="Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Settings">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Show Gutter">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Show Line Numbers">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Smart Tabs">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Stacks">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Step Into">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Step Over">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Stop Script">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Syntax">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Tab Indent">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Tab Width">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Tabs to Spaces">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Toggle Bookmark">
-		<param name="Name" value="		  		 Editing Code		  ">
+		<param name="Name" value="Editing Code		  ">
 		<param name="Local" value="Programming with LuaEdit\EditingCode.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Toggle Breakpoint">
-		<param name="Name" value="		  		 Debugging Scripts		  ">
+		<param name="Name" value="Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Tokens">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Uncomment Selection">
+		<param name="Name" value="		  		 Basics		  ">
+		<param name="Local" value="Programming with LuaEdit\Basics.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Underline">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Undo">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Undo Limit">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Unindent Selection">
+		<param name="Name" value="Basics		  ">
+		<param name="Local" value="Programming with LuaEdit\Basics.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Uppercase Selection">
 		<param name="Name" value="		  		 Basics		  ">
 		<param name="Local" value="Programming with LuaEdit\Basics.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Use Enhance Hom Key">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Use Smart Tabs">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Use Tab Indent">
-		<param name="Name" value="		  		 Editor Settings		  ">
+		<param name="Name" value="Editor Settings		  ">
 		<param name="Local" value="Programming with LuaEdit\EditorSettings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Watch List">
+		<param name="Name" value="Watch">
 		<param name="Name" value="		  		 Debugging Scripts		  ">
 		<param name="Local" value="Programming with LuaEdit\DebuggingScripts.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Welcome">
-		<param name="Name" value="		  		 What is LuaEdit?		  ">
+		<param name="Name" value="What is LuaEdit?		  ">
 		<param name="Local" value="Welcome.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="What is LuaEdit?">
-		<param name="Name" value="		  		 What is LuaEdit?		  ">
+		<param name="Name" value="What is LuaEdit?		  ">
 		<param name="Local" value="Welcome.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="What's New?">
-		<param name="Name" value="		  		 What's new?		  ">
+		<param name="Name" value="What's new?		  ">
 		<param name="Local" value="New.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Working With Projects">
-		<param name="Name" value="		  		 Working with Projects		  ">
+		<param name="Name" value="Working with Projects		  ">
 		<param name="Local" value="Programming with LuaEdit\WorkingWithProjects.html">
 		</OBJECT>
 </UL>
