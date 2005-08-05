@@ -1,0 +1,107 @@
+_VERSION	var
+_G	var
+assert(v, [message])	foo
+collectgarbage([limit])	foo
+dofile(filename)	foo
+error(message, [level])	foo
+getfenv(f)	foo
+getmetatable(object)	foo
+gcinfo()	foo
+ipairs(t)	foo
+loadfile(filename)	foo
+loadlib(libname, funcname)	foo
+loadstring(string, [chunkname])	foo
+next(table, [index])	foo
+pairs(t)	foo
+pcall(f, arg1, arg2, ...)	foo
+print(e1, e2, ...)	foo
+rawequal(v1, v2)	foo
+rawget(table, index)	foo
+rawset(table, index, value)	foo
+require(packagename)	foo
+setfenv(f, table)	foo
+setmetatable(table, metatable)	foo
+tonumber(e, [base])	foo
+tostring(e)	foo
+type(v)	foo
+unpack(list)	foo
+xpcall(f, err)	foo
+coroutine.create(f)	foo
+coroutine.resume(co, val1, ...)	foo
+coroutine.status(co)	foo
+coroutine.wrap(f)	foo
+coroutine.yield(val1, ...)	foo
+string.byte(s, [i])	foo
+string.char(i1, i2, ...)	foo
+string.dump(function)	foo
+string.find(s, pattern, [init], [plain])	foo
+string.len(s)	foo
+string.lower(s)	foo
+string.rep(s, n)	foo
+string.sub(s, i, [j])	foo
+string.upper(s)	foo
+string.format(formatstring, e1, e2, ...)	foo
+string.gfind(s, pat)	foo
+string.gsub(s, pat, rep1, [n])	foo
+table.concat(table, [sep], [i], [j])	foo
+table.foreach(table, f)	foo
+table.foreachi(table, f)	foo
+table.getn(table)	foo
+table.sort(table, [comp])	foo
+table.insert(table, [pos], value)	foo
+table.remove(table, [pos])	foo
+table.setn(table, n)	foo
+math.abs(n)	foo
+math.acos(n)	foo
+math.asin(n)	foo
+math.atan(n)	foo
+math.atan2(n1, n2)	foo
+math.ceil(n)	foo
+math.cos(n)	foo
+math.deg(n)	foo
+math.exp(n)	foo
+math.floor(n)	foo
+math.log(n)	foo
+math.log10(n)	foo
+math.max(n1, [...])	foo
+math.min(n1, [...])	foo
+math.mod(n1, n2)	foo
+math.pow(n1, n2)	foo
+math.rad(n)	foo
+math.sin(n)	foo
+math.sqrt(n)	foo
+math.tan(n)	foo
+math.frexp(n1, exp)	foo
+math.ldexp(n1, exp)	foo
+math.random(rangemin, [rangemax])	foo
+math.randomseed(seed)	foo
+io.close([file])	foo
+io.flush()	foo
+io.input([file])	foo
+io.lines([filename])	foo
+io.open(filename, [mode])	foo
+io.output([file])	foo
+io.read(format1, ...)	foo
+io.tmpfile()	foo
+io.type(obj)	foo
+io.write(value1, ...)	foo
+os.clock()	foo
+os.date([format], [time])	foo
+os.difftime(t2, t1)	foo
+os.execute(command)	foo
+os.exit([code])	foo
+os.getenv(varname)	foo
+os.remove(filename)	foo
+os.rename(oldname, newname)	foo
+os.setlocale(locale, [category])	foo
+os.time([table])	foo
+os.tmpname()	foo
+debug.debug()	foo
+debug.gethook()	foo
+debug.getinfo(function, [what])	foo
+debug.getlocal(level, local)	foo
+debug.getupvalue(func, up)	foo
+debug.setlocal(level, local, value)	foo
+debug.setupvalue(func, up, value)	foo
+debug.sethook(hook, mask, [count])	foo
+debug.traceback([message])	foo
