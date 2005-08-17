@@ -87,8 +87,6 @@ end;
 procedure TfrmAddToPrj.FormCreate(Sender: TObject);
 begin
   lstFiles := TStringList.Create;
-  lstFiles.QuoteChar := '"';
-  lstFiles.Delimiter := ',';
 end;
 
 procedure TfrmAddToPrj.FormDestroy(Sender: TObject);
@@ -102,7 +100,7 @@ var
 begin
   if chkExisting.Checked then
   begin
-    lstFiles.DelimitedText := txtExistingFile.Text;
+    lstFiles.CommaText := txtExistingFile.Text;
     ModalResult := mrOk;
 
     for x := 0 to lstFiles.Count - 1 do

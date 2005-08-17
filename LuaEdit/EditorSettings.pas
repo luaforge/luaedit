@@ -379,7 +379,7 @@ begin
   end;
 
   // Writing environement settings
-  pIniFile.WriteString('Environement', 'LibrariesSearchPaths', '"' + txtLibraries.Text + '"');
+  pIniFile.WriteString('Environement', 'LibrariesSearchPaths', txtLibraries.Text);
 
   //Writing display settings
   pIniFile.WriteBool('Display', 'ShowGutter', chkShowGutter.Checked);
@@ -485,7 +485,7 @@ begin
   chkKeepReportOpened.Checked := KeepSIFWindowOpened;
   txtUndoLimit.Text := IntToStr(Main.UndoLimit);
   txtTabWidth.Text := IntToStr(Main.TabWidth);
-  txtLibraries.Text := LibrariesSearchPaths.DelimitedText;
+  txtLibraries.Text := LibrariesSearchPaths.CommaText;
   chkShowGutter.Checked := Main.ShowGutter;
   chkShowLineNumbers.Checked := Main.ShowLineNumbers;
   chkLeadingZeros.Checked := Main.LeadingZeros;
