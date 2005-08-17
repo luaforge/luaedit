@@ -37,8 +37,46 @@
 				<tr valign="top">
 					<td>
 						  <font face="Arial" size="2">
-						  <table width="100%"> 
+						  <table width="100%">
 						  		 <tr>
+								 	 <b><font face="Arial" size="3">&nbsp;Major Release: v2.2.1.881</font></b>
+									 <br>
+									 <font face="Arial" size="1">&nbsp;Published on 08.16.2005</font>
+									 <br>
+									 <br>
+									 <ul type="square"> 
+									  	  <li>Major bug fix in the debug engine: A CPU Sleep instruction was called on every debug
+										      hook call wich was dramatically slowing down the code execution when running under LuaEdit.</li>
+										  <li>Major bug fix in the debug engine: When the unit is new, an extra call to ExpandUNCFileName 
+										  	  was done wich was trowing an exeception.</li>
+										  <li>Minor bug fix in the tab control server: If prompted to save before closing a new unit, a save dialog was shown
+										      because the unit is new and an initial path is required to be specified by the user. Pressing the cancel button
+											  of that dialog was not really cancelling the action.</li>
+										  <li>Minor bug fix in the menus, submenus, popup menus and toolbars icons: The white pixels of the icons were treated and
+										      displayed as if they were transparent.</li>
+										  <li>Minor bug fix in the "Fucntion List" window: Sometimes this window wasn't automatically updating when switching from
+										  	  a unit to another.</li>
+										  <li>Changed the look of the status bar by handling a custom draw to make it look more like .Net style.</li>
+										  <li>Updated help files.</li>
+										  <li>Changed the "Project Tree" window into a new merge of a listview and a treeview into the same component</li>
+										  <li>Changed the "Watch" window into a new merge of a listview and a treeview into the same component. This now
+										      allow the user to better visualize variables, tables and sub-tables.</li>
+										  <li>New LuaEditDebug.dll file for embedded lua code debugging from user's applications. (Special thanks to Massimo Magnano)
+										  <li>New library engine for completion proposal (not hardcoded anymore) including a new section in the
+										      editor settings: "Environment".</li>			   		
+										  <li>New powerful "Find in Files" engine.</li>
+										  <li>New "Find Window 1" and "Find Window 2" windows to output the "Find in Files" results.</li>
+										  <li>New IE "Internal Browser" to allow browsing the internet inside the IDE.</li>
+										  <li>New "History" ring for the new "Internal Browser"</li>
+										  <li>New Comment/Uncomment, Uppercase/Lowercase selection commands</li>
+										  <li>New "Goto Last Edited" action to send the cursor back to the last edited line.</li>
+										  <li>Drag and drop *.lpr or *.lua files from Windows<sup>®</sup> into LuaEdit is now supported.
+										      This means that LuaEdit is opening the dropped files if they have the *.lpr or *.lua extension.</li>
+									 </ul>
+									 <hr size="1" color="#000000">
+									 <br>
+								 </tr>
+								 <tr>
 								 	 <b><font face="Arial" size="3">&nbsp;Quick Release: v2.0.1.626</font></b>
 									 <br>
 									 <font face="Arial" size="1">&nbsp;Published on 04.25.2005</font>
