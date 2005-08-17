@@ -1798,6 +1798,8 @@ begin
   SearchedInFilesText := TStringList.Create;
   ReplacedText := TStringList.Create;
   LibrariesSearchPaths := TStringList.Create;
+  LibrariesSearchPaths.QuoteChar := '"';
+  LibrariesSearchPaths.Delimiter := ',';
   LuaSingleUnits := TLuaProject.Create('');
   LuaSingleUnits.sPrjName := '[@@SingleUnits@@]';
   LuaProjects.Add(LuaSingleUnits);
@@ -5930,6 +5932,7 @@ end;
 procedure TfrmMain.LoadEditorSettings;
 var
   pIniFile: TIniFile;
+  test: String;
 begin
   pIniFile := TIniFile.Create(ExtractFilePath(Application.ExeName)+'LuaEdit.ini');
   EditorColors.Clear;
@@ -5958,8 +5961,8 @@ begin
   KeepSIFWindowOpened := pIniFile.ReadBool('General', 'KeepSIFWindowOpened', True);
 
   // Reading Environment settings
-  LibrariesSearchPaths.CommaText := pIniFile.ReadString('Environement', 'LibrariesSearchPaths', ExtractFilePath(Application.ExeName)+'Libraries');
-  
+  LibrariesSearchPaths.DelimitedText := pIniFile.ReadString('Environement', 'LibrariesSearchPaths', ExtractFilePath(Application.ExeName)+'Libraries');
+
   //Reading display settings
   ShowGutter := pIniFile.ReadBool('Display', 'ShowGutter', True);
   ShowLineNumbers := pIniFile.ReadBool('Display', 'ShowLineNumbers', False);
