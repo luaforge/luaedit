@@ -379,7 +379,7 @@ begin
   end;
 
   // Writing environement settings
-  pIniFile.WriteString('Environement', 'LibrariesSearchPaths', txtLibraries.Text);
+  pIniFile.WriteString('Environement', 'LibrariesSearchPaths', '"'+txtLibraries.Text+'"');
 
   //Writing display settings
   pIniFile.WriteBool('Display', 'ShowGutter', chkShowGutter.Checked);

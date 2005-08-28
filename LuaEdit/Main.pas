@@ -621,7 +621,7 @@ type
     procedure RefreshOpenedUnits;
     procedure synParamsExecute(Kind: SynCompletionType; Sender: TObject; var AString: String; var x, y: Integer; var CanExecute: Boolean);
     procedure FillLookUpList;
-    function FileIsInTree(sFileName: String): Boolean;
+    function FileIsInTree(sFileName: String): PVirtualNode;
     procedure LuaGlobalsToStrings(L: PLua_State; Lines: TStrings; MaxTable: Integer = -1);
     function GetAssociatedTab(pLuaUnit: TLuaUnit): TJvTabBarItem;
     function FindUnitInTabs(sFileName: String): TLuaUnit;
@@ -1873,7 +1873,7 @@ begin
     begin
       if ExtractFileExt(odlgOpenUnit.Files.Strings[z]) = '.lua' then
       begin
-        if not FileIsInTree(odlgOpenUnit.Files.Strings[z]) then
+        if not Assigned(FileIsInTree(odlgOpenUnit.Files.Strings[z])) then
         begin
           Result := True;
           pLuaUnit := AddFileInProject(odlgOpenUnit.Files.Strings[z], False, LuaSingleUnits);
@@ -3115,7 +3115,7 @@ begin
   begin
     if ExtractFileExt(mnuSender.Caption) = '.lua' then
     begin
-      if not FileIsInTree(mnuSender.Caption) then
+      if not Assigned(FileIsInTree(mnuSender.Caption)) then
       begin
         pLuaUnit := AddFileInProject(mnuSender.Caption, False, LuaSingleUnits);
         pLuaUnit.IsLoaded := True;
@@ -3213,7 +3213,7 @@ begin
   begin
     if ExtractFileExt(btnSender.Caption) = '.lua' then
     begin
-      if not FileIsInTree(btnSender.Caption) then
+      if not Assigned(FileIsInTree(btnSender.Caption)) then
       begin
         pLuaUnit := AddFileInProject(btnSender.Caption, False, LuaSingleUnits);
         pLuaUnit.IsLoaded := True;
@@ -4347,8 +4347,7 @@ begin
     begin
       // Detecting first line of script...
       if ((AR.event = LUA_HOOKCALL) and (AR.linedefined = 0) and (AR.i_ci = 1) and (AR.what = 'main') and (AR.currentline = -1)) then
-      begin
-        
+      begin        
         AR.event := LUA_HOOKLINE;
         AR.currentline := 1;
         WaitReStart;
@@ -4436,7 +4435,7 @@ begin
       end;
     end;
 
-    if not frmMain.FileIsInTree(sFileName) then
+    if not Assigned(FileIsInTree(sFileName)) then
     begin
       pLuaUnit := TLuaUnit.Create(sFileName);
       pLuaUnit := frmMain.AddFileInProject(sFileName, False, LuaSingleUnits);
@@ -4488,8 +4487,8 @@ begin
   begin
     pItem := frmStack.lstCallStack.Items.Add;
     pItem.Caption := TBreakInfo(CallStack.Items[x]).FileName;
-    pItem.SubItems.Strings[0] := TBreakInfo(CallStack.Items[x]).Call;
-    pItem.SubItems.Strings[1] := TBreakInfo(CallStack.Items[x]).LineOut;
+    pItem.SubItems.Add(TBreakInfo(CallStack.Items[x]).Call);
+    pItem.SubItems.Add(TBreakInfo(CallStack.Items[x]).LineOut);
     pItem.Data := CallStack.Items[x];
   end;
 
@@ -4811,20 +4810,19 @@ end;
 
 function TfrmMain.DoAddWatchExecute(): Boolean;
 var
-  sTemp: string;
-  pData: PWatchNodeData;
   pNode: PVirtualNode;
+  pData: PWatchNodeData;
+  sVarName: String;
 begin
-  Result := False;
+  sVarName := 'VarName';
 
-  if Assigned(jvUnitBar.SelectedTab.Data) then
+  if InputQuery('Add Watch', 'Enter the name of the variable to watch:', sVarName) then
   begin
-    Result := True;
-    sTemp := TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelText;
-    pNode := frmWatch.vstWatch.AddChild(frmWatch.vstWatch.RootNode);
+    frmWatch.vstWatch.RootNodeCount := frmWatch.vstWatch.RootNodeCount + 1;
+    pNode := frmWatch.vstWatch.GetLast;
     pData := frmWatch.vstWatch.GetNodeData(pNode);
-    pData.Name := sTemp;
-    frmMain.PrintWatch(frmMain.LuaState);
+    pData.Name := sVarName;
+    PrintWatch(frmMain.LuaState);
   end;
 end;
 
@@ -5126,6 +5124,7 @@ begin
     TLuaUnit(jvUnitBar.SelectedTab.Data).pDebugInfos.RemoveBreakpointAtLine(iCurrentLine);
 
   TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Refresh;
+  frmBreakpoints.RefreshBreakpointList;
 end;
 
 function TfrmMain.DoPauseExecute(): Boolean;
@@ -5302,8 +5301,8 @@ end;
 
 procedure TfrmMain.synEditDblClick(Sender: TObject);
 const
-  OpeningBrackets: set of char = ['(', '[', '{', '<'];
-  ClosingBrackets: set of char = [')', ']', '}', '>'];
+  OpeningBrackets: set of char = ['(', '[', '{', '<', '"'];
+  ClosingBrackets: set of char = [')', ']', '}', '>', '"'];
 var
   pLuaUnit: TLuaUnit;
   pCoord: TBufferCoord;
@@ -5313,36 +5312,42 @@ begin
     // Get current unit and find matching bracket
     pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
 
-    if pLuaUnit.synUnit.Lines[pLuaUnit.synUnit.CaretY - 1][pLuaUnit.synUnit.CaretX] in OpeningBrackets then
+    if pLuaUnit.synUnit.Text <> '' then
     begin
-      if ((FirstClickPos.Line = pLuaUnit.synUnit.CaretXY.Line) and (FirstClickPos.Char = pLuaUnit.synUnit.CaretXY.Char)) then
+      if pLuaUnit.synUnit.Lines[pLuaUnit.synUnit.CaretY - 1] <> '' then
       begin
-        // Get matching bracket
-        pCoord := pLuaUnit.synUnit.GetMatchingBracket;
-
-        // Select matching bracket if found one
-        if pCoord.Char <> 0 then
+        if pLuaUnit.synUnit.Lines[pLuaUnit.synUnit.CaretY - 1][pLuaUnit.synUnit.CaretX] in OpeningBrackets then
         begin
-          Inc(pCoord.Char);
-          pLuaUnit.synUnit.BlockBegin := pLuaUnit.synUnit.CaretXY;
-          pLuaUnit.synUnit.BlockEnd := pCoord;
+          if ((FirstClickPos.Line = pLuaUnit.synUnit.CaretXY.Line) and (FirstClickPos.Char = pLuaUnit.synUnit.CaretXY.Char)) then
+          begin
+            // Get matching bracket
+            pCoord := pLuaUnit.synUnit.GetMatchingBracket;
+
+            // Select matching bracket if found one
+            if pCoord.Char <> 0 then
+            begin
+              Inc(pCoord.Char);
+              pLuaUnit.synUnit.BlockBegin := pLuaUnit.synUnit.CaretXY;
+              pLuaUnit.synUnit.BlockEnd := pCoord;
+            end;
+          end;
+        end
+        else if pLuaUnit.synUnit.Lines[pLuaUnit.synUnit.CaretY - 1][pLuaUnit.synUnit.CaretX - 1] in ClosingBrackets then
+        begin
+          // Get matching bracket with previous char
+          pCoord := pLuaUnit.synUnit.CaretXY;
+          Dec(pCoord.Char);
+          pCoord := pLuaUnit.synUnit.GetMatchingBracketEx(pCoord);
+
+          // Select matching bracket if found one
+          if pCoord.Char <> 0 then
+          begin
+            pLuaUnit.synUnit.BlockBegin := pLuaUnit.synUnit.CaretXY;
+            pLuaUnit.synUnit.BlockEnd := pCoord;
+          end;
         end;
       end;
-    end
-    else if pLuaUnit.synUnit.Lines[pLuaUnit.synUnit.CaretY - 1][pLuaUnit.synUnit.CaretX - 1] in ClosingBrackets then
-    begin
     end;
-      // Get matching bracket with previous char
-      pCoord := pLuaUnit.synUnit.CaretXY;
-      Dec(pCoord.Char);
-      pCoord := pLuaUnit.synUnit.GetMatchingBracketEx(pCoord);
-
-      // Select matching bracket if found one
-      if pCoord.Char <> 0 then
-      begin
-        pLuaUnit.synUnit.BlockBegin := pLuaUnit.synUnit.CaretXY;
-        pLuaUnit.synUnit.BlockEnd := pCoord;
-      end;
   end;
 end;
 
@@ -5519,7 +5524,7 @@ var
   pFctInfo: TFctInfo;
   hFileSearch: TSearchRec;
   GotTable: Boolean;
-  sTemp, sFormatString, sFunctionName, sNestedTable: String;
+  sPath, sTemp, sFormatString, sFunctionName, sNestedTable: String;
   sTable, sParameters, LineType, Lookup, LookupTable: String;
   lstLocalTable, sFileContent: TStringList;
   i, j, k, Index: Integer;
@@ -5554,13 +5559,19 @@ begin
   // Go through all libraries search paths
   for i := 0 to LibrariesSearchPaths.Count - 1 do
   begin
+    // Standarize the path
+    sPath := LibrariesSearchPaths.Strings[i];
+    
+    if Copy(sPath, Length(sPath), 1) <> '\' then
+      sPath := sPath + '\';
+
     // Begin file search
-    if FindFirst(LibrariesSearchPaths.Strings[i]+'*.lib', faAnyFile, hFileSearch) = 0 then
+    if FindFirst(sPath+'*.lib', faAnyFile, hFileSearch) = 0 then
     begin
       repeat
         // Create and initialize temporary content container
         sFileContent := TStringList.Create;
-        sFileContent.LoadFromFile(LibrariesSearchPaths.Strings[i]+hFileSearch.Name);
+        sFileContent.LoadFromFile(sPath+hFileSearch.Name);
 
         // Parse content and add it to the lookup list
         for j := 0 to sFileContent.Count - 1 do
@@ -5735,7 +5746,7 @@ end;
 procedure TfrmMain.synParamsExecute(Kind: SynCompletionType; Sender: TObject; var AString: String; var x, y: Integer; var CanExecute: Boolean);
 var
   locline, lookup, sProposition: String;
-  sFunctionName, sParameters: String;
+  sPath, sFunctionName, sParameters: String;
   TmpX, savepos, StartX, ParenCounter: Integer;
   TmpLocation, i, j: Integer;
   sFileContent: TStringList;
@@ -5811,13 +5822,19 @@ begin
       // Go through all libraries search paths
       for i := 0 to LibrariesSearchPaths.Count - 1 do
       begin
+        // Standarize the path
+        sPath := LibrariesSearchPaths.Strings[i];
+
+        if Copy(sPath, Length(sPath), 1) <> '\' then
+          sPath := sPath +'\';
+        
         // Begin file search
-        if FindFirst(LibrariesSearchPaths.Strings[i]+'*.lib', faAnyFile, hFileSearch) = 0 then
+        if FindFirst(sPath +'*.lib', faAnyFile, hFileSearch) = 0 then
         begin
           repeat
             // Create and initialize temporary content container
             sFileContent := TStringList.Create;
-            sFileContent.LoadFromFile(LibrariesSearchPaths.Strings[i]+hFileSearch.Name);
+            sFileContent.LoadFromFile(sPath+hFileSearch.Name);
 
             // Parse content and add it to the lookup list
             for j := 0 to sFileContent.Count - 1 do
@@ -5977,7 +5994,7 @@ begin
 
   //Background
   EditorColors.Add(TEditorColors.Create);
-  TEditorColors(EditorColors.Items[0]).Background := pIniFile.ReadString('Background', 'Background', 'clWhite');
+  TEditorColors(EditorColors.Items[0]).Background := pIniFile.ReadString('Background', 'BackgroundColor', 'clWhite');
 
   //Comment
   EditorColors.Add(TEditorColors.Create);
@@ -6464,13 +6481,13 @@ begin
   end;
 end;
 
-function TfrmMain.FileIsInTree(sFileName: String): Boolean;
+function TfrmMain.FileIsInTree(sFileName: String): PVirtualNode;
 var
   pNode: PVirtualNode;
   pData: PProjectTreeData;
 begin
   // Initialize stuff before going
-  Result := False;
+  Result := nil;
   pNode := frmProjectTree.vstProjectTree.GetFirst;
 
   while pNode <> nil do
@@ -6489,7 +6506,7 @@ begin
           else
             AddFileInTab(pData.pLuaUnit);
 
-          Result := True;
+          Result := pNode;
           Break;
         end;
       end;
@@ -7278,7 +7295,7 @@ begin
   begin
     if ExtractFileExt(WordAtCursor) = '.lua' then
     begin
-      if not FileIsInTree(WordAtCursor) then
+      if not Assigned(FileIsInTree(WordAtCursor)) then
       begin
         // Creates the file
         pLuaUnit := AddFileInProject(WordAtCursor, False, LuaSingleUnits);
@@ -7538,7 +7555,7 @@ begin
       if ExtractFileExt(FileName) = '.lua' then
       begin
         // Add new single unit to the tree
-        if not frmMain.FileIsInTree(FileName) then
+        if not Assigned(FileIsInTree(FileName)) then
         begin
           pLuaUnit := frmMain.AddFileInProject(FileName, False, LuaSingleUnits);
           pLuaUnit.IsLoaded := True;

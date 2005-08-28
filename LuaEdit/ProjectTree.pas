@@ -14,6 +14,7 @@ type
     pLuaUnit: TLuaUnit;
     pLuaPrj: TLuaProject;
     ActiveProject: Boolean;
+    ToKeep: Boolean;
   end;
 
   TfrmProjectTree = class(TForm)
@@ -38,6 +39,7 @@ type
     procedure vstProjectTreeDblClick(Sender: TObject);
     procedure vstProjectTreeMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure vstProjectTreeAfterItemPaint(Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode; ItemRect: TRect);
+    function GetNodeInTree(sFileName, sProjectName: String): PVirtualNode;
   private
     { Private declarations }
   public
@@ -94,12 +96,94 @@ begin
   frmMain.CheckButtons;
 end;
 
+function TfrmProjectTree.GetNodeInTree(sFileName, sProjectName: String): PVirtualNode;
+var
+  pNode: PVirtualNode;
+  pData: PProjectTreeData;
+begin
+  Result := nil;
+  pNode := vstProjectTree.GetFirst;
+
+  while Assigned(pNode) do
+  begin
+    pData := vstProjectTree.GetNodeData(pNode);
+
+    if sProjectName <> '' then
+    begin
+      if Assigned(pData.pLuaUnit) then
+      begin
+        if ((pData.pLuaUnit.pPrjOwner.sPrjName = sProjectName) or (sProjectName = '[@@SingleUnits@@]')) then
+        begin
+          if pData.pLuaUnit.sName = sFileName then
+          begin
+            Result := pNode;
+            Break;
+          end;
+        end;
+      end;
+    end
+    else
+    begin
+      if Assigned(pData.pLuaPrj) then
+      begin
+        if pData.pLuaPrj.sPrjName = sFileName then
+        begin
+          Result := pNode;
+          Break;
+        end;
+      end;
+    end;
+
+    pNode := vstProjectTree.GetNext(pNode);
+  end;
+end;
+
 procedure TfrmProjectTree.BuildProjectTree(HandleNotifier: Boolean);
 var
   pTempPrj: TLuaProject;
-  pNewPrjNode, pNewNode, pSingleUnitLastNode: PVirtualNode;
+  pNode, pNewPrjNode, pNewNode, pSingleUnitLastNode: PVirtualNode;
   pData: PProjectTreeData;
   x, y: Integer;
+
+  // Go through all nodes of the tree and set their ToKeep flag to false
+  procedure UnflagAllExpanded(pTree: TVirtualStringTree);
+  var
+    pNode: PVirtualNode;
+    pData: PProjectTreeData;
+  begin
+    pNode := pTree.GetFirst;
+
+    while Assigned(pNode) do
+    begin
+      pData := pTree.GetNodeData(pNode);
+      pData.ToKeep := False;
+      pNode := pTree.GetNext(pNode);
+    end;
+  end;
+
+  // Deletes all nodes for wich their ToKeep flag is still on false
+  procedure CleanTree(pTree: TVirtualStringTree);
+  var
+    pNode, pPrevious: PVirtualNode;
+    pData: PProjectTreeData;
+  begin
+    pNode := pTree.GetFirst;
+
+    while Assigned(pNode) do
+    begin
+      pData := pTree.GetNodeData(pNode);
+      
+      if not pData.ToKeep then
+      begin
+        pPrevious := pTree.GetPrevious(pNode);
+        pTree.DeleteNode(pNode);
+        pNode := pPrevious;
+      end;
+      
+      pNode := pTree.GetNext(pNode);
+    end;
+  end;
+  
 begin
   // Initialize stuff
   pNewNode := nil;
@@ -113,51 +197,81 @@ begin
   end;
 
   vstProjectTree.BeginUpdate;
-  vstProjectTree.Clear;
+  UnflagAllExpanded(vstProjectTree);
 
   for x := 0 to LuaProjects.Count - 1 do
   begin
     pTempPrj := TLuaProject(LuaProjects.Items[x]);
+    pNode := GetNodeInTree(pTempPrj.sPrjName, '');
 
-    if pTempPrj.sPrjName <> '[@@SingleUnits@@]' then
+    if not Assigned(pNode) then
     begin
-      // Create the node
-      pNewPrjNode := vstProjectTree.AddChild(vstProjectTree.RootNode);
-      pData := vstProjectTree.GetNodeData(pNewPrjNode);
+      if pTempPrj.sPrjName <> '[@@SingleUnits@@]' then
+      begin
+        // Create the node
+        pNewPrjNode := vstProjectTree.AddChild(vstProjectTree.RootNode);
+        pData := vstProjectTree.GetNodeData(pNewPrjNode);
+        pData.pLuaUnit := nil;
+        pData.pLuaPrj := pTempPrj;
+        pData.ActiveProject := (pTempPrj = ActiveProject);
+        pData.ToKeep := True;
+
+        // Adding project root to change notifier...
+        if ((not pTempPrj.IsNew) and HandleNotifier) then
+          frmMain.AddToNotifier(ExtractFileDir(pTempPrj.sPrjPath));
+      end
+      else
+        pNewPrjNode := pSingleUnitLastNode;
+    end
+    else
+    begin
+      // Update the node's data
+      pData := vstProjectTree.GetNodeData(pNode);
       pData.pLuaUnit := nil;
       pData.pLuaPrj := pTempPrj;
       pData.ActiveProject := (pTempPrj = ActiveProject);
-
-      // Adding project root to change notifier...
-      if ((not pTempPrj.IsNew) and HandleNotifier) then
-        frmMain.AddToNotifier(ExtractFileDir(pTempPrj.sPrjPath));
-    end
-    else
-      pNewPrjNode := pSingleUnitLastNode;
+      pData.ToKeep := True;
+    end;
 
     for y := 0 to pTempPrj.lstUnits.Count - 1 do
     begin
-      // Adding single unit (projectless) to the tree
-      if pTempPrj.sPrjName = '[@@SingleUnits@@]' then
-        pNewNode := vstProjectTree.InsertNode(pNewPrjNode, amInsertAfter)
+      pNode := GetNodeInTree(TLuaUnit(pTempPrj.lstUnits.Items[y]).sName, pTempPrj.sPrjName);
+
+      if not Assigned(pNode) then
+      begin
+        // Adding single unit (projectless) to the tree
+        if pTempPrj.sPrjName = '[@@SingleUnits@@]' then
+          pNewNode := vstProjectTree.InsertNode(pNewPrjNode, amInsertAfter)
+        else
+          pNewNode := vstProjectTree.AddChild(pNewPrjNode);
+
+        // Update last single unit node
+        pSingleUnitLastNode := pNewNode;
+
+        // Create the node
+        pData := vstProjectTree.GetNodeData(pNewNode);
+        pData.pLuaUnit := TLuaUnit(pTempPrj.lstUnits.Items[y]);
+        pData.pLuaPrj := nil;
+        pData.ActiveProject := False;
+        pData.ToKeep := True;
+
+        // Adding unit root to change notifier...
+        if ((not TLuaUnit(pTempPrj.lstUnits.Items[y]).IsNew) and HandleNotifier) then
+          frmMain.AddToNotifier(ExtractFileDir(TLuaUnit(pTempPrj.lstUnits.Items[y]).sUnitPath));
+      end
       else
-        pNewNode := vstProjectTree.AddChild(pNewPrjNode);
-
-      // Update last single unit node
-      pSingleUnitLastNode := pNewNode;
-
-      // Create the node
-      pData := vstProjectTree.GetNodeData(pNewNode);
-      pData.pLuaUnit := TLuaUnit(pTempPrj.lstUnits.Items[y]);
-      pData.pLuaPrj := nil;
-      pData.ActiveProject := False;
-
-      // Adding unit root to change notifier...
-      if ((not TLuaUnit(pTempPrj.lstUnits.Items[y]).IsNew) and HandleNotifier) then
-        frmMain.AddToNotifier(ExtractFileDir(TLuaUnit(pTempPrj.lstUnits.Items[y]).sUnitPath));
+      begin
+        // Update the node's data
+        pData := vstProjectTree.GetNodeData(pNode);
+        pData.pLuaUnit := TLuaUnit(pTempPrj.lstUnits.Items[y]);
+        pData.pLuaPrj := nil;
+        pData.ActiveProject := False;
+        pData.ToKeep := True;
+      end;
     end;
   end;
 
+  CleanTree(vstProjectTree);
   vstProjectTree.EndUpdate;
 
   // Set back on the changes notifier if required
@@ -313,9 +427,9 @@ begin
     pData := vstProjectTree.GetNodeData(pNode);
 
     // setting menu status
-    AddUnitToProject1.Enabled := (pData.pLuaPrj = ActiveProject);
-    RemoveUnitFromProject1.Enabled := (pData.pLuaPrj = ActiveProject);
-    Options1.Enabled := (pData.pLuaPrj = ActiveProject);
+    AddUnitToProject1.Enabled := ((pData.pLuaPrj = ActiveProject) and Assigned(ActiveProject));
+    RemoveUnitFromProject1.Enabled := ((pData.pLuaPrj = ActiveProject) and Assigned(ActiveProject));
+    Options1.Enabled := ((pData.pLuaPrj = ActiveProject) and Assigned(ActiveProject));
     UnloadFileProject1.Enabled := (((Assigned(pData.pLuaUnit)) and (pNode.Parent = vstProjectTree.RootNode)) or (Assigned(pData.pLuaPrj)));
   end;
 end;
@@ -331,6 +445,8 @@ begin
       0:
       begin
         pData := Sender.GetNodeData(Node);
+        pData.ToKeep := True;
+        
         if Assigned(pData.pLuaPrj) then
           CellText := pData.pLuaPrj.sPrjName
         else
@@ -339,6 +455,8 @@ begin
       1:
       begin
         pData := Sender.GetNodeData(Node);
+        pData.ToKeep := True;
+        
         if Assigned(pData.pLuaPrj) then
           CellText := pData.pLuaPrj.sPrjPath
         else

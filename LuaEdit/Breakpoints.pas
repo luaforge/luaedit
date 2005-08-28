@@ -234,17 +234,9 @@ begin
   if Assigned(lvwBreakpoints.Selected) then
   begin
     if TLuaUnit(lvwBreakpoints.Selected.Data).pDebugInfos.GetBreakpointStatus(StrToInt(lvwBreakpoints.Selected.SubItems.Strings[2])) = BKPT_DISABLED then
-    begin
-      TLuaUnit(lvwBreakpoints.Selected.Data).pDebugInfos.GetBreakpointAtLine(StrToInt(lvwBreakpoints.Selected.SubItems.Strings[2])).iStatus := BKPT_ENABLED;
-      lvwBreakpoints.Selected.Checked := True;
-      lvwBreakpoints.Selected.ImageIndex := 7;
-    end
+      lvwBreakpoints.Selected.Checked := True
     else
-    begin
-      TLuaUnit(lvwBreakpoints.Selected.Data).pDebugInfos.GetBreakpointAtLine(StrToInt(lvwBreakpoints.Selected.SubItems.Strings[2])).iStatus := BKPT_DISABLED;
       lvwBreakpoints.Selected.Checked := False;
-      lvwBreakpoints.Selected.ImageIndex := 8;
-    end;
   end;
 
   if Assigned(frmMain.jvUnitBar.SelectedTab.Data) then

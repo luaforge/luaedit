@@ -112,7 +112,7 @@ begin
       begin
         if ExtractFileExt(FileName) = '.lua' then
         begin
-          if not frmMain.FileIsInTree(FileName) then
+          if not Assigned(frmMain.FileIsInTree(FileName)) then
           begin
             pLuaUnit := frmMain.AddFileInProject(FileName, False, LuaSingleUnits);
             pLuaUnit.IsLoaded := True;

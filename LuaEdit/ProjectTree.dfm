@@ -47,6 +47,7 @@ object frmProjectTree: TfrmProjectTree
       PopupMenu = ppmProjectTree
       TabOrder = 0
       TreeOptions.MiscOptions = [toAcceptOLEDrop, toFullRepaintOnResize, toInitOnSave, toReportMode, toToggleOnDblClick, toWheelPanning]
+      TreeOptions.SelectionOptions = [toRightClickSelect]
       OnAfterItemPaint = vstProjectTreeAfterItemPaint
       OnDblClick = vstProjectTreeDblClick
       OnGetText = vstProjectTreeGetText

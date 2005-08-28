@@ -61,8 +61,7 @@ type
     procedure tbtnAddWatchClick(Sender: TObject);
     procedure vstWatchEdited(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex);
     procedure vstWatchChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
-    procedure FEditKeyDown(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
+    procedure FEditKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
     { Private declarations }
     procedure WMStartEditing(var Message: TMessage); message WM_STARTEDITING;
@@ -193,7 +192,7 @@ begin
       1:
       begin
         pData := Sender.GetNodeData(Node);
-        CellText := pData.Value
+        CellText := pData.Value;
       end;
     end;
   end;
