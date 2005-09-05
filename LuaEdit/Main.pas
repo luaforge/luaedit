@@ -1052,6 +1052,7 @@ begin
   end;
 
   pLuaUnit.synUnit.Refresh;
+  frmBreakpoints.RefreshBreakpointList;
 end;
 
 procedure TDebugSupportPlugin.LinesDeleted(FirstLine, Count: integer);
@@ -1070,6 +1071,7 @@ begin
   end;
 
   pLuaUnit.synUnit.Refresh;
+  frmBreakpoints.RefreshBreakpointList;
 end;
 
 ///////////////////////////////////////////////////////////////////
