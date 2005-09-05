@@ -117,7 +117,7 @@ begin
             pLuaUnit := frmMain.AddFileInProject(FileName, False, LuaSingleUnits);
             pLuaUnit.IsLoaded := True;
             frmMain.AddFileInTab(pLuaUnit);
-            frmMain.MonitorFile(FileName);
+            frmMain.MonitorFileToRecent(FileName);
           end;
         end
         else if ExtractFileExt(FileName) = '.lpr' then

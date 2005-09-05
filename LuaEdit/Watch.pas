@@ -18,6 +18,7 @@ type
     Value: String;
     Name: String;
     NestedTableCount: Integer;
+    ToKeep: Boolean;
   end;
 
   // Our own edit link to implement several different node editors.
@@ -50,6 +51,11 @@ type
     tbtnRefreshWatch: TToolButton;
     imlWatch: TImageList;
     FEdit: TEdit;
+    tbtnDelete: TToolButton;
+    DeleteSelectedItem1: TMenuItem;
+    N1: TMenuItem;
+    Refresh1: TMenuItem;
+    AddWatch1: TMenuItem;
     procedure vstWatchGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: WideString);
     procedure vstWatchEditing(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean);
     procedure vstWatchCreateEditor(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; out EditLink: IVTEditLink);
@@ -62,6 +68,13 @@ type
     procedure vstWatchEdited(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex);
     procedure vstWatchChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure FEditKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure vstWatchKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure DeleteSelected();
+    procedure tbtnDeleteClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure AddWatch1Click(Sender: TObject);
+    procedure Refresh1Click(Sender: TObject);
+    procedure DeleteSelectedItem1Click(Sender: TObject);
   private
     { Private declarations }
     procedure WMStartEditing(var Message: TMessage); message WM_STARTEDITING;
@@ -124,6 +137,8 @@ begin
   end;
 
   frmWatch.FEdit.Hide;
+  frmWatch.tbtnDelete.Enabled := True;
+  frmWatch.DeleteSelectedItem1.Enabled := True;
   FTree.SetFocus;
 end;
 
@@ -152,6 +167,9 @@ begin
   FColumn := Column;
     
   Data := FTree.GetNodeData(Node);
+  frmWatch.tbtnDelete.Enabled := False;
+  frmWatch.DeleteSelectedItem1.Enabled := False;
+
   with frmWatch.FEdit do
   begin
     Visible := False;
@@ -271,21 +289,8 @@ begin
 end;
 
 procedure TfrmWatch.tbtnAddWatchClick(Sender: TObject);
-var
-  pNode: PVirtualNode;
-  pData: PWatchNodeData;
-  sVarName: String;
 begin
-  sVarName := 'VarName';
-
-  if InputQuery('Add Watch', 'Enter the name of the variable to watch:', sVarName) then
-  begin
-    vstWatch.RootNodeCount := vstWatch.RootNodeCount + 1;
-    pNode := vstWatch.GetLast;
-    pData := vstWatch.GetNodeData(pNode);
-    pData.Name := sVarName;
-    frmMain.PrintWatch(frmMain.LuaState);
-  end;
+  frmMain.DoAddWatchExecute;
 end;
 
 procedure TfrmWatch.vstWatchEdited(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex);
@@ -309,6 +314,9 @@ procedure TfrmWatch.vstWatchChange(Sender: TBaseVirtualTree; Node: PVirtualNode)
 begin
   with Sender do
   begin
+    tbtnDelete.Enabled := Assigned(GetFirstSelected());
+    DeleteSelectedItem1.Enabled := Assigned(GetFirstSelected());
+
     // Start immediate editing as soon as another node gets focused.
     if Assigned(Node) and (Node.Parent <> RootNode) then
     begin
@@ -356,6 +364,48 @@ begin
         end;
       end;
   end;
+end;
+
+procedure TfrmWatch.vstWatchKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if not vstWatch.IsEditing then
+  begin
+    // Seek delete key for node deletion
+    if Key = VK_DELETE then
+      DeleteSelected;
+  end;
+end;
+
+procedure TfrmWatch.DeleteSelected();
+begin
+  if Assigned(vstWatch.GetFirstSelected()) then
+    vstWatch.DeleteNode(vstWatch.GetFirstSelected());
+end;
+
+procedure TfrmWatch.tbtnDeleteClick(Sender: TObject);
+begin
+  DeleteSelected;
+end;
+
+procedure TfrmWatch.FormCreate(Sender: TObject);
+begin
+  tbtnDelete.Enabled := False;
+  DeleteSelectedItem1.Enabled := False;
+end;
+
+procedure TfrmWatch.AddWatch1Click(Sender: TObject);
+begin
+  tbtnAddWatch.Click;
+end;
+
+procedure TfrmWatch.Refresh1Click(Sender: TObject);
+begin
+  tbtnRefreshWatch.Click;
+end;
+
+procedure TfrmWatch.DeleteSelectedItem1Click(Sender: TObject);
+begin
+  tbtnDelete.Click;
 end;
 
 end.

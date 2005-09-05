@@ -113,9 +113,9 @@ RootDir=
 IncludeVerInfo=1
 AutoIncBuild=1
 MajorVer=2
-MinorVer=3
+MinorVer=4
 Release=1
-Build=903
+Build=944
 Debug=0
 PreRelease=0
 Special=0
@@ -126,7 +126,7 @@ CodePage=1252
 [Version Info Keys]
 CompanyName=Open Source
 FileDescription=IDE for Lua 5.0.2
-FileVersion=2.3.1.903
+FileVersion=2.4.1.944
 InternalName=LuaEdit
 LegalCopyright=LuaEdit Copyright 2004-2005 ©
 LegalTrademarks=
@@ -138,11 +138,12 @@ Comments=This project was originally created by Jean-Francois Goulet
 Count=1
 Item0=WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;
 [HistoryLists\hlSearchPath]
-Count=4
+Count=5
 Item0=.\Syntax;.\LuaCore;C:\Prog\Delphi\Component\XPMenu;C:\Prog\Delphi\Component\SynEdit\Source
-Item1=$(DELPHI)\Lib\Debug;C:\Prog\Delphi\Component\JEDI\jcl\lib\D7\debug;.\Syntax;.\LuaCore;C:\Prog\Delphi\Component\XPMenu;C:\Prog\Delphi\Component\SynEdit\Source
-Item2=C:\Prog\Delphi\Component\SynEdit\Packages;C:\Prog\Delphi\Component\SynEdit\Source
-Item3=C:\Prog\Delphi\Component\SynEdit\Packages
+Item1=$(DELPHI)\Lib\Debug;C:\Prog\Delphi\Component\JEDI\jcl\lib\D7\debug;C:\Prog\Delphi\COMPON~1\JEDI\jcl\lib\D7\debug;.\Syntax;.\LuaCore;C:\Prog\Delphi\Component\XPMenu;C:\Prog\Delphi\Component\SynEdit\Source
+Item2=$(DELPHI)\Lib\Debug;C:\Prog\Delphi\Component\JEDI\jcl\lib\D7\debug;.\Syntax;.\LuaCore;C:\Prog\Delphi\Component\XPMenu;C:\Prog\Delphi\Component\SynEdit\Source
+Item3=C:\Prog\Delphi\Component\SynEdit\Packages;C:\Prog\Delphi\Component\SynEdit\Source
+Item4=C:\Prog\Delphi\Component\SynEdit\Packages
 [HistoryLists\hlOutputDirectorry]
 Count=1
 Item0=.\bin

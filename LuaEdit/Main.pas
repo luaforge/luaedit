@@ -16,7 +16,8 @@ uses
   ActnMenus, ActnColorMaps, StdStyleActnCtrls, XPMenu, Clipbrd, JvLookOut,
   JvExControls, FileCtrl, VirtualTrees
   {$ifdef RTASSERT}  , RTDebug  {$endif}
-  , JvDragDrop, JvAppEvent, JvExStdCtrls, JvButton, JvCtrls, JvComCtrls;
+  , JvDragDrop, JvAppEvent, JvExStdCtrls, JvButton, JvCtrls, JvComCtrls,
+  JvDockTree;
 
 const
   otLuaProject  = 1;
@@ -111,6 +112,7 @@ type
     function IsBreakPointLine(iLine: Integer): Boolean;
     function GetBreakpointStatus(iLine: Integer): Integer;
     procedure AddBreakpointAtLine(iLine: Integer);
+    procedure EnableDisableBreakpointAtLine(iLine: Integer);
     function GetBreakpointAtLine(iLine: Integer): TBreakpoint;
     procedure RemoveBreakpointAtLine(iLine: Integer);
     function GetLineCondition(iLine: Integer): String;
@@ -308,14 +310,10 @@ type
     Save2: TMenuItem;
     SaveAs2: TMenuItem;
     jvchnNotifier: TJvChangeNotify;
-    tlbEdit: TToolBar;
+    tlbFind: TToolBar;
     ToolButton35: TToolButton;
     ToolButton36: TToolButton;
     ToolButton37: TToolButton;
-    ToolButton38: TToolButton;
-    ToolButton39: TToolButton;
-    ToolButton40: TToolButton;
-    ToolButton41: TToolButton;
     ToolButton42: TToolButton;
     ToolButton43: TToolButton;
     actMainMenuFile: TAction;
@@ -438,8 +436,6 @@ type
     UncommentSelection1: TMenuItem;
     CommentSelection2: TMenuItem;
     UncommentSelection2: TMenuItem;
-    ToolButton24: TToolButton;
-    ToolButton25: TToolButton;
     jvAppDrop: TJvDragDrop;
     actUpperCase: TAction;
     actLowerCase: TAction;
@@ -457,6 +453,24 @@ type
     actShowFindWindow2: TAction;
     FindWindow11: TMenuItem;
     FindWindow21: TMenuItem;
+    actEnableDisableBreakpoint: TAction;
+    DisableEnableBreakpoint1: TMenuItem;
+    ToolButton26: TToolButton;
+    ToolButton27: TToolButton;
+    tlbEdit: TToolBar;
+    ToolButton28: TToolButton;
+    ToolButton29: TToolButton;
+    ToolButton30: TToolButton;
+    ToolButton31: TToolButton;
+    ToolButton32: TToolButton;
+    ToolButton44: TToolButton;
+    ToolButton45: TToolButton;
+    ToolButton46: TToolButton;
+    ToolButton47: TToolButton;
+    ToolButton48: TToolButton;
+    ToolButton49: TToolButton;
+    Find1: TMenuItem;
+    Find2: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure synEditKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure actOpenFileExecute(Sender: TObject);
@@ -551,6 +565,9 @@ type
     procedure actShowFindWindow1Execute(Sender: TObject);
     procedure actShowFindWindow2Execute(Sender: TObject);
     procedure jvUnitBarChange(Sender: TObject);
+    procedure actEnableDisableBreakpointExecute(Sender: TObject);
+    procedure Find1Click(Sender: TObject);
+    procedure ppmToolBarPopup(Sender: TObject);
     //procedure actFunctionHeaderExecute(Sender: TObject);
   private
     { Private declarations }
@@ -598,7 +615,7 @@ type
     procedure CheckButtons;
     procedure BuildReopenMenu;
     function IsReopenInList(sString: String): Boolean;
-    procedure MonitorFile(sString: String);
+    procedure MonitorFileToRecent(sString: String);
     procedure mnuXReopenClick(Sender: TObject);
     procedure btnXFilesClick(Sender: TObject);
     procedure btnXClipboardClick(Sender: TObject);
@@ -685,6 +702,7 @@ type
     function DoRunScriptExecute(): Boolean;
     function DoAddWatchExecute(): Boolean;
     function DoToggleBreakpointExecute(): Boolean;
+    function DoEnableDisableBreakpoint(): Boolean;
     function DoStepOverExecute(): Boolean;
     function DoStepIntoExecute(): Boolean;
     function DoPauseExecute(): Boolean;
@@ -921,6 +939,24 @@ begin
   lstBreakpoint.Add(pNewBreakpoint);
 end;
 
+procedure TLineDebugInfos.EnableDisableBreakpointAtLine(iLine: Integer);
+var
+  x: Integer;
+begin
+  for x := 0 to lstBreakpoint.Count - 1 do
+  begin
+    if TBreakpoint(lstBreakpoint.Items[x]).iLine = iLine then
+    begin
+      if TBreakpoint(lstBreakpoint.Items[x]).iStatus = BKPT_ENABLED then
+        TBreakpoint(lstBreakpoint.Items[x]).iStatus := BKPT_DISABLED
+      else
+        TBreakpoint(lstBreakpoint.Items[x]).iStatus := BKPT_ENABLED;
+
+      Break;
+    end;
+  end;
+end;
+
 procedure TLineDebugInfos.RemoveBreakpointAtLine(iLine: Integer);
 var
   x: Integer;
@@ -967,7 +1003,7 @@ begin
 
   FirstLine := pLuaUnit.synUnit.RowToLine(FirstLine);
   LastLine := pLuaUnit.synUnit.RowToLine(LastLine);
-  X := 14;
+  X := 1;
   LH := pLuaUnit.synUnit.LineHeight;
   while FirstLine <= LastLine do
   begin
@@ -1097,7 +1133,7 @@ begin
   HasChanged := False;
   LuaProjects.Add(Self);
   ActiveProject := Self;
-  frmMain.MonitorFile(sPrjPath);
+  frmMain.MonitorFileToRecent(sPrjPath);
 
   // Read [Files] section
   fFile.ReadSection('Files', lstTmpFiles);
@@ -1203,6 +1239,9 @@ begin
       if frmMain.sdlgSaveAsPrj.Execute then
       begin
         sPath := frmMain.sdlgSaveAsPrj.FileName;
+
+        if IsNew then
+          frmMain.MonitorFileToRecent(sPath);
       end
       else
       begin
@@ -1259,6 +1298,7 @@ begin
   frmProjectTree.BuildProjectTree;
   pFile.UpdateFile;
   pFile.Free;
+  frmMain.BuildReopenMenu;
 
   // Now we wrote on the disk we may retrieve the time it has been writen
   LastTimeModified := GetFileLastTimeModified(PChar(sPath));
@@ -1274,7 +1314,7 @@ begin
   frmMain.jvchnNotifier.Active := False;
   Result := True;
 
-  // Popup a open dialog according to parameters and the state of the file
+  // Popup an open dialog according to parameters and the state of the file
   if ((IsNew and not bNoDialog) or (bForceDialog)) then
   begin
     frmMain.sdlgSaveAsPrj.FileName := sPrjName + '.lpr';
@@ -1282,6 +1322,9 @@ begin
     if frmMain.sdlgSaveAsPrj.Execute then
     begin
       sPath := frmMain.sdlgSaveAsPrj.FileName;
+
+      if IsNew then
+        frmMain.MonitorFileToRecent(sPath);
     end
     else
     begin
@@ -1356,15 +1399,14 @@ begin
 
   // Wrtie data for [Files] section  
   for x := 0 to lstUnits.Count - 1 do
-  begin
     // Write the file with a relative path
     pFile.WriteString('Files', 'File'+IntToStr(x), ExtractRelativePath(ExtractFilePath(sPrjPath), TLuaUnit(lstUnits.Items[x]).sUnitPath));
-  end;
 
   // Initialize stuff...   
   IsNew := False;
   HasChanged := False;
   frmProjectTree.BuildProjectTree;
+  frmMain.BuildReopenMenu;
   pFile.UpdateFile;
   pFile.Free;
 
@@ -1463,6 +1505,9 @@ begin
       if frmMain.sdlgSaveAsUnit.Execute then
       begin
         sPath := frmMain.sdlgSaveAsUnit.FileName;
+
+        if IsNew then
+          frmMain.MonitorFileToRecent(sPath);
       end
       else
       begin
@@ -1546,6 +1591,7 @@ begin
     // Reinitialize stuff...
     frmMain.RefreshOpenedUnits;
     frmProjectTree.BuildProjectTree;
+    frmMain.BuildReopenMenu;
     frmMain.stbMain.Panels[5].Text := '';
     frmMain.stbMain.Refresh;
     synUnit.Refresh;
@@ -1575,6 +1621,9 @@ begin
       begin
         sPath := frmMain.sdlgSaveAsUnit.FileName;
         pPrjOwner.HasChanged := True;
+
+        if IsNew then
+          frmMain.MonitorFileToRecent(sPath);
       end
       else
       begin
@@ -1636,6 +1685,7 @@ begin
     // Initialize stuff...
     frmMain.RefreshOpenedUnits;
     frmProjectTree.BuildProjectTree;
+    frmMain.BuildReopenMenu;
     frmMain.stbMain.Panels[5].Text := '';
     frmMain.stbMain.Refresh;
     synUnit.Refresh;
@@ -1879,7 +1929,7 @@ begin
           pLuaUnit := AddFileInProject(odlgOpenUnit.Files.Strings[z], False, LuaSingleUnits);
           pLuaUnit.IsLoaded := True;
           AddFileInTab(pLuaUnit);
-          MonitorFile(odlgOpenUnit.Files.Strings[z]);
+          MonitorFileToRecent(odlgOpenUnit.Files.Strings[z]);
           
           // Add opened file to recent opens
           pReg.OpenKey('\Software\LuaEdit', True);
@@ -1913,6 +1963,7 @@ begin
 
   // Rebuild the project tree and initialize stuff
   frmProjectTree.BuildProjectTree;
+  BuildReopenMenu;
   CheckButtons;
 
   pReg.Free;
@@ -1945,6 +1996,7 @@ begin
   synEdit.WantTabs := True;
   synEdit.ShowHint := True;
   synEdit.PopupMenu := ppmEditor;
+  synEdit.BookMarkOptions.LeftMargin := 15;
 
   // Set event handlers
   synEdit.OnChange := synEditChange;
@@ -2000,7 +2052,12 @@ begin
   pLuaUnit.pPrjOwner := pPrj;
   pLuaUnit.IsNew := IsNew;
   pLuaUnit.synUnit := nil;
-  pPrj.lstUnits.Add(pLuaUnit);
+
+  if pPrj.sPrjName = '[@@SingleUnits@@]' then
+    pPrj.lstUnits.Insert(pPrj.lstUnits.Count, pLuaUnit)
+  else
+    pPrj.lstUnits.Add(pLuaUnit);
+
   Result := pLuaUnit;
 end;
 
@@ -2122,6 +2179,8 @@ begin
     stbMain.Panels[2].Text := 'CAPS'
   else
     stbMain.Panels[2].Text := '';
+
+  CheckButtons;
 end;
 
 function TfrmMain.DoOpenProjectExecute(): Boolean;
@@ -2225,6 +2284,7 @@ procedure TfrmMain.CheckButtons;
 var
   pNode: PVirtualNode;
   pData: PProjectTreeData;
+  pLuaUnit: TLuaUnit;
 begin
   actClose.Enabled := not (LuaOpenedUnits.Count = 0);
   actSave.Enabled := not (LuaOpenedUnits.Count = 0);
@@ -2260,18 +2320,24 @@ begin
   PrintSetup1.Enabled := not (LuaOpenedUnits.Count = 0);
   //HeaderBuilder1.Enabled := not (LuaOpenedUnits.Count = 0);
 
+  // Initialize some actions' state
+  actEnableDisableBreakpoint.Enabled := False;
+
   if LuaOpenedUnits.Count > 0 then
   begin
     if Assigned(jvUnitBar.SelectedTab) then
     begin
       if Assigned(jvUnitBar.SelectedTab.Data) then
       begin
-        if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.UndoList.ItemCount = 0 then
+        pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
+        actEnableDisableBreakpoint.Enabled := pLuaUnit.pDebugInfos.IsBreakPointLine(TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.CaretY);
+
+        if pLuaUnit.synUnit.UndoList.ItemCount = 0 then
           actUndo.Enabled := False
         else
           actUndo.Enabled := True;
 
-        if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.RedoList.ItemCount = 0 then
+        if pLuaUnit.synUnit.RedoList.ItemCount = 0 then
           actRedo.Enabled := False
         else
           actRedo.Enabled := True;
@@ -2299,21 +2365,6 @@ begin
   end
   else
     actActiveSelPrj.Enabled := False;
-
-  if Assigned(ActiveProject) then
-  begin
-    actAddToPrj.Enabled := True;
-    actRemoveFromPrj.Enabled := True;
-    actPrjSettings.Enabled := True;
-    actSaveProjectAs.Enabled := True;
-  end
-  else
-  begin
-    actAddToPrj.Enabled := False;
-    actRemoveFromPrj.Enabled := False;
-    actPrjSettings.Enabled := False;
-    actSaveProjectAs.Enabled := False;
-  end;
 
   actNewProject.Enabled := True;
   actNewUnit.Enabled := True;
@@ -2722,7 +2773,7 @@ begin
   pReg.Free;
 end;
 
-procedure TfrmMain.MonitorFile(sString: String);
+procedure TfrmMain.MonitorFileToRecent(sString: String);
 var
   pReg: TRegistry;
   lstValues: TStringList;
@@ -2759,7 +2810,6 @@ begin
 
     pReg.WriteInteger(sString, 0);
     lstValues.Free;
-    //BuildReopenMenu;
   end;
 
   pReg.Free;
@@ -2795,6 +2845,8 @@ begin
   Run1.Checked := tlbRun.Visible;
   File3.Checked := tlbBaseFile.Visible;
   Edit3.Checked := tlbEdit.Visible;
+  Find1.Checked := tlbFind.Visible;
+  Find2.Checked := tlbFind.Visible;
   Run4.Checked := tlbRun.Visible;
   actShowMessages.Checked := frmLuaEditMessages.Visible;
   actShowProjectTree.Checked := frmProjectTree.Visible;
@@ -2818,9 +2870,27 @@ begin
 end;
 
 function TfrmMain.DoMainMenuProjectExecute(): Boolean;
+var
+  pNode: PVirtualNode;
+  pData: PProjectTreeData;
 begin
-  Result := False;
-  // Do nothing for now...
+  Result := True;
+  
+  // Retreive first selected node
+  pNode := frmProjectTree.vstProjectTree.GetFirstSelected;
+
+  // Only if a menu is selected
+  if Assigned(pNode) then
+  begin
+    // Retreive data from selected node
+    pData := frmProjectTree.vstProjectTree.GetNodeData(pNode);
+
+    actActiveSelPrj.Enabled := Assigned(pData.pLuaPrj);
+    actAddToPrj.Enabled := ((pData.pLuaPrj = ActiveProject) and Assigned(ActiveProject));
+    actPrjSettings.Enabled := ((pData.pLuaPrj = ActiveProject) and Assigned(ActiveProject));
+    frmProjectTree.UnloadFileProject1.Enabled := (((Assigned(pData.pLuaUnit)) and (pNode.Parent = frmProjectTree.vstProjectTree.RootNode)) or (Assigned(pData.pLuaPrj)));
+    actRemoveFromPrj.Enabled := not ((pNode.Parent = frmProjectTree.vstProjectTree.RootNode) and (Assigned(pData.pLuaUnit)));
+  end;
 end;
 
 procedure TfrmMain.actMainMenuProjectExecute(Sender: TObject);
@@ -2830,8 +2900,9 @@ end;
 
 function TfrmMain.DoMainMenuRunExecute(): Boolean;
 begin
-  Result := False;
-  // Do nothing for now...
+  Result := True;
+
+  CheckButtons;
 end;
 
 procedure TfrmMain.actMainMenuRunExecute(Sender: TObject);
@@ -3015,6 +3086,8 @@ begin
 end;
 
 function TfrmMain.DoShowRingsExecute(): Boolean;
+var
+  test: Integer;
 begin
   Result := True;
   actShowRings.Checked := not actShowRings.Checked;
@@ -3120,7 +3193,7 @@ begin
         pLuaUnit := AddFileInProject(mnuSender.Caption, False, LuaSingleUnits);
         pLuaUnit.IsLoaded := True;
         AddFileInTab(pLuaUnit);
-        MonitorFile(mnuSender.Caption);
+        MonitorFileToRecent(mnuSender.Caption);
         BuildTreeNeeded := True;
       end
       else
@@ -3218,7 +3291,7 @@ begin
         pLuaUnit := AddFileInProject(btnSender.Caption, False, LuaSingleUnits);
         pLuaUnit.IsLoaded := True;
         AddFileInTab(pLuaUnit);
-        MonitorFile(btnSender.Caption);
+        MonitorFileToRecent(btnSender.Caption);
         BuildTreeNeeded := True;
       end
       else
@@ -4532,10 +4605,50 @@ end;
 procedure TfrmMain.PrintWatch(L: Plua_State);
 var
   x, iLen: Integer;
-  sValue: String;
+  sSub, sValue, sLookup, sSubTable: String;
   lstTable: TStringList;
+  IsTable: Boolean;
   pNode, pChildNode, pNodeToDel: PVirtualNode;
   pData, pChildData, pNewData: PWatchNodeData;
+
+  // Go through all nodes of the tree and set their ToKeep flag to false
+  procedure UnflagAllExpanded(pTree: TVirtualStringTree);
+  var
+    pNode: PVirtualNode;
+    pData: PWatchNodeData;
+  begin
+    pNode := pTree.GetFirst;
+
+    while Assigned(pNode) do
+    begin
+      pData := pTree.GetNodeData(pNode);
+      pData.ToKeep := False;
+      pNode := pTree.GetNext(pNode);
+    end;
+  end;
+
+  // Deletes all nodes for wich their ToKeep flag is still on false
+  procedure CleanTree(pTree: TVirtualStringTree);
+  var
+    pNode, pPrevious: PVirtualNode;
+    pData: PWatchNodeData;
+  begin
+    pNode := pTree.GetFirst;
+
+    while Assigned(pNode) do
+    begin
+      pData := pTree.GetNodeData(pNode);
+      
+      if not pData.ToKeep then
+      begin
+        pPrevious := pTree.GetPrevious(pNode);
+        pTree.DeleteNode(pNode);
+        pNode := pPrevious;
+      end;
+      
+      pNode := pTree.GetNext(pNode);
+    end;
+  end;
 
   // Subroutine wich parse a string to retreive fields and tables
   procedure LuaStrTableToStringList(sTable: String; pStrLst: TStrings);
@@ -4615,8 +4728,44 @@ var
       end;
     end;
   end;
+
+  // Normalize a table indexing style a[1]["test"] -> a.[1].test
+  function NormalizeName(sName: String): String;
+  var
+    sTemp, sKey: String;
+    Dummy: Integer;
+  begin
+    Result := '';
+    sTemp := sName;
+
+    // Convert [] indexing style to . indexing style
+    while Pos('[', sTemp) <> 0 do
+    begin
+      Result := Result + Copy(sTemp, 1, Pos('[', sTemp) - 1) + '.';
+      sTemp := Copy(sTemp, Pos('[', sTemp) + 1, Length(sTemp) - Pos('[', sTemp));
+      sKey := Copy(sTemp, 1, Pos(']', sTemp) - 1);
+
+      // Convert integer indexing into [] formating for LuaEdit compatibility if required
+      if TryStrToInt(sKey, Dummy) then
+        Result := Result + '[' + Dequote(sKey) + ']'
+      else
+        Result := Result + Dequote(sKey);
+
+      sTemp := Copy(sTemp, Pos(']', sTemp) + 1, Length(sTemp) - Pos(']', sTemp));
+    end;
+
+    // Append rests of sTemp if any...
+    if sTemp <> '' then
+      Result := Result + sTemp;
+
+    // Return passed name if normal...
+    if Result = '' then
+      Result := sName;
+  end;
+
 begin
   // Initialize stuff
+  UnflagAllExpanded(frmWatch.vstWatch);
   lstTable := TStringList.Create;
   pNodeToDel := nil;
 
@@ -4626,8 +4775,9 @@ begin
   // Go through all nodes
   while pNode <> nil do
   begin
-    // retreive current text
+    // retreive current text and initializing some values
     pData := frmWatch.vstWatch.GetNodeData(pNode);
+    IsTable := False;
     sValue := '';
 
     // A variable name must be assigned in order to make an association
@@ -4636,69 +4786,147 @@ begin
       // Attempt to make the association
       if pNode.Parent = frmWatch.vstWatch.RootNode then
       begin
-        if lstLocals.Values[pData.Name] <> '' then
-          sValue := lstLocals.Values[pData.Name];
+        if ((Pos('.', pData.Name) <> 0) or (Pos('[', pData.Name) <> 0)) then
+        begin
+          IsTable := True;
+          // Normalize table's indexing style
+          sLookup := NormalizeName(pData.Name);
+          sSubTable := Copy(sLookup, Pos('.', sLookup) + 1, Length(sLookup) - Pos('.', sLookup));
+          sLookup := Copy(sLookup, 1, Pos('.', sLookup) - 1);
 
-        if ((sValue = '') and (lstGlobals.Values[pData.Name] <> '')) then
-          sValue := lstGlobals.Values[pData.Name];
+          if sSubTable = '' then
+            sValue := 'nil';
+        end
+        else
+          sLookup := pData.Name;
+
+        if lstLocals.Values[sLookup] <> '' then
+          sValue := lstLocals.Values[sLookup];
+
+        if ((sValue = '') and (lstGlobals.Values[sLookup] <> '')) then
+          sValue := lstGlobals.Values[sLookup];
 
         if sValue = '' then
           sValue := 'nil';
       end
       else
-        sValue := pData.Value;
-
-      // Parse table string if it is a table and initalize any required child
-      if sValue[1] = '{' then
       begin
-        LuaStrTableToStringList(sValue, lstTable);
-        pData.Value := sValue;
+        if pData.ToKeep = True then
+          sValue := pData.Value;
+      end;
 
-        // Get first child
-        pChildNode := frmWatch.vstWatch.GetFirstChild(pNode);
-
-        while pChildNode <> nil do
+      if sValue <> '' then
+      begin
+        // Parse table string if it is a table and initalize any required child
+        if sValue[1] = '{' then
         begin
-          // Get the current data of the current child
-          pChildData := frmWatch.vstWatch.GetNodeData(pChildNode);
-
-          if lstTable.Values[pChildData.Name] <> '' then
+          // If value found and is a name is a table then we recursively search for value
+          if IsTable then
           begin
-            pChildData.Value := lstTable.Values[pChildData.Name];
-            lstTable.Values[pChildData.Name] := '';
-            pNodeToDel := nil;
+            // Initialize first item to look for
+            sSub := Copy(sSubTable, 1, Pos('.', sSubTable) - 1);
+            if sSub = '' then
+              sSub := sSubTable;
+          
+            // Search for value/subtables in current value
+            while ((sValue <> 'nil') and (sSub <> '')) do
+            begin
+              if Pos('.', sSubTable) <> 0 then
+                sSubTable := Copy(sSubTable, Pos('.', sSubTable) + 1, Length(sSubTable) + Pos('.', sSubTable) - 1)
+              else
+                sSubTable := '';
+
+              LuaStrTableToStringList(sValue, lstTable);
+              sValue := lstTable.Values[sSub];
+
+              if sValue = '' then
+                sValue := 'nil';
+
+              sSub := Copy(sSubTable, 1, Pos('.', sSubTable) - 1);
+              if sSub = '' then
+                sSub := sSubTable;
+              // Find subtables in current sValue until result or not...
+            end;
+          end;
+
+          // If found value is still a table then display values/subtables...
+          if sValue[1] = '{' then
+          begin
+            LuaStrTableToStringList(sValue, lstTable);
+            pData.Value := sValue;
+            pData.ToKeep := True;
+
+            // Get first child
+            pChildNode := frmWatch.vstWatch.GetFirstChild(pNode);
+
+            while pChildNode <> nil do
+            begin
+              // Get the current data of the current child
+              pChildData := frmWatch.vstWatch.GetNodeData(pChildNode);
+
+              if ((lstTable.Values[pChildData.Name] <> '') and (lstTable.Values[pChildData.Name] <> 'nil')) then
+              begin
+                pChildData.ToKeep := True;
+                pChildData.Value := lstTable.Values[pChildData.Name];
+                lstTable.Values[pChildData.Name] := '';
+                pNodeToDel := nil;
+              end
+              else
+                pNodeToDel := pChildNode;
+
+              // Get next sibling child
+              pChildNode := frmWatch.vstWatch.GetNextSibling(pChildNode);
+
+              // Delete the node if required
+              if Assigned(pNodeToDel) then
+              begin
+                frmWatch.vstWatch.DeleteNode(pNodeToDel);
+                pNodeToDel := nil;
+              end;
+            end;
+
+            // Assign child nodes
+            for x := 0 to lstTable.Count - 1 do
+            begin
+              if lstTable.Values[lstTable.Names[x]] <> '' then
+              begin
+                pNewData := frmWatch.vstWatch.GetNodeData(frmWatch.vstWatch.AddChild(pNode));
+                pNewData.ToKeep := True;
+                pNewData.Name := lstTable.Names[x];
+                pNewData.Value := lstTable.Values[pNewData.Name];
+              end;
+            end;
           end
           else
-            pNodeToDel := pChildNode;
-
-          // Get next sibling child
-          pChildNode := frmWatch.vstWatch.GetNextSibling(pChildNode);
-
-          // Delete the node if required
-          if Assigned(pNodeToDel) then
           begin
-            frmWatch.vstWatch.DeleteNode(pNodeToDel);
-            pNodeToDel := nil;
+            pData.ToKeep := True;
+            pData.Value := sValue;
           end;
-        end;
-
-        // Assign child nodes
-        for x := 0 to lstTable.Count - 1 do
+        end
+        else
         begin
-          if lstTable.Values[lstTable.Names[x]] <> '' then
-          begin
-            pNewData := frmWatch.vstWatch.GetNodeData(frmWatch.vstWatch.AddChild(pNode));
-            pNewData.Name := lstTable.Names[x];
-            pNewData.Value := lstTable.Values[pNewData.Name];
-          end;
+          pData.ToKeep := True;
+          pData.Value := sValue;
         end;
-      end
-      else
-        pData.Value := sValue;
+      end;
     end
     else
       pNodeToDel := pNode;
 
+    // If value is nil and child count is different than zero, it means the user
+    // just changed the name of the watch, wich was matching a table before, into
+    // something wich matches nothing
+   { if not Assigned(pNodeToDel) and Assigned(pNode) then
+    begin
+      if ((pNode.ChildCount <> 0) and (sValue = 'nil')) then
+      begin
+        frmWatch.vstWatch.DeleteChildren(pNode);
+        if pNode.Parent <> frmWatch.vstWatch.RootNode then
+          frmWatch.vstWatch.DeleteNode(pNode);
+      end;
+    end;}
+
+    //pNode := frmWatch.vstWatch.GetNextSibling(pNode);
     pNode := frmWatch.vstWatch.GetNext(pNode);
 
     // Delete the node if required
@@ -4711,6 +4939,7 @@ begin
 
   // Free stuff and call virtual treeview to repaint
   lstTable.Free;
+  CleanTree(frmWatch.vstWatch);
   frmWatch.vstWatch.Refresh;
 end;
 
@@ -4814,7 +5043,17 @@ var
   pData: PWatchNodeData;
   sVarName: String;
 begin
+  // Determine default proposed value
   sVarName := 'VarName';
+
+  if Assigned(jvUnitBar.SelectedTab) then
+  begin
+    if Assigned(jvUnitBar.SelectedTab.Data) then
+    begin
+      if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelText <> '' then
+        sVarName := TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelText;
+    end;
+  end;
 
   if InputQuery('Add Watch', 'Enter the name of the variable to watch:', sVarName) then
   begin
@@ -4851,6 +5090,30 @@ end;
 procedure TfrmMain.actToggleBreakpointExecute(Sender: TObject);
 begin
   DoToggleBreakpointExecute;
+end;
+
+function TfrmMain.DoEnableDisableBreakpoint(): Boolean;
+var
+  pLuaUnit: TLuaUnit;
+begin
+  Result := False;
+
+  if Assigned(jvUnitBar.SelectedTab) then
+  begin
+    if Assigned(jvUnitBar.SelectedTab.Data) then
+    begin
+      Result := True;
+      pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
+      pLuaUnit.pDebugInfos.EnableDisableBreakpointAtLine(pLuaUnit.synUnit.CaretY);
+      pLuaUnit.synUnit.Refresh;
+      frmBreakpoints.RefreshBreakpointList;
+    end;
+  end;
+end;
+
+procedure TfrmMain.actEnableDisableBreakpointExecute(Sender: TObject);
+begin
+  DoEnableDisableBreakpoint;
 end;
 
 procedure TfrmMain.stbMainDrawPanel(StatusBar: TStatusBar; Panel: TStatusPanel; const Rect: TRect);
@@ -5115,16 +5378,21 @@ end;
 procedure TfrmMain.synEditGutterClick(Sender: TObject; Button: TMouseButton; X, Y, Line: Integer; Mark: TSynEditMark);
 var
   iCurrentLine: Integer;
+  pLuaUnit: TLuaUnit;
 begin
-  iCurrentLine := TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.RowToLine(Line);
+  if X <= 14 then
+  begin
+    pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
+    iCurrentLine := pLuaUnit.synUnit.RowToLine(Line);
 
-  if not TLuaUnit(jvUnitBar.SelectedTab.Data).pDebugInfos.IsBreakPointLine(iCurrentLine) then
-    TLuaUnit(jvUnitBar.SelectedTab.Data).pDebugInfos.AddBreakpointAtLine(iCurrentLine)
-  else
-    TLuaUnit(jvUnitBar.SelectedTab.Data).pDebugInfos.RemoveBreakpointAtLine(iCurrentLine);
+    if not pLuaUnit.pDebugInfos.IsBreakPointLine(iCurrentLine) then
+      pLuaUnit.pDebugInfos.AddBreakpointAtLine(iCurrentLine)
+    else
+      pLuaUnit.pDebugInfos.RemoveBreakpointAtLine(iCurrentLine);
 
-  TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Refresh;
-  frmBreakpoints.RefreshBreakpointList;
+    pLuaUnit.synUnit.Refresh;
+    frmBreakpoints.RefreshBreakpointList;
+  end;
 end;
 
 function TfrmMain.DoPauseExecute(): Boolean;
@@ -6301,7 +6569,7 @@ begin
   Result := False;
   pLuaUnit := TLuaUnit(jvUnitBar.SelectedTab.Data);
 
-  for x := pLuaUnit.synUnit.BlockBegin.Line to pLuaUnit.synUnit.BlockEnd.Line - 1 do
+  for x := pLuaUnit.synUnit.BlockBegin.Line - 1 to pLuaUnit.synUnit.BlockEnd.Line - 1 do
   begin
     if Copy(pLuaUnit.synUnit.Lines.Strings[x], 1, 2) <> '--' then
     begin
@@ -6611,6 +6879,14 @@ begin
     tlbEdit.Hide
   else
     tlbEdit.Show;
+end;
+
+procedure TfrmMain.Find1Click(Sender: TObject);
+begin
+  if tlbFind.Visible then
+    tlbFind.Hide
+  else
+    tlbFind.Show;
 end;
 
 procedure TfrmMain.Run3Click(Sender: TObject);
@@ -7301,7 +7577,7 @@ begin
         pLuaUnit := AddFileInProject(WordAtCursor, False, LuaSingleUnits);
         pLuaUnit.IsLoaded := True;
         AddFileInTab(pLuaUnit);
-        MonitorFile(pLuaUnit.sUnitPath);
+        MonitorFileToRecent(pLuaUnit.sUnitPath);
       end
       else
       begin
@@ -7363,12 +7639,21 @@ procedure TfrmMain.ppmEditorPopup(Sender: TObject);
 var
   sTextToShow, sOriginalName: String;
 begin
+  sTextToShow := '';
+  
   if TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelAvail then
   begin
     OpenFileatCursor1.Enabled := True;
     sOriginalName := StringReplace(TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.SelText, '\\', '\', [rfIgnoreCase, rfReplaceAll]);
-    sTextToShow := MinimizeName(sOriginalName, stbMain.Canvas, 150);
+
+    if FileExists(sOriginalName) then
+      sTextToShow := MinimizeName(sOriginalName, stbMain.Canvas, 150);
+  end;
+
+  if sTextToShow <> '' then
+  begin
     OpenFileatCursor1.Caption := 'Open Document "'+sTextToShow+'"';
+    OpenFileatCursor1.Enabled := True;
   end
   else
   begin
@@ -7559,14 +7844,14 @@ begin
         begin
           pLuaUnit := frmMain.AddFileInProject(FileName, False, LuaSingleUnits);
           pLuaUnit.IsLoaded := True;
-          frmMain.AddFileInTab(pLuaUnit);
-          frmMain.MonitorFile(FileName);
+          AddFileInTab(pLuaUnit);
+          MonitorFileToRecent(FileName);
         end;
       end
       else if ExtractFileExt(FileName) = '.lpr' then
       begin
         // Add new project to the tree
-        if not frmMain.IsProjectOpened(FileName) then
+        if not IsProjectOpened(FileName) then
         begin
           pNewPrj := TLuaProject.Create(FileName);
           pNewPrj.GetProjectFromDisk(FileName);
@@ -7577,7 +7862,7 @@ begin
 
   // Rebuild the project tree and initialize stuff
   frmProjectTree.BuildProjectTree;
-  frmMain.CheckButtons;
+  CheckButtons;
 end;
 
 procedure TfrmMain.jvUnitBarTabClosed(Sender: TObject; Item: TJvTabBarItem);
@@ -7607,6 +7892,11 @@ begin
         TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Visible := False;
     end;
   end;
+end;
+
+procedure TfrmMain.ppmToolBarPopup(Sender: TObject);
+begin
+  DoMainMenuViewExecute;
 end;
 
 end.

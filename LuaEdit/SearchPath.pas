@@ -185,7 +185,6 @@ end;
 
 procedure TfrmSearchPath.btnOkClick(Sender: TObject);
 begin
-  btnAdd.Click;
   ModalResult := mrOk;
 end;
 

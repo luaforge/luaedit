@@ -6,8 +6,6 @@ object frmProjectTree: TfrmProjectTree
   BorderStyle = bsSizeToolWin
   Caption = 'Project Tree'
   Color = clBtnFace
-  Constraints.MinHeight = 200
-  Constraints.MinWidth = 250
   DockSite = True
   DragKind = dkDock
   DragMode = dmAutomatic

@@ -136,7 +136,7 @@ begin
 
   lstValues.Free;
   pReg.Free;
-  InternalBrowser.GoHome;
+  actHome.Execute;
 end;
 
 procedure TfrmInternalBrowser.FormDestroy(Sender: TObject);
