@@ -184,7 +184,7 @@ begin
                RTAssert(0, true, ' AddFileInTab', '', 0);
                pLuaUnit.IsLoaded := True;
                AddFileInTab(pLuaUnit);
-               MonitorFile(FileName);
+               MonitorFileToRecent(FileName);
                RTAssert(0, true, ' CheckButtons', '', 0);
                CheckButtons;
                MainForm.LuaState :=LState;
