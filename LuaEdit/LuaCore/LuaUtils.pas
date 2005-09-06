@@ -46,6 +46,8 @@ type
   TVariantArray =array of Variant;
   PVariantArray =^TVariantArray;
 
+function Quote(const Str: string): string;
+function Dequote(const QuotedStr: string): string;
 function lua_print(L: Plua_State): Integer; cdecl;
 function lua_io_write(L: Plua_State): Integer; cdecl;
 
@@ -636,7 +638,12 @@ function LuaStackToStr(L: Plua_State; Index: Integer; MaxTable: Integer): string
         lua_pop(L, 2);
         Break;
       end;
-      Key := Dequote(LuaStackToStr(L, -2, MaxTable));
+
+      if lua_type(L, -2) = LUA_TNUMBER then
+        Key := '[' + Dequote(LuaStackToStr(L, -2, MaxTable)) + ']'
+      else
+        Key := Dequote(LuaStackToStr(L, -2, MaxTable));
+
       if (Key = '_G') then
         Value := LuaGlobalVariableStr
       else
