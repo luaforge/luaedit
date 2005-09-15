@@ -35,7 +35,7 @@ begin
   closesocket(pSock);
   closesocket(pRSock);
   WSACleanup;
-  TerminateThread(ThreadDebugHandle, 0);
+  //TerminateThread(ThreadDebugHandle, 0);
   Screen.Cursor := crDefault;
 end;
 

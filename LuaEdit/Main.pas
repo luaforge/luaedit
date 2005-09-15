@@ -149,6 +149,8 @@ type
     sPrjName:           String;
     sPrjPath:           String;
     sInitializer:       String;
+    sRemoteIP:          String;
+    sRemoteDirectory:   String;
     LastTimeModified:   TDateTime;
     IsReadOnly:         Boolean;
     IsNew:              Boolean;
@@ -158,6 +160,7 @@ type
     iVersionMinor:      Integer;
     iVersionRelease:    Integer;
     iVersionRevision:   Integer;
+    iRemotePort:        Integer;
     lstUnits:           TList;
     public
       constructor Create(sPath: String);
@@ -167,13 +170,6 @@ type
       function SaveProject(sPath: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
       function SaveProjectInc(sPath: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
       procedure RealoadProject();
-  end;
-
-  TDebuggerThread = class(TThread)
-    private
-      { Private declarations }
-    protected
-      procedure Execute; override;
   end;
 
   TfrmMain = class(TForm)
@@ -584,7 +580,7 @@ type
     PauseFile: string;
     NotifyModified: Boolean;
     LuaState: Plua_State;
-
+    
     //Search variables
     sSearchInFilesString: String;
     sSearchInFilesDir: String;
@@ -764,9 +760,6 @@ var
   FirstClickPos: TBufferCoord;
   lstLocals: TStringList;
   lstGlobals: TStringList;
-  ThreadDebugHandle: THandle;
-  ThreadDebugID: Cardinal;
-  hMutex: Cardinal;
   lstStack: TStringList;
   lstLuaStack: TStringList;
   IsCompiledComplete: Boolean;
@@ -786,12 +779,10 @@ var
   IsRemoteDebug: Boolean;
   pSock: TSocket;
   pRSock: TSocket;
-  thDebugger: TThread;
 
 // Misc functions
 procedure CallRemoteHookFunc(pSock: TSocket);
 procedure DoLuaStdout(S: PChar; N: Integer);
-procedure RelaunchRunningThread;
 function GetLocalIP: String;
 function LocalOutput(L: PLua_State): Integer; cdecl;
 procedure HookCaller(L: Plua_State; AR: Plua_Debug); cdecl;
@@ -1085,6 +1076,9 @@ begin
   iVersionRelease := 0;
   iVersionRevision := 0;
   AutoIncRevNumber := False;
+  iRemotePort := 1024;
+  sRemoteIP := '0.0.0.0';
+  sRemoteDirectory := '';
 
   // Get Last Time accessed and readonly state
   if sPath <> '' then
@@ -1128,6 +1122,9 @@ begin
 
   // Read the [Debug] section
   sInitializer := fFile.ReadString('Debug', 'Initializer', '');
+  sRemoteIP := fFile.ReadString('Debug', 'RemoteIP', '0.0.0.0');
+  sRemoteDirectory := fFile.ReadString('Debug', 'RemoteDirectory', '');
+  iRemotePort := fFile.ReadInteger('Debug', 'RemotePort', 1024);
 
   // Initialize project variables and global variables
   sPrjPath := sPath;
@@ -1283,6 +1280,9 @@ begin
 
   // Write data for [Debug] section
   pFile.WriteString('Debug', 'Initializer', sInitializer);
+  pFile.WriteString('Debug', 'RemoteIP', sRemoteIP);
+  pFile.WriteString('Debug', 'RemoteDirectory', sRemoteDirectory);
+  pFile.WriteInteger('Debug', 'RemotePort', iRemotePort);
 
   // Wrtie data for [Files] section
   for x := 0 to lstUnits.Count - 1 do
@@ -1398,6 +1398,9 @@ begin
 
   // Write data for [Debug] section
   pFile.WriteString('Debug', 'Initializer', sInitializer);
+  pFile.WriteString('Debug', 'RemoteIP', sRemoteIP);
+  pFile.WriteString('Debug', 'RemoteDirectory', sRemoteDirectory);
+  pFile.WriteInteger('Debug', 'RemotePort', iRemotePort);
 
   // Wrtie data for [Files] section  
   for x := 0 to lstUnits.Count - 1 do
@@ -1834,7 +1837,7 @@ begin
   end;
   pReg.Free;
 
-  hMutex := CreateMutex(nil, False, nil);
+  //hMutex := CreateMutex(nil, False, nil);
   LookupList := TStringList.Create;
   EditorColors := TList.Create;
   CallStack := TList.Create;
@@ -2891,7 +2894,20 @@ begin
     actAddToPrj.Enabled := ((pData.pLuaPrj = ActiveProject) and Assigned(ActiveProject));
     actPrjSettings.Enabled := ((pData.pLuaPrj = ActiveProject) and Assigned(ActiveProject));
     frmProjectTree.UnloadFileProject1.Enabled := (((Assigned(pData.pLuaUnit)) and (pNode.Parent = frmProjectTree.vstProjectTree.RootNode)) or (Assigned(pData.pLuaPrj)));
-    actRemoveFromPrj.Enabled := not ((pNode.Parent = frmProjectTree.vstProjectTree.RootNode) and (Assigned(pData.pLuaUnit)));
+
+    if Assigned(pData.pLuaPrj) then
+      actRemoveFromPrj.Enabled := ((pData.pLuaPrj = ActiveProject) and Assigned(ActiveProject) and (pData.pLuaPrj.lstUnits.Count <> 0))
+    else
+      actRemoveFromPrj.Enabled := False;
+  end
+  else
+  begin
+    // Flag all menus to false since no node is selected
+    actActiveSelPrj.Enabled := False;
+    actAddToPrj.Enabled := False;
+    actPrjSettings.Enabled := False;
+    frmProjectTree.UnloadFileProject1.Enabled := False;
+    actRemoveFromPrj.Enabled := False;
   end;
 end;
 
@@ -4202,7 +4218,7 @@ begin
           Exit;
 
         LuaLoadBuffer(L, TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Text, pLuaUnit.sUnitPath);
-      
+
         if (FuncName <> '') then
         begin
           LuaPCall(L, 0, 0, 0);
@@ -4230,7 +4246,7 @@ begin
         LuaPCall(L, NArgs, LUA_MULTRET, 0);
         frmLuaEditMessages.memMessages.Lines.Add('[HINT]:  End of Script - '+DateTimeToStr(Now));
 {$ifdef RTASSERT} RTAssert(0, true, ' End Script', '', 0);   {$endif}
-      
+
         if (Assigned(Results)) then
         begin
           Results.Clear;
@@ -4313,7 +4329,7 @@ begin
   frmMain.CallHookFunc(L, AR);
 end;
 
-{The Lau debug library is calling us every time before executing AR.currentline.
+{The Lua debug library is calling us every time before executing AR.currentline.
 That means that the first line will get hook but only if AR.what='main' and
 AR.currentline=-1 and AR.event=0. It also means that it will call us on the last
 execution with AR.what='main' and AR.event=0}
@@ -4386,7 +4402,7 @@ var
       PauseFile := '';
     end;
 
-    frmMain.CheckButtons;
+    //frmMain.CheckButtons;
     PrevLine := AR.currentline - 1;
 
     // Update debug informations only if we are going to break
@@ -4394,14 +4410,16 @@ var
       Update;
 
     repeat
+      // Always process messages while in the waiting loop (even if not hanging in
+      // loop because it's running) to avoid output freezes
+      // Bug fixed the 10/09/2005 by Jean-Francois Goulet
+      Application.ProcessMessages;
+
       // Only slow down processor if we really have to wait
       // if we don't we have major poor performances
       // Bug fixed the 02/06/2005 by Jean-Francois Goulet
       if not ReStart then
-      begin
-        Application.ProcessMessages;
         Sleep(20);
-      end;
 
       // Quit loop if user pressed stop/run
       if (not Running) then
@@ -4599,7 +4617,8 @@ begin
   if not Foce then
     Exit;
 
-  LuaTableToTreeView(L, LUA_GLOBALSINDEX, frmLuaGlobals.tvwLuaGlobals, PRINT_SIZE);
+  //frmLuaGlobals.tvwLuaGlobals.
+  LuaTableToVirtualTreeView(L, LUA_GLOBALSINDEX, frmLuaGlobals.vstGlobals, PRINT_SIZE);
   LuaGlobalsToStrings(L, lstGlobals, PRINT_SIZE);
 end;
 
@@ -4915,19 +4934,6 @@ begin
     else
       pNodeToDel := pNode;
 
-    // If value is nil and child count is different than zero, it means the user
-    // just changed the name of the watch, wich was matching a table before, into
-    // something wich matches nothing
-   { if not Assigned(pNodeToDel) and Assigned(pNode) then
-    begin
-      if ((pNode.ChildCount <> 0) and (sValue = 'nil')) then
-      begin
-        frmWatch.vstWatch.DeleteChildren(pNode);
-        if pNode.Parent <> frmWatch.vstWatch.RootNode then
-          frmWatch.vstWatch.DeleteNode(pNode);
-      end;
-    end;}
-
     //pNode := frmWatch.vstWatch.GetNextSibling(pNode);
     pNode := frmWatch.vstWatch.GetNext(pNode);
 
@@ -4968,7 +4974,7 @@ begin
         begin
           lua_dostring(LuaState, PChar('return ('+BreakCondition+')'));
 
-          if lua_toboolean(LuaState, -1) = 1 then
+          if lua_isboolean(LuaState, -1) then
           begin
             // Breakpoint hit!!!
             Result := True;
@@ -5172,14 +5178,12 @@ begin
       begin
         actStopExecute(nil);
 
-        while  WaitForSingleObject(hMutex, 100) = WAIT_TIMEOUT   do
+        {while  WaitForSingleObject(hMutex, 100) = WAIT_TIMEOUT   do
         begin
           Sleep(20);
           Application.ProcessMessages;
-        end;
+        end;}
 
-        ReleaseMutex(hMutex);
-        CloseHandle(ThreadDebugHandle);
         TLuaUnit(jvUnitBar.SelectedTab.Data).pDebugInfos.iCurrentLineDebug := -1;
         TLuaUnit(jvUnitBar.SelectedTab.Data).pDebugInfos.iLineError := -1;
         TLuaUnit(jvUnitBar.SelectedTab.Data).synUnit.Refresh;
@@ -5401,8 +5405,9 @@ function TfrmMain.DoPauseExecute(): Boolean;
 begin
   Result := False;
 
-  if (ReStart) then
+  if ReStart then
   begin
+    frmLuaEditMessages.memMessages.Lines.Add('[HINT]:  Script Paused by User - '+DateTimeToStr(Now));
     Result := True;
     Pause := True;
   end;
@@ -5416,11 +5421,12 @@ end;
 function TfrmMain.DoStopExecute(): Boolean;
 begin
   Result := True;
-  Running := False;
+
   if Running then
   begin
     frmLuaEditMessages.memMessages.Lines.Add('[HINT]:  End of Scipt - '+DateTimeToStr(Now));
-    frmLuaEditMessages.memMessages.Lines.Add('[HINT]:  Script Terminated by User - '+DateTimeToStr(Now))
+    frmLuaEditMessages.memMessages.Lines.Add('[HINT]:  Script Terminated by User - '+DateTimeToStr(Now));
+    Running := False;
   end;
 end;
 
@@ -6899,13 +6905,6 @@ begin
     tlbRun.Show;
 end;
 
-procedure RelaunchRunningThread;
-begin
-  WaitForSingleObject(hMutex, INFINITE);
-  ReleaseMutex(hMutex);
-  frmMain.actRunScriptExecute(nil);
-end;
-
 procedure TfrmMain.ASciiTable1Click(Sender: TObject);
 begin
   frmAsciiTable.ShowModal;
@@ -6916,7 +6915,7 @@ begin
   ShellExecute(Self.Handle, 'open', PChar(ExtractFilePath(Application.ExeName)+'\Help\LuaEdit.chm'), nil, nil, SW_SHOWNORMAL);
 end;
 
-procedure TDebuggerThread.Execute;
+(*procedure TDebuggerThread.Execute;
 begin
   //frmMain.actCompileExecute(nil);
 
@@ -7095,7 +7094,7 @@ begin
       WSACleanup;
     end;
   end; }
-end;
+end;*) 
 
 procedure CallRemoteHookFunc(pSock: TSocket);
 var

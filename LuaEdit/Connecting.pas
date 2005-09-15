@@ -35,7 +35,7 @@ begin
   closesocket(pSock);
   closesocket(pRSock);
   WSACleanup;
-  TerminateThread(ThreadDebugHandle, 0);
+  //TerminateThread(ThreadDebugHandle, 0);
   Screen.Cursor := crDefault;
 end;
 
@@ -55,13 +55,13 @@ begin
     btnCancel.Click;
   end;
 
-  if WaitForSingleObject(hMutex, 30) <> WAIT_TIMEOUT then
+  {if WaitForSingleObject(hMutex, 30) <> WAIT_TIMEOUT then
   begin
     // A connection has been made so we close this form and start debugging
     ReleaseMutex(hMutex);
     tmrTimeOut.Enabled := False;
     Self.Close;
-  end;
+  end;}
 end;
 
 procedure TfrmConnecting.FormShow(Sender: TObject);

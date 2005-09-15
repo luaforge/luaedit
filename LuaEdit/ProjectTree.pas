@@ -235,6 +235,10 @@ begin
       pData.ActiveProject := (pTempPrj = ActiveProject);
       pData.ToKeep := True;
       pData.Deleting := False;
+
+      // Adding project root to change notifier...
+      if ((not pTempPrj.IsNew) and HandleNotifier) then
+        frmMain.AddToNotifier(ExtractFileDir(pTempPrj.sPrjPath));
     end;
 
     for y := 0 to pTempPrj.lstUnits.Count - 1 do
@@ -277,6 +281,10 @@ begin
         pData.ActiveProject := False;
         pData.ToKeep := True;
         pData.Deleting := False;
+
+        // Adding unit root to change notifier...
+        if ((not TLuaUnit(pTempPrj.lstUnits.Items[y]).IsNew) and HandleNotifier) then
+          frmMain.AddToNotifier(ExtractFileDir(TLuaUnit(pTempPrj.lstUnits.Items[y]).sUnitPath));
       end;
     end;
   end;

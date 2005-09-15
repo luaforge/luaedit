@@ -6,8 +6,6 @@ object frmWatch: TfrmWatch
   BorderStyle = bsSizeToolWin
   Caption = 'Watch List'
   Color = clBtnFace
-  Constraints.MinHeight = 200
-  Constraints.MinWidth = 300
   DockSite = True
   DragKind = dkDock
   DragMode = dmAutomatic
@@ -45,7 +43,7 @@ object frmWatch: TfrmWatch
     Header.Font.Height = -11
     Header.Font.Name = 'MS Sans Serif'
     Header.Font.Style = []
-    Header.Options = [hoColumnResize, hoDrag, hoVisible]
+    Header.Options = [hoAutoResize, hoColumnResize, hoDrag, hoVisible]
     Header.Style = hsFlatButtons
     LineStyle = lsSolid
     PopupMenu = ppmWatch
@@ -72,7 +70,7 @@ object frmWatch: TfrmWatch
       end
       item
         Position = 1
-        Width = 400
+        Width = 163
         WideText = 'Value'
       end>
     WideDefaultText = ''
@@ -152,11 +150,7 @@ object frmWatch: TfrmWatch
     end
   end
   object JvDockClient1: TJvDockClient
-    LRDockWidth = 100
-    TBDockHeight = 100
     DirectDrag = False
-    ShowHint = True
-    EnableCloseButton = True
     DockStyle = frmMain.jvDockVSNet
     Left = 80
     Top = 48

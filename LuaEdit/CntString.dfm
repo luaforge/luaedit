@@ -4,8 +4,8 @@ object frmCntString: TfrmCntString
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Connection String'
-  ClientHeight = 161
-  ClientWidth = 443
+  ClientHeight = 156
+  ClientWidth = 444
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -45,8 +45,8 @@ object frmCntString: TfrmCntString
   object Panel1: TPanel
     Left = 0
     Top = 0
-    Width = 443
-    Height = 120
+    Width = 444
+    Height = 115
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 0
@@ -57,10 +57,10 @@ object frmCntString: TfrmCntString
       Height = 52
       Caption = 
         'The following string has been copied in your clipboard. Use it t' +
-        'o launch the remote debugger on the remote computer. To do so, u' +
-        'se a command window (Start Menu/Execute --> type cmd) move into ' +
-        'the folder where you previously copied "rdbg.exe" and paste the ' +
-        'line. Press Ok whenever you are ready...'
+        'o launch the remote debugger on the remote machine. To do so, us' +
+        'e a command window (Start Menu/Execute --> type cmd) move into t' +
+        'he folder where you previously copied "rdbg.exe" and paste the l' +
+        'ine. Press Ok whenever you are ready...'
       WordWrap = True
     end
     object memoCntString: TMemo
@@ -76,8 +76,8 @@ object frmCntString: TfrmCntString
   end
   object Panel2: TPanel
     Left = 0
-    Top = 120
-    Width = 443
+    Top = 115
+    Width = 444
     Height = 41
     Align = alBottom
     BevelOuter = bvNone

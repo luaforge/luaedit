@@ -1,7 +1,7 @@
 object frmPrjOptions: TfrmPrjOptions
-  Left = 443
-  Top = 265
-  ActiveControl = txtPrjName
+  Left = 506
+  Top = 300
+  ActiveControl = txtDebugInitializer
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Project Options'
@@ -74,7 +74,7 @@ object frmPrjOptions: TfrmPrjOptions
       Top = 0
       Width = 442
       Height = 275
-      ActivePage = stabGeneral
+      ActivePage = stabDebug
       Align = alClient
       TabOrder = 0
       object stabGeneral: TTabSheet
@@ -212,6 +212,114 @@ object frmPrjOptions: TfrmPrjOptions
             Caption = '...'
             TabOrder = 1
             OnClick = btnBrowseClick
+          end
+        end
+        object GroupBox3: TGroupBox
+          Left = 16
+          Top = 104
+          Width = 401
+          Height = 121
+          Caption = 'Remote Debugging'
+          TabOrder = 1
+          Visible = False
+          object Label3: TLabel
+            Left = 24
+            Top = 24
+            Width = 62
+            Height = 13
+            Caption = 'Port Number:'
+          end
+          object Label4: TLabel
+            Left = 208
+            Top = 24
+            Width = 54
+            Height = 13
+            Caption = 'IP Address:'
+          end
+          object Label5: TLabel
+            Left = 247
+            Top = 48
+            Width = 3
+            Height = 13
+            Caption = '.'
+          end
+          object Label6: TLabel
+            Left = 294
+            Top = 48
+            Width = 3
+            Height = 13
+            Caption = '.'
+          end
+          object Label12: TLabel
+            Left = 342
+            Top = 48
+            Width = 3
+            Height = 13
+            Caption = '.'
+          end
+          object Label13: TLabel
+            Left = 24
+            Top = 72
+            Width = 82
+            Height = 13
+            Caption = 'Upload Directory:'
+          end
+          object jvspinPort: TJvSpinEdit
+            Left = 24
+            Top = 40
+            Width = 161
+            Height = 21
+            MaxValue = 65535.000000000000000000
+            MinValue = 1024.000000000000000000
+            Value = 1024.000000000000000000
+            TabOrder = 0
+          end
+          object txtUploadDir: TEdit
+            Left = 24
+            Top = 88
+            Width = 361
+            Height = 21
+            TabOrder = 5
+          end
+          object txtIP1: TEdit
+            Left = 208
+            Top = 40
+            Width = 33
+            Height = 21
+            MaxLength = 3
+            TabOrder = 1
+            OnExit = txtIP1Exit
+            OnKeyPress = txtIP1KeyPress
+          end
+          object txtIP2: TEdit
+            Left = 256
+            Top = 40
+            Width = 33
+            Height = 21
+            MaxLength = 3
+            TabOrder = 2
+            OnExit = txtIP2Exit
+            OnKeyPress = txtIP2KeyPress
+          end
+          object txtIP3: TEdit
+            Left = 304
+            Top = 40
+            Width = 33
+            Height = 21
+            MaxLength = 3
+            TabOrder = 3
+            OnExit = txtIP3Exit
+            OnKeyPress = txtIP3KeyPress
+          end
+          object txtIP4: TEdit
+            Left = 352
+            Top = 40
+            Width = 33
+            Height = 21
+            MaxLength = 3
+            TabOrder = 4
+            OnExit = txtIP4Exit
+            OnKeyPress = txtIP4KeyPress
           end
         end
       end

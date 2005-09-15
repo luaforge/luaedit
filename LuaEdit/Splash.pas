@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ExtCtrls, jpeg;
+  Dialogs, StdCtrls, ExtCtrls, jpeg, JvGIF;
 
 type
   TfrmSplash = class(TForm)
@@ -18,6 +18,7 @@ type
     imlLua: TImage;
     imlLuaEditLogo: TImage;
     imgLogo: TImage;
+    Image1: TImage;
     procedure FormShow(Sender: TObject);
   private
     { Private declarations }

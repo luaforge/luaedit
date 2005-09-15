@@ -120,7 +120,7 @@ object frmEditorSettings: TfrmEditorSettings
       Top = 0
       Width = 492
       Height = 375
-      ActivePage = TabSheet1
+      ActivePage = stabGeneral
       Align = alClient
       TabOrder = 0
       object stabGeneral: TTabSheet
@@ -299,7 +299,7 @@ object frmEditorSettings: TfrmEditorSettings
             Width = 161
             Height = 17
             Caption = 'Save Breakpoints'
-            TabOrder = 1
+            TabOrder = 5
           end
           object chkShowExSaveDlg: TCheckBox
             Left = 16
@@ -315,7 +315,7 @@ object frmEditorSettings: TfrmEditorSettings
             Width = 225
             Height = 17
             Caption = 'Keep Find in Files Report Opened'
-            TabOrder = 5
+            TabOrder = 1
           end
         end
       end
