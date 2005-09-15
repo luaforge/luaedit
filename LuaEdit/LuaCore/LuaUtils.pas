@@ -12,6 +12,10 @@
 //******************************************************************************
 //** See Copyright Notice in lua.h
 
+//Revision 1.6
+//     JF Adds :
+//             LuaTableToVirtualTreeView
+//
 //Revision 1.1
 //     MaxM Adds :
 //             LuaPCallFunction
@@ -29,7 +33,7 @@ unit LuaUtils;
 interface
 
 uses
-  SysUtils, Classes, ComCtrls, lua, lualib, lauxlib, Variants;
+  SysUtils, Classes, ComCtrls, lua, lualib, lauxlib, Variants, VirtualTrees;
 
 const
      ERR_Script ='Script Error : ';  
@@ -41,6 +45,12 @@ type
     Line: Integer;
     Msg: string;
     constructor Create(Title: string; Line: Integer; Msg: string);
+  end;
+
+  PBasicTreeData = ^TBasicTreeData;
+  TBasicTreeData = record
+    sName: String;
+    sValue: String;
   end;
 
   TVariantArray =array of Variant;
@@ -104,6 +114,7 @@ procedure LuaRegisterProperty(L: PLua_State; const Name: PChar; ReadFunc, WriteF
 procedure LuaStackToStrings(L: Plua_State; Lines: TStrings; MaxTable: Integer = -1);
 procedure LuaLocalToStrings(L: Plua_State; Lines: TStrings; MaxTable: Integer = -1; Level: Integer = 0);
 procedure LuaTableToStrings(L: Plua_State; Index: Integer; Lines: TStrings; MaxTable: Integer = -1);
+procedure LuaTableToVirtualTreeView(L: Plua_State; Index: Integer; VTV: TVirtualStringTree; MaxTable: Integer);
 procedure LuaTableToTreeView(L: Plua_State; Index: Integer; TV: TTreeView; MaxTable: Integer = -1);
 function LuaGetIdentValue(L: Plua_State; Ident: string; MaxTable: Integer = -1): string;
 procedure LuaSetIdentValue(L: Plua_State; Ident, Value: string; MaxTable: Integer = -1);
@@ -864,8 +875,64 @@ begin
   end;
 end;
 
+procedure LuaTableToVirtualTreeView(L: Plua_State; Index: Integer; VTV: TVirtualStringTree; MaxTable: Integer);
+  // Go through all child of current table and create nodes
+  procedure ParseTreeNode(TreeNode: PVirtualNode; Index: Integer);
+  var
+    Key: string;
+    pData: PBasicTreeData;
+    pNode: PVirtualNode;
+  begin
+    // Retreive absolute index 
+    Index := LuaAbsIndex(L, Index);
+    
+    // Get the root node if current node is not assigned
+    //if not Assigned(TreeNode) then
+      //TreeNode := VTV.RootNode;
+
+    lua_pushnil(L);
+    while (lua_next(L, Index) <> 0) do
+    begin
+      Key := Dequote(LuaStackToStr(L, -2, MaxTable));
+      if (lua_type(L, -1) <> LUA_TTABLE) then
+      begin
+        pData := VTV.GetNodeData(VTV.AddChild(TreeNode));
+        pData.sName := Key;
+        pData.sValue := LuaStackToStr(L, -1, MaxTable);
+      end
+      else
+      begin
+        if (Key = '_G') then
+        begin
+          pData := VTV.GetNodeData(VTV.AddChild(TreeNode));
+          pData.sName := Key;
+          pData.sValue := '[LUA_GLOBALSINDEX]';
+        end
+        else
+        begin
+          pNode := VTV.AddChild(TreeNode);
+          pData := VTV.GetNodeData(pNode);
+          pData.sName := Key;
+          pData.sValue := '';
+          ParseTreeNode(pNode, -1);
+        end;
+      end;
+      lua_pop(L, 1);
+    end;
+  end;
+begin
+  Assert(lua_type(L, Index) = LUA_TTABLE);
+  VTV.BeginUpdate;
+  VTV.Clear;
+  try
+    ParseTreeNode(nil, Index);
+  finally
+    VTV.EndUpdate;
+  end;
+end;
+
 procedure LuaTableToTreeView(L: Plua_State; Index: Integer; TV: TTreeView; MaxTable: Integer);
-// Index ÇÃ Table Ç©ÇÁ TreeView çÏê¨
+  // Go through all child of current table and create nodes
   procedure ParseTreeNode(TreeNode: TTreeNode; Index: Integer);
   var
     Key: string;

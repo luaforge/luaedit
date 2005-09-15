@@ -153,7 +153,7 @@ end;
 end;
 
 
-function LuaEditDebugOpen :Plua_State;
+function LuaEditDebugOpen :Plua_State; cdecl;
 begin
      Result :=lua_open;
      //Store in LuaRegistry Only!!!!!
@@ -161,7 +161,7 @@ begin
                               InitForms);
 end;
 
-function LuaEditDebugStartFile(LState :Plua_State; Filename :PChar):Integer;
+function LuaEditDebugStartFile(LState :Plua_State; Filename :PChar):Integer; cdecl;
 Var
    MainForm :TfrmMain;
    pLuaUnit: TLuaUnit;
@@ -192,7 +192,7 @@ begin
          end;
 end;
 
-function LuaEditDebugStart(LuaState :Plua_State; Code :PChar):Integer;
+function LuaEditDebugStart(LuaState :Plua_State; Code :PChar):Integer; cdecl;
 Var
    xTempFile     :TFileStream;
    xTempFileName,
@@ -236,7 +236,7 @@ begin
      end;
 end;
 
-procedure LuaEditDebugClose(LuaState :Plua_State);
+procedure LuaEditDebugClose(LuaState :Plua_State); cdecl;
 Var
    MainForm :TfrmMain;
 
