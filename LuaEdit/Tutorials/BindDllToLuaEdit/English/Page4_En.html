@@ -1,0 +1,305 @@
+<html>	
+	<head>
+		  <title>
+		  		 Bind a Dll to LuaEdit (Tutorial) - Controling and binding the Game
+		  </title>	
+		  <link rel="stylesheet" href="..\Tutorial.css" type="text/css">
+	</head>
+
+	<body bgcolor="#FFFFFF" vlink="silver" alink="navy" link="navy">
+		 <table width="100%" border="0" cellpadding="0" cellspacing="0" summary="">
+				<tr> 
+					<td valign="bottom">													  
+						<div align="left">
+							<b><font face="Tahoma" size="3" color="navy">Controling and binding the Game</font></b>
+						</div>	
+					</td> 
+					<td>
+						<font face="Tahoma" size="1" color="silver">  
+						<div align="right" valign="top">
+							 <a href="http://www.lua.org">Lua homepage</a>
+						</div>	
+						</font>
+					</td>
+				</tr>
+				<tr valign="top">
+					<td colspan="2">
+						  <hr size="1" color="#000000">
+						  <br>
+						  <br>
+						  <font face="Tahoma" size="2">
+						  <p style="text-align:justify">
+							 Now that we have quiet something to start with, it's time to actually control
+							 the game through that previously created main loop.
+						  </p>
+						  <br> 
+						  </font>
+					</td>
+				</tr> 
+				<tr>
+					<td colspan="2"> 	
+						  <font face="Tahoma" size="2">	
+						  <p style="text-align:justify"> 
+						  	 Before the simon.Create() function call previously added, we will add a new call
+							 to the simon.SetMediaPath() function. This will specify the game's engine to look
+							 in the specified directory to find its multimedia files (*.wav). Here is how the whole
+							 chunk should looks like:
+						  </p> 
+						  <br>
+					</td>
+				</tr>
+				<tr>
+					<td class="code" colspan="2">
+						<br>
+						<blockquote>
+							-- Show Simon game main form<br>
+							simon.SetMediaPath("C:\\Prog\\Delphi\\MNet\\Bin\\Medias")<br>
+							simon.Create()<br><br>
+							
+							-- Main processing loop<br>
+							while simon.GetPowerStatus() == 1 do<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;if simon.GetPlayStatus() == 1 then<br>
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;simon:Initialize()<br><br>
+									
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-- Game processing loop<br>
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;while GameState do<br>
+										&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;UserSequenceCount = 0<br>
+										&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;simon:AddSequence()<br>
+										&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;simon:DisplayMessage("Simon's Turn!", "clRed", 750)<br>
+										&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;simon:PlaySequence(MainSequence)<br><br>
+										
+										&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;simon:DisplayMessage("Your Turn!", "clLime", 1000)<br>
+										&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GameState = simon.GetUserSequence(SequenceCount, 2000)<br><br>
+										
+										&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if simon:GetScore() > 1000 then<br>
+											&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;simon:DisplayMessage("You Win!", "clAqua", -1)<br>
+											&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GameState = false<br>
+										&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;end<br>
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;end<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;end<br><br>
+								
+								&nbsp;&nbsp;&nbsp;&nbsp;-- Make sure the processor doesn't runs for no reason<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;Sleep(10)<br>
+							end<br><br>
+							
+							simon.Destroy()<br>
+						</blockquote>
+					</td>						  
+				</tr> 
+				<tr>
+					<td colspan="2"> 	
+						  <font face="Tahoma" size="2">	
+						  <br>
+						  <br>	
+						  <p style="text-align:justify"> 
+						  	 The function simon.GetPowerStatus() is used to determine if the "power" (in our 
+							 case virtual) is still on. If this function returns 1, this means the "power" is still
+							 on. The simon.GetPlayerStatus() function returns 1 if the user pushed the "play" button.
+							 Calling simon.DisplayMessage() will display the specified string using the specified 
+							 color (for color codes, look at the "Delphi/C++ Builder" column of
+							 <a href="http://www.iocomp.com/support/helpvcl/ioc01592.htm">this website</a>) and
+							 and the specified length in miliseconds. In our case, this will be use to display whose turn it is.
+							 The function simon.GetUserSequence() will prompt the user to enter its sequence. The first
+							 argument specifies the length of the sequence to retrieve and the second one specifies
+							 the timeout value in miliseconds to use before considering the turn as wrong. In terms of
+							 execution in the Lua script, this call should hang the code while waiting for user's response
+							 but will eventually trigger automated calls to the simon:OnButtonClick() function everytime
+							 the user pushes a button from the game. This function also return the state of the game
+							 (false == game over). Now, the following should briefly explain how to configure the dll
+							 in C++/Delphi to actually allow LuaEdit to bind to your code, in this case: simon.dll. (The full
+							 code is available in the tutorial's sources but for a reason of time and complexity, it won't be explained in
+							 details like the simon.lua script. Only the "initializer" part will be.)
+						  </p> 	
+						  <p style="text-align:justify"> 
+						  	 As discussed in the <a href=".\Page1_En.html">part 1</a> of the tutorial, your dll MUST export the
+							 specific function LuaDebug_Initializer(). This function will be called by LuaEdit right before starting
+							 a debugging session. We will then use this "hook"/"callback" to register all of the game's engine
+							 functions previously described. This will map the functions in Lua and prevent LuaEdit from yelding
+							 errors because it can't find any reference to the function from the script. This way, runtime debugging
+							 will be available through LuaEdit.
+						  </p>
+						  <br>
+						  <b>Delphi:</b> (This function must added in the "exports" instruction area of your code just like all the registred functions referenced in it)
+						  <br>
+						  <br>
+					</td>
+				</tr>
+				<tr>
+					<td class="code" colspan="2">
+						<br>
+						<blockquote>						
+								// Register a c function in a specified table<br>
+								procedure LuaRegisterCustom(L: PLua_State; ndx: Integer; funcname: String; func: lua_CFunction);<br>
+								begin<br>
+									&nbsp;&nbsp;&nbsp;&nbsp;lua_pushstring(L, funcname);<br>
+									&nbsp;&nbsp;&nbsp;&nbsp;lua_pushcfunction(L, func);<br>
+									&nbsp;&nbsp;&nbsp;&nbsp;lua_rawset(L, ndx - 2);<br>
+								end;<br><br>
+												
+								// Register a c function using the globalsindex constant<br>
+								procedure LuaRegister(L: PLua_State; funcname: String; func: lua_CFunction);<br>
+								begin<br>
+									&nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, LUA_GLOBALSINDEX, funcname, func);<br>
+								end;<br><br>
+														
+								// LuaEdit is calling this function everytime a script with a project<br>
+								// specifying this dll as the initializer when debugging<br>
+								function LuaDebug_Initializer(L: PLua_State): Integer;<br>
+								begin<br>
+								  	 &nbsp;&nbsp;&nbsp;&nbsp;// Create new table on the lua stack<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;lua_newtable(L);<br><br>
+								
+									 &nbsp;&nbsp;&nbsp;&nbsp;// Register delphi functions in that new table<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, 'SetMediaPath', SetMediaPath);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, 'SetLight', SetLight);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, 'Create', Create);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, 'Destroy', Destroy);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, 'GetUserSequence', GetUserSequence);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, 'GetPowerStatus', GetPowerStatus);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, 'GetPlayStatus', GetPlayStatus);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, 'SetScore', SetScore);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, 'GetScore', GetScore);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, 'LockControls', LockControls);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, 'UnlockControls', UnlockControls);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, 'DisplayMessage', DisplayMessage);<br><br>
+									
+									 &nbsp;&nbsp;&nbsp;&nbsp;// Register other miscalleneous functions<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegister(L, 'Sleep', LuaSleep);<br><br>
+									
+									 &nbsp;&nbsp;&nbsp;&nbsp;// Assing "simon" lua global variable to the new table<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;lua_setglobal(L, 'simon');<br>
+								end;<br>
+						</blockquote>
+					</td>						  
+				</tr>
+				<tr>
+					<td colspan="2"> 	
+						  <font face="Tahoma" size="2">	
+						  <br>
+						  <br>
+						  <b>C/C++:</b> (This function must added in the "EXPORTS" instruction area of your *.def file just like all the registred functions referenced in it)
+						  <br>
+						  <br>
+					</td>
+				</tr> 
+				<tr>
+					<td class="code" colspan="2">
+						<br>
+						<blockquote>						
+								// Register a c function in a specified table<br>
+								void LuaRegisterCustom(lua_State *L, long ndx, const char* funcname, lua_CFunction func)<br>
+								{<br>
+									&nbsp;&nbsp;&nbsp;&nbsp;lua_pushstring(L, funcname);<br>
+									&nbsp;&nbsp;&nbsp;&nbsp;lua_pushcfunction(L, func);<br>
+									&nbsp;&nbsp;&nbsp;&nbsp;lua_rawset(L, ndx - 2);<br>
+								}<br><br>
+												
+								// Register a c function using the globalsindex constant<br>
+								void LuaRegister(lua_State *L, const char* funcname, lua_CFunction func)<br>
+								{<br>
+									&nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, LUA_GLOBALSINDEX, funcname, func);<br>
+								}<br><br>
+														
+								// LuaEdit is calling this function everytime a script with a project<br>
+								// specifying this dll as the initializer when debugging<br>
+								int LuaDebug_Initializer(lua_State *L)<br>
+								{<br>
+								  	 &nbsp;&nbsp;&nbsp;&nbsp;// Create new table on the lua stack<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;lua_newtable(L);<br><br>
+								
+									 &nbsp;&nbsp;&nbsp;&nbsp;// Register delphi functions in that new table<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, "SetMediaPath", SetMediaPath);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, "SetLight", SetLight);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, "Create", Create);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, "Destroy", Destroy);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, "GetUserSequence", GetUserSequence);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, "GetPowerStatus", GetPowerStatus);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, "GetPlayStatus", GetPlayStatus);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, "SetScore", SetScore);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, "GetScore", GetScore);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, "LockControls", LockControls);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, "UnlockControls", UnlockControls);<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegisterCustom(L, -1, "DisplayMessage", DisplayMessage);<br><br>
+									
+									 &nbsp;&nbsp;&nbsp;&nbsp;// Register other miscalleneous functions<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;LuaRegister(L, "Sleep", LuaSleep);<br><br>
+									
+									 &nbsp;&nbsp;&nbsp;&nbsp;// Assing "simon" lua global variable to the new table<br>
+									 &nbsp;&nbsp;&nbsp;&nbsp;lua_setglobal(L, "simon");<br>
+								}<br>
+						</blockquote>
+					</td>						  
+				</tr>
+				<tr>
+					<td colspan="2"> 	
+						  <font face="Tahoma" size="2">	
+						  <br>
+						  <br>	
+						  <p style="text-align:justify"> 
+						  	 The LuaRegisterCustom() and LuaRegister() functions will simplify the code's complexity
+							 since we would have had to repeat those 3 lines of code for every functions that
+							 we needed to register in the Lua environment. Now, to complete this project/turotial,
+							 all you need to do inspired yourself from the supplied code and finish the dll. As mentioned
+							 higher, this part will not be explained in details.
+						  </p>
+						  <br>
+						  <p style="text-align:justify">
+						  	 Now you've seen enough to know how Lua works in interaction with LuaEdit to eventually
+							 build your own project that way so that Lua code can finally be an easy thing to debug.
+							 I hopped this tutorial helped you in many ways. If you still have questions you can always
+							 post a new thread in the <a href="">"Tutorial" section</a> of our forum or feel free to
+							 contact me at the following address: <a href="mailto:jf.goulet@luaedit.net?subject=About Bind a Dll to LuaEdit (Tutorial)...">
+							 jf.goulet@luaedit.net</a>. Thank you very much for using this tutorial and good luck in your future projects!
+						  </p>
+					</td>
+				</tr>
+				<tr>	  
+					<td colspan="2">
+							<font face="Tahoma" size="2">
+					 	  	<br>
+							<br>
+							<b>Hints:</b>
+							<ul type="square">		
+								<li>Try live debugging with the script you just finished using the compiled simon.dll
+									and lua.dll located in the bin folder. Copy/paste the project and Lua script you
+									created in that same folder, launch LuaEdit, set a breakpoint somewhere and press
+									play.</li>				 
+								<li>Try adding some "Level" logic in the Lua code by modifying the game's variants
+								    such as the sequence display speed, the player's timeout, the number of
+									items added to the main sequence per turn, etc...</li>
+								<li>Challenge your firends with some "impossible to win" scripts! :P</li>
+								<li>For more advanced users, try adding a multiplayer engine to play over LAN.</li>
+								<li>Implement an *.exe application that will launch the dll the same way LuaEdit
+									does by calling at first the LuaDebug_Initializer() function and then loading
+									the Lua script using the luaL_loadbuffer() API. See Delphi code of the SimonExec
+									project.</li>
+							</ul>
+						  </p> 
+					</td>
+				</tr> 
+				<tr> 
+					<td valign="bottom">													  
+						<font face="Tahoma" size="2">
+						<div align="left" valign="bottom">
+							<a href=".\Page3_En.html">&lt;&lt; Previous</a>
+						</div>	
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<font face="Tahoma" size="1" color="silver">
+						<hr size="1" color="#000000">
+							<div align="right">			  
+								<a href="http://www.luaedit.org">www.luaedit.org</a>
+								<br>
+								© Copyright 2004-2005 LuaEdit
+								<br>
+								Bind a Dll to LuaEdit (Tutorial)
+							</div>
+						</font>
+					</td>
+				</tr>
+		  </table>
+	</body>
+</html>
+

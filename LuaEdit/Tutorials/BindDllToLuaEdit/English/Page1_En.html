@@ -1,0 +1,104 @@
+<html>	
+	<head>
+		  <title>
+		  		 Bind a Dll to LuaEdit (Tutorial) - Getting Started
+		  </title>
+	</head>
+
+	<body bgcolor="#FFFFFF" vlink="silver" alink="navy" link="navy">
+		 <table width="100%" border="0" cellpadding="0" cellspacing="0" summary="">
+				<tr> 
+					<td valign="bottom">													  
+						<div align="left">
+							<b><font face="Tahoma" size="3" color="navy">Getting Started</font></b>
+						</div>	
+					</td> 
+					<td>
+						<font face="Tahoma" size="1" color="silver">  
+						<div align="right" valign="top">
+							 <a href="http://www.lua.org">Lua homepage</a>
+						</div>	
+						</font>
+					</td>
+				</tr>
+				<tr valign="top">
+					<td colspan="2">
+						  <hr size="1" color="#000000">
+						  <br>
+						  <br>
+						  <font face="Tahoma" size="2">
+						  <p style="text-align:justify">
+						  	First of all, download LuaEdit <a href="http://luaforge.net/frs/?group_id=84&release_id=318">here</a>,
+							install it and start it. (If LuaEdit is already installed, simply start it)
+							Then, we need to create a new project which will contain a lua script file in it.
+							Once the new project is created, save it under [Tutorial]\Bin\Simon.lpr and save its lua script file
+							under [Tutorial]\Bin\Simon.lua where [Tutorial] represents the path where you unzipped this
+							tutorial. We need to do so to be able to set the "Initializer" property. This "Initializer"
+							property is in fact the path of a dll file wich MUST export the following function:
+							
+							<ul type="square"> 
+							  <li>Delphi: <b style="color: navy">&nbsp;LuaDebug_Initializer(L: PLua_State): Integer; cdecl;&nbsp;</b></li>
+							  <li>C/C++: <b style="color: navy">&nbsp;int LuaDebug_Initializer(lua_State *L);&nbsp;</b></li>
+							</ul>
+										   
+							This function will be called right before the execution of the script and its use may
+							vary from a project to another. In other words, this is a call back function in which you
+							may do anything useful with/without the Lua state before any scripts has been executed yet.
+							Only lua script files contained in a project can benefit of the "Initializer" property
+							since this property	is set in the project settings.	In our example in this tutorial, we will
+							assign the full path of [Tutorial]\Bin\simon.dll file. This file exports the function discuss
+							above to register functions to the Lua environement. Once this property set, save the project
+							again and let's get ready to talk about code.
+							<br>
+							<br>
+							<br>
+							<b>Hints:</b>
+							<ul type="square">						 
+								<li>To create a new project, click on the menu Files/New/Project</li>
+								<li>If you can't find the Project Tree window, this may be because it's hidden.
+									To show it, click on the View/Project Tree menu.</li>
+								<li>To set the initializer property of a project, right click on the project
+									file in the project tree, and click on the Project Settings menu. In the
+									Project Settings dialog, select Debug tab. Specify the path of a valid dll
+									file and press Ok when done.</li>
+								<li>You may want to change the project name to Simon in the project settings.
+									Changing this property has no effects but may help you when working with
+									LuaEdit.</li>
+							</ul>
+						  </p>
+						  <br> 
+						  </font>
+					</td>
+				</tr> 
+				<tr> 
+					<td valign="bottom">													  
+						<font face="Tahoma" size="2">
+						<div align="left" valign="bottom">
+							<a href=".\Intro_En.html">&lt;&lt; Previous</a>
+						</div>	
+					</td> 
+					<td>   
+						<font face="Tahoma" size="2">
+						<div align="right" valign="bottom">
+                             <a href=".\Page2_En.html">Next &gt;&gt;</a>
+						</div>	
+						</font>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<font face="Tahoma" size="1" color="silver">
+						<hr size="1" color="#000000">
+							<div align="right">			  
+								<a href="http://www.luaedit.org">www.luaedit.org</a>
+								<br>
+								© Copyright 2004-2005 LuaEdit
+								<br>
+								Bind a Dll to LuaEdit (Tutorial)
+							</div>
+						</font>
+					</td>
+				</tr>
+		  </table>
+	</body>
+</html>

@@ -1,0 +1,260 @@
+<html>	
+	<head>
+		  <title>
+		  		 Bind a Dll to LuaEdit (Tutorial) - Managing the Game
+		  </title>	
+		  <link rel="stylesheet" href="..\Tutorial.css" type="text/css">
+	</head>
+
+	<body bgcolor="#FFFFFF" vlink="silver" alink="navy" link="navy">
+		 <table width="100%" border="0" cellpadding="0" cellspacing="0" summary="">
+				<tr> 
+					<td valign="bottom">													  
+						<div align="left">
+							<b><font face="Tahoma" size="3" color="navy">Managing the Game</font></b>
+						</div>	
+					</td> 
+					<td>
+						<font face="Tahoma" size="1" color="silver">  
+						<div align="right" valign="top">
+							 <a href="http://www.lua.org">Lua homepage</a>
+						</div>	
+						</font>
+					</td>
+				</tr>
+				<tr valign="top">
+					<td colspan="2">
+						  <hr size="1" color="#000000">
+						  <br>
+						  <br>
+						  <font face="Tahoma" size="2">
+						  <p style="text-align:justify">
+							Now, the script contains a solid basic frame/structure around which we will add
+							code to actually handle the game. This means sequence randomization algorythms,
+							key validations, point system logic, etc. Let's start by the game initialization
+							routine.
+						  </p>
+						  <br> 
+						  </font>
+					</td>
+				</tr> 
+				<tr>
+					<td colspan="2"> 	
+						  <font face="Tahoma" size="2">	
+						  <p style="text-align:justify"> 
+						  	The simon:Initialize() function previously added will be called right before a new game is
+							requested by the player. Our main goal in this function is to reset all of our game handling variables
+							previously created and intialize random logic. In the world of computers, generating
+							random is not an easy thing to achieve. Let's be realistic, it's impossible to recreate
+							exactly what random is by definition. On the other hand, we can generate something
+							so huge in terms of quantity of possibilities, that statistically and humanly speaking, we can
+							call this random. Lua's pseudo-random engine works the same way as in C++.
+							In fact, "behind the scene", Lua uses the C++ pseudo-random engine. This engine works
+							with seeds to generate "random" sequences of numbers. A seed is a number which will
+							be used to generate "random" numbers. In other words, two sequences using the same seed will
+							be identical. To avoid this problem, many scripts/programs use the system's current time
+							as the random seed, which pratically makes it impossible for the user to get or even remember
+							having the same sequence. Here is how the simon:Initialize() function should looks like:
+						  </p> 
+						  <br>
+					</td>
+				</tr>
+				<tr>
+					<td class="code" colspan="2">
+						<br>
+						<blockquote>
+							-- Initialize the game<br>
+							function simon:Initialize()<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;-- Initalize variables<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;simon:SetScore(0)<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;GameState = true<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;UserSequenceCount = 0<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;SequenceCount = 0<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;MainSequence = {}<br><br>
+								
+								&nbsp;&nbsp;&nbsp;&nbsp;-- Initialize random engine<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;math.randomseed(os.time())<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;math.random()<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;math.random()<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;math.random()<br>
+							end<br>
+						</blockquote>
+					</td>						  
+				</tr> 
+				<tr>
+					<td colspan="2"> 	
+						  <font face="Tahoma" size="2">
+						  <br>
+						  <br>	
+						  <p style="text-align:justify"> 
+						  	In this previous code example, math.random() function is called three times because under
+							some operating systems (at least in Windows 2k<sup>®</sup>) the first random number you get is not really
+							"randomized". (Source taken from the <a href="http://lua-users.org/wiki/MathLibraryTutorial">lua-users wiki</a> website)
+							 To get better pseudo-random numbers, we just pop some random numbers before using
+							them for real. The other lines of code in that previous example initialize the variables previously
+							declared in the <a href=".\Page2_En.html">step 2</a> of this tutorial. Next, let's add some code
+							in the simon:AddSequence(Sequence) function. The goal of this function is to append a new item to
+							the sequence that the player is going to have to reproduce later. To do so, we will increment by 1
+							the global variable SequenceCount and we will "randomize" a number from 1 to 4. That generated number
+							is going to represent the light to turn on in the sequence. Here is how the function should looks like:
+						  </p> 
+						  <br>
+					</td>
+				</tr>  
+				<tr>
+					<td class="code" colspan="2">
+						<br>
+						<blockquote>
+							-- Add one more part to the game's sequence<br>
+							function simon:AddSequence()<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;SequenceCount = SequenceCount + 1<br>
+							    &nbsp;&nbsp;&nbsp;&nbsp;MainSequence[SequenceCount] = math.random(4)<br>
+							end<br>
+						</blockquote>
+					</td>						  
+				</tr> 
+				<tr>
+					<td colspan="2"> 	
+						  <font face="Tahoma" size="2">
+						  <br>
+						  <br>	
+						  <p style="text-align:justify"> 
+						  	 Next, we will fill the simon:PlaySequence(Sequence) function. The main goal of
+							 this function is to play the sequence previously build via some calls to the
+							 Simon<sup>®</sup> game's engine exported functions. In this function, we should
+							 parse the sequence table item by item and turn on the light that this item is worth.
+							 Let's be more specific:
+						  </p> 
+						  <br>
+					</td>
+				</tr> 
+				<tr>
+					<td class="code" colspan="2">
+						<br>
+						<blockquote>
+							-- Play the game's sequence<br>
+							function simon:PlaySequence(Sequence)<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;local v = nil<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;local i = nil<br><br>
+								
+								&nbsp;&nbsp;&nbsp;&nbsp;-- Lock controls from user to make sure no conflicts happened while palying sequence<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;simon.LockControls()<br><br>
+								
+								&nbsp;&nbsp;&nbsp;&nbsp;-- Play all sequence<br>
+							    &nbsp;&nbsp;&nbsp;&nbsp;repeat<br>
+							    	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;simon.SetLight(SIMON_NONE)<br>
+							    	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Sleep(300)<br>
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;i, v = next(Sequence, i)<br>
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;simon.SetLight(v)<br><br>
+							
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if i ~= nil then<br>
+										&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Sleep(500)<br>
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;end<br>
+							    &nbsp;&nbsp;&nbsp;&nbsp;until i == nil<br><br>
+							    
+							    &nbsp;&nbsp;&nbsp;&nbsp;simon.UnlockControls()<br>
+							    &nbsp;&nbsp;&nbsp;&nbsp;simon.SetLight(SIMON_NONE)<br>
+							end<br>
+						</blockquote>
+					</td>						  
+				</tr>  
+				<tr>
+					<td colspan="2"> 	
+						  <font face="Tahoma" size="2">
+						  <br>
+						  <br>	
+						  <p style="text-align:justify"> 
+						  	 The two local variables v and i are going to be use to retrieve the result
+							 of our calls to the next() function. The next() function is use to retrieve the
+							 next element in a lua table by specifiying the actual table and the index of
+							 the current element as arguments. The simon.LockControls() and simon.UnlockControls() functions
+							 are exported from the game's engine and their main goal is to lock/unlock the
+							 controls from the player to avoid any conflict in the code. In the previous sample
+							 of code, those calls will be made before and after the loop that is actually
+							 displaying the sequence to the player. Also, in the code sample the repeat...until
+							 statement was used to allow the code to enter in the loop for the first iteration
+							 everytime it has to but any other loop syntax would have been a proper use as well.
+							 The first chunk in the loop is a call to the simon.SetLight() function using
+							 SIMON_NONE as first and only argument. This instruction will turn off all the lights
+							 in the game because we want to make sure that for each item no other light but the one
+							 of the current item will be on. Next, we have a Sleep() call of 300 miliseconds as
+							 the argument. This call, unlike the one in <a href=".\Page2_En.html">step 2</a> of
+							 this tutorial, has the same effect on the computer but is more used as a "pause"
+							 feature than a CPU "slower" kind of feature. With what has been clarify so far,
+							 you should be able to understand the remaining lines that I didn't detailed.
+						  </p> 
+						  <p style="text-align:justify"> 
+						  	 To finalize this step we will add some code to the simon:OnButtonClick(ButtonIndex)
+							 function. This function will be called the the Simon<sup>®</sup> game's engine everytime
+							 the player pushes one of the four buttons in the game. Our main goal in that function
+							 is to validate the pushed button and start managing points for an eventual victory.
+							 To do so, the functions simon.GetScore() and simon.SetScore() will be used. View the
+							 simplicity of this function and the advancement in the tutorial, this function will
+							 not be explained in details. Just remember what we've dicuss so far in the turorial:
+						  </p> 
+						  <br>
+					</td>
+				</tr>
+				<tr>
+					<td class="code" colspan="2">
+						<br>
+						<blockquote>
+							-- Event handler called by simon.dll when any of the colored buttons are clicked<br>
+							function simon:OnButtonClick(ButtonIndex)<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;local Result = 0<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;UserSequenceCount = UserSequenceCount + 1<br><br>
+								
+								&nbsp;&nbsp;&nbsp;&nbsp;if MainSequence[UserSequenceCount] == ButtonIndex then<br>
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;simon.SetScore(simon.GetScore() + 10)<br>
+								    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Result = 1<br>
+								&nbsp;&nbsp;&nbsp;&nbsp;end<br><br>
+								
+								&nbsp;&nbsp;&nbsp;&nbsp;return Result<br>
+							end<br>
+						</blockquote>
+					</td>						  
+				</tr>  
+				<tr>
+					<td colspan="2"> 	
+						  <font face="Tahoma" size="2">
+						  <br>
+						  <br>	
+						  <p style="text-align:justify"> 
+						  	 In the next step of this tutorial, we will discuss more about controling the
+							 game in the main loop and linking the functions from the C/C++/Delphi dll file.
+						  </p> 
+						  <br>
+					</td>
+				</tr> 
+				<tr> 
+					<td valign="bottom">													  
+						<font face="Tahoma" size="2">
+						<div align="left" valign="bottom">
+							<a href=".\Page2_En.html">&lt;&lt; Previous</a>
+						</div>	
+					</td> 
+					<td>   
+						<font face="Tahoma" size="2">
+						<div align="right" valign="bottom">
+                             <a href=".\Page4_En.html">Next &gt;&gt;</a>
+						</div>	
+						</font>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<font face="Tahoma" size="1" color="silver">
+						<hr size="1" color="#000000">
+							<div align="right">			  
+								<a href="http://www.luaedit.org">www.luaedit.org</a>
+								<br>
+								© Copyright 2004-2005 LuaEdit
+								<br>
+								Bind a Dll to LuaEdit (Tutorial)
+							</div>
+						</font>
+					</td>
+				</tr>
+		  </table>
+	</body>
+</html>

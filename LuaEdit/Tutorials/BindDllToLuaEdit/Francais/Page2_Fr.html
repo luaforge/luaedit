@@ -1,0 +1,217 @@
+<html>	
+	<head>
+		  <title>
+		  		 Lier une Dll à LuaEdit (Tutoriel) - Créer les Bases du Code
+		  </title>	 
+		  <link rel="stylesheet" href="..\Tutorial.css" type="text/css">
+	</head>
+
+	<body bgcolor="#FFFFFF" vlink="silver" alink="navy" link="navy">
+		 <table width="100%" border="0" cellpadding="0" cellspacing="0" summary="">
+				<tr> 
+					<td valign="bottom">													  
+						<div align="left">
+							<b><font face="Tahoma" size="3" color="navy">Créer les Bases du Code</font></b>
+						</div>	
+					</td> 
+					<td>
+						<font face="Tahoma" size="1" color="silver">  
+						<div align="right" valign="top">
+							 <a href="http://www.lua.org">Page d'accueuil Lua</a>
+						</div>	
+						</font>
+					</td>
+				</tr>
+				<tr valign="top">
+					<td colspan="2">
+						  <hr size="1" color="#000000">
+						  <br>
+						  <br>
+						  <font face="Tahoma" size="2">
+						  <p style="text-align:justify">
+							Avant de commencer à programmer la logique du jeu Simon<sup>®</sup>, il y a quelques bases que
+							l'ont doit créer, tout comme dans n'importe quel autre projet. Commencons par ajouter les variables
+							suivante au début du script:
+						  </p>
+						  <br> 
+						  </font>
+					</td>
+				</tr>
+				<tr>
+					<td class="code" colspan="2">
+						<br>
+						<blockquote>	  
+							-- Set "constants" for Simon game<br>
+							local SIMON_NONE		= 0<br>
+							local SIMON_RED			= 1<br>
+							local SIMON_BLUE		= 2<br>
+							local SIMON_YELLOW		= 3<br>
+							local SIMON_GREEN		= 4
+						</blockquote>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2"> 	
+						  <font face="Tahoma" size="2">	
+						  <br>
+						  <br>
+						  <p style="text-align:justify"> 
+						  	Ces variables seront utilisées "comme si" elle étaient des constantes étant donné le fait que
+							le concepte de constantes n'existe pas vraiment en Lua. Cela signifie que notre code ne modifira
+							pas leurs contenue. Ensuite, allons ajouter de "réel" variables (leurs contenue ne sera pas
+							modifier tout au long de la script) pour controler l'environnment du jeu:
+						  </p> 
+						  <br>
+					</td>
+				</tr>
+				<tr>
+					<td class="code" colspan="2">
+						<br>
+						<blockquote>	  
+							-- Game handling variables<br>
+							local GameState = true<br>
+							local MainSequence = {}<br>
+							local SequenceCount = 0<br>
+							local UserSequenceCount = 0
+						</blockquote>
+					</td>						  
+				</tr> 
+				<tr>
+					<td colspan="2"> 	
+						  <font face="Tahoma" size="2">	
+						  <br>
+						  <br>
+						  <p style="text-align:justify"> 
+						  	La variable GameState est un booléen qui contiendra false si le jeu est terminé. MainSequence est
+							une table qui contiendra la séquence complète depuis le début d'une nouvelle partie. la variable SequenceCount is
+							un entier qui contiendra le compte actuel de la longeur totale de la séquence. Finallement, UserSequenceCount est un entier
+							qui contiendra la longeur de la séquence entrée par le joueur jusqu'à maintenant. Maintenant, nous allons ajouter 4 fonctions dans lesquelles
+							nous ajouterons du code plus tard. Ces fonctions seront localisées dans la table simon qui sera créée par le moteur du jeu
+							(simon.dll) quand la script sera intialisée à travers la fonction "Initializer":
+						  </p> 
+						  <br>
+					</td>
+				</tr>
+				<tr>
+					<td class="code" colspan="2">
+						<br>
+						<blockquote>
+							function simon:OnButtonClick(ButtonIndex)<br>
+							end<br><br>
+							
+							function simon:AddSequence(Sequence)<br>
+							end<br><br>
+							
+							function simon:PlaySequence(Sequence)<br>
+							end<br><br>
+							
+							function simon:Initialize()<br>
+							end<br>
+						</blockquote>
+					</td>						  
+				</tr>
+				<tr>
+					<td colspan="2"> 	
+						  <font face="Tahoma" size="2">	
+						  <br>
+						  <br>
+						  <p style="text-align:justify"> 
+						  	La fonction OnClick(ButtonIndex) sera appelée à chaque fois que le joueur cliquera sur
+							un bouton dans le jeu. Cette fonction servira à valider le
+							bouton dans la séquence courrante. Les fonctions simon:AddSequence(Sequence), 
+							simon:PlaySequence(Sequence) et simon:Initialize() sont des fonctions appelées
+							à travers la script lors de différentes étapes durant le jeu.
+							Une dernière chose est requise avant la fin de cette étape: créer la charpente.
+							Pour se faire, une boucle principale sera ajoutée en fin de fichier comme suit:
+						  </p> 
+						  <br>
+					</td>
+				</tr> 
+				<tr>
+					<td class="code" colspan="2">
+						<br>
+						<blockquote>
+							simon.Create()<br><br>
+							
+							-- Main processing loop<br>
+							while simon.GetPowerStatus() == 1 do<br>
+							  &nbsp;&nbsp;&nbsp;&nbsp;-- Make sure the processor doesn't runs for no reason<br>
+							  &nbsp;&nbsp;&nbsp;&nbsp;Sleep(10)<br>
+							end<br><br>
+							
+							simon.Destroy()<br>
+						</blockquote>
+					</td>						  
+				</tr>
+				<tr>
+					<td colspan="2"> 	
+						  <font face="Tahoma" size="2">	
+						  <br>
+						  <br>
+						  <p style="text-align:justify"> 
+						  	Cette boucle manipulera le jeu du début jusqu'à la fin. Un itération dans cette
+							boucle sera exécuté plusieurs fois par seconde tandisqu'un tel travail de la par du processeur n'est
+							aucunement nécessaire au jeu afin de fonctionner. C'est pourquoi le moteur du jeu (simon.dll) exporte une fonction appelée Sleep()
+							qui signale au processeur de "dormir" pendant un certain laps de temps en milisecondes.
+							En d'autre mots, en employant cette fonction nous nous assurerons que le jeu n'utilisera pas 100% des ressources du processeur
+							alors que dans ce cas précis nous n'en avons guerre de besoin.	Aussi, comme vous avez probablement déjà remarqué,
+							cette partie de code inclue deux appels à des fonctions du moteur du jeu: simon.Create() et
+							simon.Destroy(). la fonction simon.Create() crée l'interface du jeu Simon<sup>®</sup> afin d'interagir
+							avec le joueur alors que la fonction simon.Destroy() détruit celle-ci. Dans la prochaine étape,
+							ajouterons du code à l'intérieur des fonctions que nous venons d'instancier.
+						  </p> 
+						  <br>
+					</td>
+				</tr>
+				<tr>	  
+					<td colspan="2">
+							<font face="Tahoma" size="2">
+							<b>Conseils:</b>
+							<ul type="square">						 
+								<li>L'expression réservé "local" utilisée lors de la déclaration de variables ci-haut
+									n'est pas nécessaire au code afin de fonctionner dans la mesure où la script n'est pas chargé dans d'autre scripts.
+									Cepandant, étant donné que ces variables ne seront utilisées que dans le scope global
+									de ce scripts, il serait recommendé, afin de prévenir tout potentiel problème que ce soit,
+									de garder l'instruction "local" instruction même si elle n'est pas nécessaire dans ce cas précis. Voir
+									section 2.6 de la documentation Lua 5.0 pour plus de détails. (Disponible dans le menu Help de LuaEdit)</li>
+								<li>La fonction Create() accepte un argument optionel. Celui-ci gère le "comment" l'interface sera crée.
+									Quand cet argument vaut 1, l'interface est crée dans une fenêtre ajustable. Lorsque ce même argument
+									vaut 2, l'interface est créé dans une fenêtre d'outils ajustable. Lorsque l'argument vaut ni 1, ni 2, 
+									l'interface est créé dans une fenêtre sans bordure. Dans l'example, l'argument
+									optionel valait nil puisque nous n'avions jamais donné quelque valeur que ce soit lors de l'appel de cette fonction.</li>
+							</ul>
+						  </p> 
+					</td>
+				</tr>
+				<tr> 
+					<td valign="bottom">													  
+						<font face="Tahoma" size="2">
+						<div align="left" valign="bottom">
+							<a href=".\Page1_Fr.html">&lt;&lt; Précédent</a>
+						</div>	
+					</td>
+					<td>   
+						<font face="Tahoma" size="2">
+						<div align="right" valign="bottom">
+                             <a href=".\Page3_Fr.html">Suivant &gt;&gt;</a>
+						</div>	
+						</font>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<font face="Tahoma" size="1" color="silver">
+						<hr size="1" color="#000000">
+							<div align="right">			  
+								<a href="http://www.luaedit.org">www.luaedit.org</a>
+								<br>
+								© Copyright 2004-2005 LuaEdit
+								<br>
+								Lier une Dll à LuaEdit (Tutoriel)
+							</div>
+						</font>
+					</td>
+				</tr>
+		  </table>
+	</body>
+</html>

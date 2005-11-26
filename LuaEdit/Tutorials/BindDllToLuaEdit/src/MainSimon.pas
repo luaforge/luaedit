@@ -1,0 +1,691 @@
+unit MainSimon;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, ExtCtrls, Lua, LuaUtils, LAuxLib, LuaLib, Themes, UxTheme,
+  StdCtrls, MMSystem;
+
+const
+  // Light colors constants
+  LIGHT_NONE    = 0;
+  LIGHT_RED     = 1;
+  LIGHT_BLUE    = 2;
+  LIGHT_YELLOW  = 3;
+  LIGHT_GREEN   = 4;
+
+  // Turns constants
+  TURN_SIMON  = 1;
+  TURN_USER   = 2;
+
+type
+  TfrmMainSimon = class(TForm)
+    lblGreen: TLabel;
+    lblRed: TLabel;
+    lblBlue: TLabel;
+    lblYellow: TLabel;
+    Shape1: TShape;
+    Label1: TLabel;
+    shpPlay: TShape;
+    Label2: TLabel;
+    lblGameOver: TLabel;
+    shpGameOver: TShape;
+    shpPower: TShape;
+    Label3: TLabel;
+    Label4: TLabel;
+    Shape2: TShape;
+    lblScore: TLabel;
+    shpMessage: TShape;
+    lblMessage: TLabel;
+    procedure shpPowerMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure shpPlayMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure lblGreenMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure lblGreenMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure lblRedMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure lblRedMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure lblBlueMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure lblBlueMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure lblYellowMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure lblYellowMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+    function SetNoLight: Integer;
+    function SetRedLight: Integer;
+    function SetBlueLight: Integer;
+    function SetGreenLight: Integer;
+    function SetYellowLight: Integer;
+  end;
+
+var
+  frmMainSimon: TfrmMainSimon;
+  GameOver: Boolean;
+  Power: Boolean;
+  PlayHit: Boolean;
+  ControlsLock: Boolean;
+  MediaPath: String;
+  AppHandle: HWND;
+  SequenceCount: Integer;
+  MaxInterval: Integer;
+  LastClickInterval: Cardinal;
+  Score: Cardinal;
+  LuaState: Plua_State;
+
+// Other misc functions
+procedure SetAppHandle(Handle: HWND); cdecl;
+
+// LuaEdit debug hook function
+function LuaDebug_Initializer(L: PLua_State): Integer; cdecl;
+
+// Lua registred functions
+function DisplayMessage(L: Plua_State): Integer; cdecl;
+function LockControls(L: Plua_State): Integer; cdecl;
+function UnlockControls(L: Plua_State): Integer; cdecl;
+function SetScore(L: Plua_State): Integer; cdecl;
+function GetScore(L: Plua_State): Integer; cdecl;
+function GetPlayStatus(L: Plua_State): Integer; cdecl;
+function GetPowerStatus(L: Plua_State): Integer; cdecl;
+function GetUserSequence(L: Plua_State): Integer; cdecl;
+function SetMediaPath(L: Plua_State): Integer; cdecl;
+function SetLight(L: Plua_State): Integer; cdecl;
+function Create(L: Plua_State): Integer; cdecl;
+function Destroy(L: Plua_State): Integer; cdecl;
+function LuaSleep(L: Plua_State): Integer; cdecl;
+
+implementation
+
+{$R *.dfm}
+
+//////////////////////////////////////////////////////////////
+//  Miscellaneous exported functions
+//////////////////////////////////////////////////////////////
+
+procedure SetAppHandle(Handle: HWND);
+begin
+  AppHandle := Handle;
+end;
+
+//////////////////////////////////////////////////////////////
+//  LuaEdit debug hook function (simon.dll main entry function)
+//////////////////////////////////////////////////////////////
+
+// LuaEdit is calling this function everytime a script with a project
+// specifying this dll as the initializer when debugging
+function LuaDebug_Initializer(L: PLua_State): Integer;
+begin
+  // Create new table on the lua stack
+  lua_newtable(L);
+
+  // Register delphi functions in that new table
+  LuaRegisterCustom(L, -1, 'SetMediaPath', SetMediaPath);
+  LuaRegisterCustom(L, -1, 'SetLight', SetLight);
+  LuaRegisterCustom(L, -1, 'Create', Create);
+  LuaRegisterCustom(L, -1, 'Destroy', Destroy);
+  LuaRegisterCustom(L, -1, 'GetUserSequence', GetUserSequence);
+  LuaRegisterCustom(L, -1, 'GetPowerStatus', GetPowerStatus);
+  LuaRegisterCustom(L, -1, 'GetPlayStatus', GetPlayStatus);
+  LuaRegisterCustom(L, -1, 'SetScore', SetScore);
+  LuaRegisterCustom(L, -1, 'GetScore', GetScore);
+  LuaRegisterCustom(L, -1, 'LockControls', LockControls);
+  LuaRegisterCustom(L, -1, 'UnlockControls', UnlockControls);
+  LuaRegisterCustom(L, -1, 'DisplayMessage', DisplayMessage);
+
+  // Register other miscalleneous functions
+  LuaRegister(L, 'Sleep', LuaSleep);
+
+  // Assing "Simon" lua global variable to the new table
+  lua_setglobal(L, 'simon');
+  AppHandle := 0;
+  Result := 1;
+end;
+
+//////////////////////////////////////////////////////////////
+//  Lua registred functions
+//////////////////////////////////////////////////////////////
+
+function DisplayMessage(L: Plua_State): Integer;
+var
+  Msg, Color: String;
+  ShowTime: Integer;
+begin
+  Result := 1;
+  ShowTime := -1;
+  Msg := '';
+  Color := 'clWhite';
+
+  if lua_type(L, -3) = LUA_TSTRING then
+    Msg := lua_tostring(L, -3)
+  else
+    Result := 0;
+
+  if lua_type(L, -2) = LUA_TSTRING then
+    Color := lua_tostring(L, -2)
+  else
+    Result := 0;
+
+  if lua_type(L, -1) = LUA_TNUMBER then
+    ShowTime := Trunc(lua_tonumber(L, -1))
+  else
+    Result := 0;
+
+  if Result <> 0 then
+  begin
+    frmMainSimon.lblMessage.Caption := Msg;
+    frmMainSimon.lblMessage.Font.Color := StringToColor(Color);
+    frmMainSimon.lblMessage.Visible := True;
+    frmMainSimon.shpMessage.Visible := True;
+    Application.ProcessMessages;
+
+    if ShowTime > 0 then
+    begin
+      Sleep(ShowTime);
+      frmMainSimon.lblMessage.Visible := False;
+      frmMainSimon.shpMessage.Visible := False;
+    end;
+  end;
+
+  lua_pushnumber(L, Result);
+end;
+
+function LockControls(L: Plua_State): Integer;
+begin
+  frmMainSimon.lblGreen.Cursor := crDefault;
+  frmMainSimon.lblRed.Cursor := crDefault;
+  frmMainSimon.lblBlue.Cursor := crDefault;
+  frmMainSimon.lblYellow.Cursor := crDefault;
+  frmMainSimon.shpPlay.Cursor := crDefault;
+  frmMainSimon.shpPower.Cursor := crDefault;
+  ControlsLock := True;
+  Application.ProcessMessages;
+  Result := 1;
+  lua_pushnumber(L, Result);
+end;
+
+function UnlockControls(L: Plua_State): Integer;
+begin
+  frmMainSimon.lblGreen.Cursor := crHandPoint;
+  frmMainSimon.lblRed.Cursor := crHandPoint;
+  frmMainSimon.lblBlue.Cursor := crHandPoint;
+  frmMainSimon.lblYellow.Cursor := crHandPoint;
+  frmMainSimon.shpPlay.Cursor := crHandPoint;
+  frmMainSimon.shpPower.Cursor := crHandPoint;
+  ControlsLock := False;
+  Application.ProcessMessages;
+  Result := 1;
+  lua_pushnumber(L, Result);
+end;
+
+function SetScore(L: Plua_State): Integer;
+var
+  NewScore: Cardinal;
+begin
+  Result := 1;
+  if lua_type(L, -1) = LUA_TNUMBER then
+    NewScore := Trunc(lua_tonumber(L, -1))
+  else
+    Result := 0;
+
+  if Result <> 0 then
+  begin
+    Score := NewScore;
+    frmMainSimon.lblScore.Caption := IntToStr(Score);
+    Application.ProcessMessages;
+  end;
+
+  lua_pushnumber(L, Score);
+end;
+
+function GetScore(L: Plua_State): Integer;
+begin
+  Result := 1;
+  lua_pushnumber(L, Score);
+end;
+
+function GetPlayStatus(L: Plua_State): Integer;
+begin
+  Result := Integer(PlayHit);
+  PlayHit := False;
+  lua_pushnumber(L, Result);
+end;
+
+function GetPowerStatus(L: Plua_State): Integer;
+begin
+  Result := Integer(Power);
+  lua_pushnumber(L, Result);
+end;
+
+function GetUserSequence(L: Plua_State): Integer;
+var
+  SequenceLength: Integer;
+begin
+  Result := 1;
+  SequenceCount := 0;
+  LastClickInterval := GetTickCount();
+  GameOver := False;
+
+  if lua_type(L, -2) = LUA_TNUMBER then
+    SequenceLength := Trunc(lua_tonumber(L, -2))
+  else
+    Result := 0;
+
+  if lua_type(L, -1) = LUA_TNUMBER then
+    MaxInterval := Trunc(lua_tonumber(L, -1))
+  else
+    Result := 0;
+
+  if Result <> 0 then
+  begin
+    while (Power and (not GameOver) and (SequenceCount < SequenceLength)) do
+    begin
+      if ((GetTickCount() - LastClickInterval) >= MaxInterval) then
+        GameOver := True;
+
+      Application.ProcessMessages;
+      Sleep(10);
+    end;
+  end;
+
+  if GameOver then
+  begin
+    frmMainSimon.lblGameOver.Visible := True;
+    frmMainSimon.shpGameOver.Visible := True;
+    Application.ProcessMessages;
+    Result := 0;
+  end;
+
+  lua_pushnumber(L, Result);
+end;
+
+function SetMediaPath(L: Plua_State): Integer;
+var
+  sMediaPath: String;
+begin
+  Result := 0;
+  sMediaPath := '';
+
+  // Retreive last and only one lua argument from lua stack (string)
+  if lua_type(L, -1) = LUA_TSTRING then
+    sMediaPath := lua_tostring(L, -1);
+
+  // Set media path if any
+  if DirectoryExists(sMediaPath) then
+  begin
+    MediaPath := sMediaPath;
+    Result := 1;
+  end;
+
+  lua_pushnumber(L, Result);
+end;
+
+function SetLight(L: Plua_State): Integer;
+var
+  Color: Integer;
+begin
+  Result := 0;
+  Color := -1;
+
+  // Retreive last and only one lua argument from lua stack (Integer or nil)
+  if lua_type(L, -1) = LUA_TNUMBER then
+    Color := Trunc(lua_tonumber(L, -1))
+  else if lua_type(L, -1) = LUA_TNIL then
+    Color := 0;
+  
+  case Color of
+    LIGHT_NONE:   Result := frmMainSimon.SetNoLight();
+    LIGHT_RED:    Result := frmMainSimon.SetRedLight();
+    LIGHT_BLUE:   Result := frmMainSimon.SetBlueLight();
+    LIGHT_YELLOW: Result := frmMainSimon.SetYellowLight();
+    LIGHT_GREEN:  Result := frmMainSimon.SetGreenLight();
+  end;
+
+  lua_pushnumber(L, Result);
+end;
+
+function Create(L: Plua_State): Integer;
+var
+  Style: Integer;
+begin
+  // leave those important lines here...
+  // There is a bug with the themes and forms placed in dll
+  // The dll don't have the time to free the theme handle and the when it does it,
+  // the hoset application (LuaEdit) already did it so... Runtime Error 216
+  ThemeServices.ApplyThemeChange;
+  InitThemeLibrary;
+  Result := -1;
+  Style := -1;
+  GameOver := False;
+  Power := True;
+  Score := 0;
+
+  // Retreive optional parameter (create style)
+  if lua_type(L, -1) = LUA_TNUMBER then
+    Style := Trunc(lua_tonumber(L, -1));
+
+  if not Assigned(frmMainSimon) then
+  begin
+    if AppHandle = 0 then
+      AppHandle := GetActiveWindow();
+
+    LuaState := L;
+    Application.Handle := AppHandle;
+    //frmMainSimon := TfrmMainSimon.Create(Application);
+    frmMainSimon := TfrmMainSimon.CreateParented(0);
+
+    case Style of
+      1: frmMainSimon.BorderStyle := bsSizeable;
+      2: frmMainSimon.BorderStyle := bsSizeToolWin;
+    else
+      frmMainSimon.BorderStyle := bsNone;
+    end;
+
+    frmMainSimon.lblGameOver.Visible := False;
+    frmMainSimon.shpGameOver.Visible := False;
+    Application.ProcessMessages;
+    Result := 1;
+  end;
+
+  if Result = 1 then
+  begin
+    frmMainSimon.Show;
+    frmMainSimon.BringToFront;
+    Application.ProcessMessages;
+  end;
+
+  lua_pushnumber(L, Result);
+end;
+
+function Destroy(L: Plua_State): Integer;
+begin
+  Result := -1;
+
+  if Assigned(frmMainSimon) then
+  begin
+    LuaState := nil;
+    frmMainSimon.Close;
+    SetParent(frmMainSimon.Handle, 0);
+    FreeAndNil(frmMainSimon);
+    Application.ProcessMessages;
+    Result := 1;
+  end;
+
+  // leave those important lines here...
+  // There is a bug with the themes and forms placed in dll
+  // The dll don't have the time to free the theme handle and the when it does it,
+  // the hoset application (LuaEdit) already did it so... Runtime Error 216
+  ThemeServices.ApplyThemeChange;
+  FreeThemeLibrary;
+  lua_pushnumber(L, Result);
+end;
+
+function LuaSleep(L: Plua_State): Integer; cdecl;
+var
+  Length: Integer;
+begin
+  Result := 0;
+  Length := -1;
+
+  // Retreive last and only one lua argument from lua stack (Integer or nil)
+  if lua_type(L, -1) = LUA_TNUMBER then
+    Length := Trunc(lua_tonumber(L, -1));
+
+  if Length > 0 then
+  begin
+    Result := 1;
+    Sleep(Length);
+  end;
+
+  lua_pushnumber(L, Result);
+end;
+
+//////////////////////////////////////////////////////////////
+//  TfrmMainSimon implementation
+//////////////////////////////////////////////////////////////
+
+function TfrmMainSimon.SetNoLight: Integer;
+begin
+  lblBlue.Color := clNavy;
+  lblRed.Color := clMaroon;
+  lblYellow.Color := clOlive;
+  lblGreen.Color := clGreen;
+  Result := 1;
+end;
+
+function TfrmMainSimon.SetRedLight: Integer;
+begin
+  PlaySound(PChar(MediaPath + '\01.wav'), 0, SND_FILENAME or SND_NODEFAULT or SND_ASYNC);
+  lblBlue.Color := clNavy;
+  lblRed.Color := clRed;
+  lblYellow.Color := clOlive;
+  lblGreen.Color := clGreen;
+  Result := 1;
+end;
+
+function TfrmMainSimon.SetBlueLight: Integer;
+begin
+  PlaySound(PChar(MediaPath + '\02.wav'), 0, SND_FILENAME or SND_NODEFAULT or SND_ASYNC);
+  lblBlue.Color := clBlue;
+  lblRed.Color := clMaroon;
+  lblYellow.Color := clOlive;
+  lblGreen.Color := clGreen;
+  Result := 1;
+end;
+
+function TfrmMainSimon.SetGreenLight: Integer;
+begin
+  PlaySound(PChar(MediaPath + '\03.wav'), 0, SND_FILENAME or SND_NODEFAULT or SND_ASYNC);
+  lblBlue.Color := clNavy;
+  lblRed.Color := clMaroon;
+  lblYellow.Color := clOlive;
+  lblGreen.Color := clLime;
+  Result := 1;
+end;
+
+function TfrmMainSimon.SetYellowLight: Integer;
+begin
+  PlaySound(PChar(MediaPath + '\04.wav'), 0, SND_FILENAME or SND_NODEFAULT or SND_ASYNC);
+  lblBlue.Color := clNavy;
+  lblRed.Color := clMaroon;
+  lblYellow.Color := clYellow;
+  lblGreen.Color := clGreen;
+  Result := 1;
+end;
+
+procedure TfrmMainSimon.shpPowerMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  if not ControlsLock then
+  begin
+    ShpPower.Brush.Color := clSilver;
+    ShpPower.Pen.Color := clSilver;
+    Application.ProcessMessages;
+    Power := False;
+    GameOver := True;
+    Sleep(500);
+  end;
+end;
+
+procedure TfrmMainSimon.shpPlayMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  if not ControlsLock then
+  begin
+    PlayHit := True;
+    shpGameOver.Visible := False;
+    lblGameOver.Visible := False;
+    Application.ProcessMessages;
+  end;
+end;
+
+procedure TfrmMainSimon.lblGreenMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  if not ControlsLock then
+  begin
+    SetGreenLight;
+    Application.ProcessMessages;    
+  end;
+end;
+
+procedure TfrmMainSimon.lblGreenMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  TimeDiff: Cardinal;
+begin
+  if not ControlsLock then
+  begin
+    Inc(SequenceCount);
+    TimeDiff := GetTickCount() - LastClickInterval;
+
+    if TimeDiff <= MaxInterval then
+    begin
+      // Calling OnButtonClick lua event handler
+      lua_pushstring(LuaState, 'simon');
+      lua_gettable(LuaState, LUA_GLOBALSINDEX);
+      lua_pushstring(LuaState, 'OnButtonClick');
+      lua_gettable(LuaState, -2);
+      lua_pushnumber(LuaState, LIGHT_GREEN);
+      lua_pushnumber(LuaState, LIGHT_GREEN);
+      lua_pushnumber(LuaState, TimeDiff);
+      lua_call(LuaState, 3, 1);
+      GameOver := (Trunc(lua_tonumber(LuaState, -1)) = 0);
+
+      LastClickInterval := GetTickCount();
+    end
+    else
+      GameOver := True;
+
+    SetNoLight;
+  end;
+end;
+
+procedure TfrmMainSimon.lblRedMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  if not ControlsLock then
+  begin
+    SetRedLight;
+    Application.ProcessMessages;
+  end;
+end;
+
+procedure TfrmMainSimon.lblRedMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  TimeDiff: Cardinal;
+begin
+  if not ControlsLock then
+  begin
+    Inc(SequenceCount);
+    TimeDiff := GetTickCount() - LastClickInterval;
+
+    if TimeDiff <= MaxInterval then
+    begin
+      // Calling OnButtonClick lua event handler
+      lua_pushstring(LuaState, 'simon');
+      lua_gettable(LuaState, LUA_GLOBALSINDEX);
+      lua_pushstring(LuaState, 'OnButtonClick');
+      lua_gettable(LuaState, -2);
+      lua_pushnumber(LuaState, LIGHT_RED);
+      lua_pushnumber(LuaState, LIGHT_RED);
+      lua_pushnumber(LuaState, TimeDiff);
+      lua_call(LuaState, 3, 1);
+      GameOver := (Trunc(lua_tonumber(LuaState, -1)) = 0);
+
+      LastClickInterval := GetTickCount();
+    end
+    else
+      GameOver := True;
+
+    SetNoLight;
+  end;
+end;
+
+procedure TfrmMainSimon.lblBlueMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  if not ControlsLock then
+  begin
+    SetBlueLight;
+    Application.ProcessMessages;
+  end;
+end;
+
+procedure TfrmMainSimon.lblBlueMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  TimeDiff: Cardinal;
+begin
+  if not ControlsLock then
+  begin
+    Inc(SequenceCount);
+    TimeDiff := GetTickCount() - LastClickInterval;
+
+    if TimeDiff <= MaxInterval then
+    begin
+      // Calling OnButtonClick lua event handler
+      lua_pushstring(LuaState, 'simon');
+      lua_gettable(LuaState, LUA_GLOBALSINDEX);
+      lua_pushstring(LuaState, 'OnButtonClick');
+      lua_gettable(LuaState, -2);
+      lua_pushnumber(LuaState, LIGHT_BLUE);
+      lua_pushnumber(LuaState, LIGHT_BLUE);
+      lua_pushnumber(LuaState, TimeDiff);
+      lua_call(LuaState, 3, 1);
+      GameOver := (Trunc(lua_tonumber(LuaState, -1)) = 0);
+
+      LastClickInterval := GetTickCount();
+    end
+    else
+      GameOver := True;
+
+    SetNoLight;
+  end;
+end;
+
+procedure TfrmMainSimon.lblYellowMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  TimeDiff: Cardinal;
+begin
+  if not ControlsLock then
+  begin
+    SetYellowLight;
+    Application.ProcessMessages;
+  end;
+end;
+
+procedure TfrmMainSimon.lblYellowMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  TimeDiff: Cardinal;
+begin
+  if not ControlsLock then
+  begin
+    Inc(SequenceCount);
+    TimeDiff := GetTickCount() - LastClickInterval;
+
+    if TimeDiff <= MaxInterval then
+    begin
+      // Calling OnButtonClick lua event handler
+      lua_pushstring(LuaState, 'simon');
+      lua_gettable(LuaState, LUA_GLOBALSINDEX);
+      lua_pushstring(LuaState, 'OnButtonClick');
+      lua_gettable(LuaState, -2);
+      lua_pushnumber(LuaState, LIGHT_YELLOW);
+      lua_pushnumber(LuaState, LIGHT_YELLOW);
+      lua_pushnumber(LuaState, TimeDiff);
+      lua_call(LuaState, 3, 1);
+      GameOver := (Trunc(lua_tonumber(LuaState, -1)) = 0);
+
+      LastClickInterval := GetTickCount();
+    end
+    else
+      GameOver := True;
+
+    SetNoLight;
+  end;
+end;
+
+end.

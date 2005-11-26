@@ -1,0 +1,104 @@
+<html>	
+	<head>
+		  <title>
+		  		 Lier une Dll à LuaEdit (Tutoriel) - Et c'est un Départ!
+		  </title>
+	</head>
+
+	<body bgcolor="#FFFFFF" vlink="silver" alink="navy" link="navy">
+		 <table width="100%" border="0" cellpadding="0" cellspacing="0" summary="">
+				<tr> 
+					<td valign="bottom">													  
+						<div align="left">
+							<b><font face="Tahoma" size="3" color="navy">Et c'est un Départ!</font></b>
+						</div>	
+					</td> 
+					<td>
+						<font face="Tahoma" size="1" color="silver">  
+						<div align="right" valign="top">
+							 <a href="http://www.lua.org">Page d'accueuil Lua</a>
+						</div>	
+						</font>
+					</td>
+				</tr>
+				<tr valign="top">
+					<td colspan="2">
+						  <hr size="1" color="#000000">
+						  <br>
+						  <br>
+						  <font face="Tahoma" size="2">
+						  <p style="text-align:justify">
+						  	Tout d'abord, téléchargez LuaEdit <a href="http://luaforge.net/frs/?group_id=84&release_id=318">ici</a>,
+							installez-le et démarrez-le. (Si LuaEdit est déjà installé, il est inutile de le retélécharger et réinstaller)
+							Ensuite, on doit créer un nouveau project qui contiendra une script lua.
+							Une fois le project créé, sauvegardez-le sous [Tutoriel]\Bin\Simon.lpr et sauvegardez la script lua
+							sous [Tutoriel]\Bin\Simon.lua où [Tutoriel] représente le chemin où vous avez dézippé le tutoriel.
+							On se doit de le faire ainsi afin d'utiliser la propriété "Initializer". Cette propriété
+							est en fait le chemin complet d'une dll qui DOIT exporter une fonction suivant le prototype suivant:
+							
+							<ul type="square"> 
+							  <li>Delphi: <b style="color: navy">&nbsp;LuaDebug_Initializer(L: PLua_State): Integer; cdecl;&nbsp;</b></li>
+							  <li>C/C++: <b style="color: navy">&nbsp;int LuaDebug_Initializer(lua_State *L);&nbsp;</b></li>
+							</ul>
+										   
+							Cette fonction sera appelée juste avant l'exécution de la script et peut être utilisée
+							pour différente raison d'un projet à l'autre. En d'autre mots, ceci se trouve à être une fonction "call back" dans laquel vous
+							pouvez fair pratiquement quoi que soit d'utile avec/sans l'environnement Lua avant l'exécution d'une script Lua.
+							Seul les scripts lua contenue dans un projet peuvent bénéficier de la propriété "Initializer"
+							étant donné le fait que celle-ci n'est disponible que dans les options d'un projet.	Dans ce tutoriel, nous 
+							assignerons le chemin complet du fichier [Tutorial]\Bin\simon.dll. Cette dll exporte déjà la fonction discuté plus haut
+							pour enregister des fonctions dans l'environnement Lua. Une fois cette propriété ajusté, sauvegardez le projet
+							et commencons à parler de code!
+							<br>
+							<br>
+							<br>
+							<b>Conseils:</b>
+							<ul type="square">						 
+								<li>Pour créer un projet, cliquez sur le menu Files/New/Project</li>
+								<li>Si vous ne trouvez pas la fenêtre "Project Tree", c'est peut-être parce qu'elle.
+									est cachée. Pour l'afficher, cliquez sur le menu View/Project Tree.</li>
+								<li>Pour ajuster la propriété "Initializer" d'un projet, appliquez un cliquer droit sur celui-ci
+									et cliquez sur le menu Project Settings. Dans cette boîte de dialogue
+									selectionnez le tabulateur Debug. Specifiez le chemin complet de la dll en question
+									et appuyez sur Ok lorsque terminé.</li>
+								<li>Vous voulez peut-être changer le nom du projet pour l'apperler "Simon".
+									Changer cette propriété n'a aucun effet sur le comportement du code Lua
+									mais peut être utile pour se retrouver dans l'interface de LuaEdit.</li>
+							</ul>
+						  </p>
+						  <br> 
+						  </font>
+					</td>
+				</tr> 
+				<tr> 
+					<td valign="bottom">													  
+						<font face="Tahoma" size="2">
+						<div align="left" valign="bottom">
+							<a href=".\Intro_Fr.html">&lt;&lt; Précédent</a>
+						</div>	
+					</td> 
+					<td>   
+						<font face="Tahoma" size="2">
+						<div align="right" valign="bottom">
+                             <a href=".\Page2_Fr.html">Suivant &gt;&gt;</a>
+						</div>	
+						</font>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<font face="Tahoma" size="1" color="silver">
+						<hr size="1" color="#000000">
+							<div align="right">			  
+								<a href="http://www.luaedit.org">www.luaedit.org</a>
+								<br>
+								© Copyright 2004-2005 LuaEdit
+								<br>
+								Lier une Dll à LuaEdit (Tutoriel)
+							</div>
+						</font>
+					</td>
+				</tr>
+		  </table>
+	</body>
+</html>

@@ -1,0 +1,220 @@
+<html>	
+	<head>
+		  <title>
+		  		 Bind a Dll to LuaEdit (Tutorial) - Setup Code Bases
+		  </title>	 
+		  <link rel="stylesheet" href="..\Tutorial.css" type="text/css">
+	</head>
+
+	<body bgcolor="#FFFFFF" vlink="silver" alink="navy" link="navy">
+		 <table width="100%" border="0" cellpadding="0" cellspacing="0" summary="">
+				<tr> 
+					<td valign="bottom">													  
+						<div align="left">
+							<b><font face="Tahoma" size="3" color="navy">Setup Code Bases</font></b>
+						</div>	
+					</td> 
+					<td>
+						<font face="Tahoma" size="1" color="silver">  
+						<div align="right" valign="top">
+							 <a href="http://www.lua.org">Lua homepage</a>
+						</div>	
+						</font>
+					</td>
+				</tr>
+				<tr valign="top">
+					<td colspan="2">
+						  <hr size="1" color="#000000">
+						  <br>
+						  <br>
+						  <font face="Tahoma" size="2">
+						  <p style="text-align:justify">
+							Before starting programming logics of the Simon<sup>®</sup> game, there is actually some basics
+							code setups to do just like in any other script. Let's start by adding the following
+							variables at the begenning of script:
+						  </p>
+						  <br> 
+						  </font>
+					</td>
+				</tr>
+				<tr>
+					<td class="code" colspan="2">
+						<br>
+						<blockquote>	  
+							-- Set "constants" for Simon game<br>
+							local SIMON_NONE		= 0<br>
+							local SIMON_RED			= 1<br>
+							local SIMON_BLUE		= 2<br>
+							local SIMON_YELLOW		= 3<br>
+							local SIMON_GREEN		= 4
+						</blockquote>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2"> 	
+						  <font face="Tahoma" size="2">	
+						  <br>
+						  <br>
+						  <p style="text-align:justify"> 
+						  	Those variables will actually be use "as if" they were constants since the concept
+							of constants does not really exists in Lua. This means that our code should never
+							modify their content. Next, we will add four "actual" variables (their content will
+							probably change during the execution of the script) to control the game's environment:
+						  </p> 
+						  <br>
+					</td>
+				</tr>
+				<tr>
+					<td class="code" colspan="2">
+						<br>
+						<blockquote>	  
+							-- Game handling variables<br>
+							local GameState = true<br>
+							local MainSequence = {}<br>
+							local SequenceCount = 0<br>
+							local UserSequenceCount = 0
+						</blockquote>
+					</td>						  
+				</tr> 
+				<tr>
+					<td colspan="2"> 	
+						  <font face="Tahoma" size="2">	
+						  <br>
+						  <br>
+						  <p style="text-align:justify"> 
+						  	The GameState variable is a boolean wich contains false if the game is over or true if not. MainSequence is
+							a table wich contains the whole sequence since the begenning of the new game. The variable SequenceCount is
+							an integer containing the actual total sequence's length. Finally, UserSequenceCount is an integer
+							containing the user's sequence length so far. Next, we will need to add four functions in wich we will add
+							some code later. Those functions will be nested into the the table simon wich will be created by the game
+							engine (simon.dll) when the script will initialize through the Initializer function:
+						  </p> 
+						  <br>
+					</td>
+				</tr>
+				<tr>
+					<td class="code" colspan="2">
+						<br>
+						<blockquote>
+							function simon:OnButtonClick(ButtonIndex)<br>
+							end<br><br>
+							
+							function simon:AddSequence(Sequence)<br>
+							end<br><br>
+							
+							function simon:PlaySequence(Sequence)<br>
+							end<br><br>
+							
+							function simon:Initialize()<br>
+							end<br>
+						</blockquote>
+					</td>						  
+				</tr>
+				<tr>
+					<td colspan="2"> 	
+						  <font face="Tahoma" size="2">	
+						  <br>
+						  <br>
+						  <p style="text-align:justify"> 
+						  	The OnClick(ButtonIndex) function will be called every time the user
+							will click on a button. In this function we will validate the clicked
+							button in the current sequence.	The functions simon:AddSequence(Sequence), 
+							simon:PlaySequence(Sequence) and simon:Initialize() are functions that are going
+							to be called by our own script to handle different steps during the game.
+							One last thing remains before the end of this step: creating the game's
+							frame. To do so, a main loop at the end of the script will be required as
+							followed:
+						  </p> 
+						  <br>
+					</td>
+				</tr> 
+				<tr>
+					<td class="code" colspan="2">
+						<br>
+						<blockquote>
+							simon.Create()<br><br>
+							
+							-- Main processing loop<br>
+							while simon.GetPowerStatus() == 1 do<br>
+							  &nbsp;&nbsp;&nbsp;&nbsp;-- Make sure the processor doesn't runs for no reason<br>
+							  &nbsp;&nbsp;&nbsp;&nbsp;Sleep(10)<br>
+							end<br><br>
+							
+							simon.Destroy()<br>
+						</blockquote>
+					</td>						  
+				</tr>
+				<tr>
+					<td colspan="2"> 	
+						  <font face="Tahoma" size="2">	
+						  <br>
+						  <br>
+						  <p style="text-align:justify"> 
+						  	This loop will handle the game from the beginning up to the end. An iteration
+							in this loop will be executed many times per seconds when there is no need for
+							it. That's why the game engine (simon.dll) has exported a functions called Sleep()
+							wich tells to the processor to sleep for a certain amount of time in miliseconds.
+							In other words, by using this function we will ensure that the game isn't using 100% of the processor's resources
+							since we don't need it in this perticular case.	Also, as you probably noticed already, 
+							this code snipset include two function calls from the game engine: simon.Create() and
+							simon.Destroy(). The simon.Create() function create the Simon<sup>®</sup> game interface to interact
+							with the user when the simon.Destroy() function destroy this interface. In the next step, we
+							will add some code into the previously added functions.
+						  </p> 
+						  <br>
+					</td>
+				</tr>
+				<tr>	  
+					<td colspan="2">
+							<font face="Tahoma" size="2">
+							<b>Hints:</b>
+							<ul type="square">						 
+								<li>The reserved word "local" used in the variables declarations code above is not
+									necessary for the code to work since this script isn't supposed to be loaded
+									in any other scripts. In the other hand, since those variables are going to be
+									used ONLY in the script's global scope, it would be recommended, to avoid any
+									potential problems, to keep the "local" instruction even if not necessary. See
+									section 2.6 of Lua 5.0 documentation for more details. (Available in LuaEdit
+									Help menu)</li>
+								<li>The Create() function has an optional argument you can pass to. This argument
+									manage how the interface will be created. When this argument is worth 1, it creates
+									the interface in a sizeable regular window. When it's worth 2, it creates the
+									interface in a sizeable tool window. When the argument is worth anything else
+									than 1 or 2, it creates the interface without any borders. In our example, this
+									optional argument was worth nil since we didn't give any to this function call.</li>
+							</ul>
+						  </p> 
+					</td>
+				</tr>
+				<tr> 
+					<td valign="bottom">													  
+						<font face="Tahoma" size="2">
+						<div align="left" valign="bottom">
+							<a href=".\Page1_En.html">&lt;&lt; Previous</a>
+						</div>	
+					</td>
+					<td>   
+						<font face="Tahoma" size="2">
+						<div align="right" valign="bottom">
+                             <a href=".\Page3_En.html">Next &gt;&gt;</a>
+						</div>	
+						</font>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<font face="Tahoma" size="1" color="silver">
+						<hr size="1" color="#000000">
+							<div align="right">			  
+								<a href="http://www.luaedit.org">www.luaedit.org</a>
+								<br>
+								© Copyright 2004-2005 LuaEdit
+								<br>
+								Bind a Dll to LuaEdit (Tutorial)
+							</div>
+						</font>
+					</td>
+				</tr>
+		  </table>
+	</body>
+</html>
