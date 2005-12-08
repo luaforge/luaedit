@@ -4,8 +4,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, ExtCtrls, StdCtrls, ComCtrls, Main, JvComponent,
-  JvDockControlForm, ImgList, JvExStdCtrls, JvListComb, JvExComCtrls,
+  Dialogs, ExtCtrls, StdCtrls, ComCtrls, Main, JvComponent, Misc, ImgList,
+  JvDockControlForm, JvExStdCtrls, JvListComb, JvExComCtrls,
   JvListView, JvDotNetControls, lua, lualib, lauxlib, LuaUtils;
 
 type
