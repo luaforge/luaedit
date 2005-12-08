@@ -1,7 +1,7 @@
 <html>	
 	<head>
 		  <title>
-		  		 Lier une Dll à LuaEdit (Tutoriel) - Créer les Bases du Code
+		  		 Lier une Dll &agrave; LuaEdit (Tutoriel) - Cr&eacute;er les Bases du Code
 		  </title>	 
 		  <link rel="stylesheet" href="..\Tutorial.css" type="text/css">
 	</head>
@@ -11,7 +11,7 @@
 				<tr> 
 					<td valign="bottom">													  
 						<div align="left">
-							<b><font face="Tahoma" size="3" color="navy">Créer les Bases du Code</font></b>
+							<b><font face="Tahoma" size="3" color="navy">Cr&eacute;er les Bases du Code</font></b>
 						</div>	
 					</td> 
 					<td>
@@ -29,9 +29,9 @@
 						  <br>
 						  <font face="Tahoma" size="2">
 						  <p style="text-align:justify">
-							Avant de commencer à programmer la logique du jeu Simon<sup>®</sup>, il y a quelques bases que
-							l'ont doit créer, tout comme dans n'importe quel autre projet. Commencons par ajouter les variables
-							suivante au début du script:
+							Avant de commencer &agrave; programmer la logique du jeu Simon<sup>&reg;</sup>, il y a quelques bases que
+							l'ont doit cr&eacute;er, tout comme dans n'importe quel autre projet. Commencons par ajouter les variables
+							suivante au d&eacute;but du script:
 						  </p>
 						  <br> 
 						  </font>
@@ -56,9 +56,9 @@
 						  <br>
 						  <br>
 						  <p style="text-align:justify"> 
-						  	Ces variables seront utilisées "comme si" elle étaient des constantes étant donné le fait que
+						  	Ces variables seront utilis&eacute;es "comme si" elle &eacute;taient des constantes &eacute;tant donn&eacute; le fait que
 							le concepte de constantes n'existe pas vraiment en Lua. Cela signifie que notre code ne modifira
-							pas leurs contenue. Ensuite, allons ajouter de "réel" variables (leurs contenue ne sera pas
+							pas leurs contenue. Ensuite, allons ajouter de "r&eacute;el" variables (leurs contenue ne sera pas
 							modifier tout au long de la script) pour controler l'environnment du jeu:
 						  </p> 
 						  <br>
@@ -82,12 +82,12 @@
 						  <br>
 						  <br>
 						  <p style="text-align:justify"> 
-						  	La variable GameState est un booléen qui contiendra false si le jeu est terminé. MainSequence est
-							une table qui contiendra la séquence complète depuis le début d'une nouvelle partie. la variable SequenceCount is
-							un entier qui contiendra le compte actuel de la longeur totale de la séquence. Finallement, UserSequenceCount est un entier
-							qui contiendra la longeur de la séquence entrée par le joueur jusqu'à maintenant. Maintenant, nous allons ajouter 4 fonctions dans lesquelles
-							nous ajouterons du code plus tard. Ces fonctions seront localisées dans la table simon qui sera créée par le moteur du jeu
-							(simon.dll) quand la script sera intialisée à travers la fonction "Initializer":
+						  	La variable GameState est un bool&eacute;en qui contiendra false si le jeu est termin&eacute;. MainSequence est
+							une table qui contiendra la s&eacute;quence compl&egrave;te depuis le d&eacute;but d'une nouvelle partie. la variable SequenceCount is
+							un entier qui contiendra le compte actuel de la longeur totale de la s&eacute;quence. Finallement, UserSequenceCount est un entier
+							qui contiendra la longeur de la s&eacute;quence entr&eacute;e par le joueur jusqu'&agrave; maintenant. Maintenant, nous allons ajouter 4 fonctions dans lesquelles
+							nous ajouterons du code plus tard. Ces fonctions seront localis&eacute;es dans la table simon qui sera cr&eacute;&eacute;e par le moteur du jeu
+							(simon.dll) quand la script sera intialis&eacute;e &agrave; travers la fonction "Initializer":
 						  </p> 
 						  <br>
 					</td>
@@ -116,13 +116,13 @@
 						  <br>
 						  <br>
 						  <p style="text-align:justify"> 
-						  	La fonction OnClick(ButtonIndex) sera appelée à chaque fois que le joueur cliquera sur
-							un bouton dans le jeu. Cette fonction servira à valider le
-							bouton dans la séquence courrante. Les fonctions simon:AddSequence(Sequence), 
-							simon:PlaySequence(Sequence) et simon:Initialize() sont des fonctions appelées
-							à travers la script lors de différentes étapes durant le jeu.
-							Une dernière chose est requise avant la fin de cette étape: créer la charpente.
-							Pour se faire, une boucle principale sera ajoutée en fin de fichier comme suit:
+						  	La fonction OnClick(ButtonIndex) sera appel&eacute;e &agrave; chaque fois que le joueur cliquera sur
+							un bouton dans le jeu. Cette fonction servira &agrave; valider le
+							bouton dans la s&eacute;quence courrante. Les fonctions simon:AddSequence(Sequence), 
+							simon:PlaySequence(Sequence) et simon:Initialize() sont des fonctions appel&eacute;es
+							&agrave; travers la script lors de diff&eacute;rentes &eacute;tapes durant le jeu.
+							Une derni&egrave;re chose est requise avant la fin de cette &eacute;tape: cr&eacute;er la charpente.
+							Pour se faire, une boucle principale sera ajout&eacute;e en fin de fichier comme suit:
 						  </p> 
 						  <br>
 					</td>
@@ -149,16 +149,16 @@
 						  <br>
 						  <br>
 						  <p style="text-align:justify"> 
-						  	Cette boucle manipulera le jeu du début jusqu'à la fin. Un itération dans cette
-							boucle sera exécuté plusieurs fois par seconde tandisqu'un tel travail de la par du processeur n'est
-							aucunement nécessaire au jeu afin de fonctionner. C'est pourquoi le moteur du jeu (simon.dll) exporte une fonction appelée Sleep()
+						  	Cette boucle manipulera le jeu du d&eacute;but jusqu'&agrave; la fin. Un it&eacute;ration dans cette
+							boucle sera ex&eacute;cut&eacute; plusieurs fois par seconde tandisqu'un tel travail de la par du processeur n'est
+							aucunement n&eacute;cessaire au jeu afin de fonctionner. C'est pourquoi le moteur du jeu (simon.dll) exporte une fonction appel&eacute;e Sleep()
 							qui signale au processeur de "dormir" pendant un certain laps de temps en milisecondes.
 							En d'autre mots, en employant cette fonction nous nous assurerons que le jeu n'utilisera pas 100% des ressources du processeur
-							alors que dans ce cas précis nous n'en avons guerre de besoin.	Aussi, comme vous avez probablement déjà remarqué,
-							cette partie de code inclue deux appels à des fonctions du moteur du jeu: simon.Create() et
-							simon.Destroy(). la fonction simon.Create() crée l'interface du jeu Simon<sup>®</sup> afin d'interagir
-							avec le joueur alors que la fonction simon.Destroy() détruit celle-ci. Dans la prochaine étape,
-							ajouterons du code à l'intérieur des fonctions que nous venons d'instancier.
+							alors que dans ce cas pr&eacute;cis nous n'en avons guerre de besoin.	Aussi, comme vous avez probablement d&eacute;j&agrave; remarqu&eacute;,
+							cette partie de code inclue deux appels &agrave; des fonctions du moteur du jeu: simon.Create() et
+							simon.Destroy(). la fonction simon.Create() cr&eacute;e l'interface du jeu Simon<sup>&reg;</sup> afin d'interagir
+							avec le joueur alors que la fonction simon.Destroy() d&eacute;truit celle-ci. Dans la prochaine &eacute;tape,
+							ajouterons du code &agrave; l'int&eacute;rieur des fonctions que nous venons d'instancier.
 						  </p> 
 						  <br>
 					</td>
@@ -168,17 +168,17 @@
 							<font face="Tahoma" size="2">
 							<b>Conseils:</b>
 							<ul type="square">						 
-								<li>L'expression réservé "local" utilisée lors de la déclaration de variables ci-haut
-									n'est pas nécessaire au code afin de fonctionner dans la mesure où la script n'est pas chargé dans d'autre scripts.
-									Cepandant, étant donné que ces variables ne seront utilisées que dans le scope global
-									de ce scripts, il serait recommendé, afin de prévenir tout potentiel problème que ce soit,
-									de garder l'instruction "local" instruction même si elle n'est pas nécessaire dans ce cas précis. Voir
-									section 2.6 de la documentation Lua 5.0 pour plus de détails. (Disponible dans le menu Help de LuaEdit)</li>
-								<li>La fonction Create() accepte un argument optionel. Celui-ci gère le "comment" l'interface sera crée.
-									Quand cet argument vaut 1, l'interface est crée dans une fenêtre ajustable. Lorsque ce même argument
-									vaut 2, l'interface est créé dans une fenêtre d'outils ajustable. Lorsque l'argument vaut ni 1, ni 2, 
-									l'interface est créé dans une fenêtre sans bordure. Dans l'example, l'argument
-									optionel valait nil puisque nous n'avions jamais donné quelque valeur que ce soit lors de l'appel de cette fonction.</li>
+								<li>L'expression r&eacute;serv&eacute; "local" utilis&eacute;e lors de la d&eacute;claration de variables ci-haut
+									n'est pas n&eacute;cessaire au code afin de fonctionner dans la mesure o&ugrave; la script n'est pas charg&eacute; dans d'autre scripts.
+									Cepandant, &eacute;tant donn&eacute; que ces variables ne seront utilis&eacute;es que dans le scope global
+									de ce scripts, il serait recommend&eacute;, afin de pr&eacute;venir tout potentiel probl&egrave;me que ce soit,
+									de garder l'instruction "local" instruction m&ecirc;me si elle n'est pas n&eacute;cessaire dans ce cas pr&eacute;cis. Voir
+									section 2.6 de la documentation Lua 5.0 pour plus de d&eacute;tails. (Disponible dans le menu Help de LuaEdit)</li>
+								<li>La fonction Create() accepte un argument optionel. Celui-ci g&egrave;re le "comment" l'interface sera cr&eacute;e.
+									Quand cet argument vaut 1, l'interface est cr&eacute;e dans une fen&ecirc;tre ajustable. Lorsque ce m&ecirc;me argument
+									vaut 2, l'interface est cr&eacute;&eacute; dans une fen&ecirc;tre d'outils ajustable. Lorsque l'argument vaut ni 1, ni 2, 
+									l'interface est cr&eacute;&eacute; dans une fen&ecirc;tre sans bordure. Dans l'example, l'argument
+									optionel valait nil puisque nous n'avions jamais donn&eacute; quelque valeur que ce soit lors de l'appel de cette fonction.</li>
 							</ul>
 						  </p> 
 					</td>
@@ -187,7 +187,7 @@
 					<td valign="bottom">													  
 						<font face="Tahoma" size="2">
 						<div align="left" valign="bottom">
-							<a href=".\Page1_Fr.html">&lt;&lt; Précédent</a>
+							<a href=".\Page1_Fr.html">&lt;&lt; Pr&eacute;c&eacute;dent</a>
 						</div>	
 					</td>
 					<td>   
@@ -205,9 +205,9 @@
 							<div align="right">			  
 								<a href="http://www.luaedit.org">www.luaedit.org</a>
 								<br>
-								© Copyright 2004-2005 LuaEdit
+								&copy; Copyright 2004-2005 LuaEdit
 								<br>
-								Lier une Dll à LuaEdit (Tutoriel)
+								Lier une Dll &agrave; LuaEdit (Tutoriel)
 							</div>
 						</font>
 					</td>
