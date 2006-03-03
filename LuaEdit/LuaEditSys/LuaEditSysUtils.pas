@@ -5,6 +5,7 @@ unit LuaEditSysUtils;
 
 interface
 
+function GetFileSizeStr(Size: Cardinal): PChar; 
 function GetFileLastTimeModified(const sFileName: PChar): TDateTime;
 function GetFileReadOnlyAttr(const sFileName: PChar): Boolean;
 procedure ToggleFileReadOnlyAttr(const sFileName: PChar);
@@ -16,6 +17,17 @@ function WinExit(iFlags: integer): Boolean;
 implementation
 
 uses SysUtils, Windows;
+
+function GetFileSizeStr(Size: Cardinal): PChar; 
+begin 
+  if Size < 1024 then
+    Result := PChar(IntToStr(Size) + ' Bytes')
+  else 
+    if Size < 1024 * 1024 then
+      Result := PChar(IntToStr(Size div (1024)) + 'KB')
+    else
+      Result := PChar(IntToStr(Size div (1024 * 1024)) + 'MB');
+end;
 
 function GetFileLastTimeModified(const sFileName: PChar): TDateTime;
 var
