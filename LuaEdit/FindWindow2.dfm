@@ -50,11 +50,7 @@ object frmFindWindow2: TfrmFindWindow2
     SortOnClick = False
   end
   object JvDockClient1: TJvDockClient
-    LRDockWidth = 100
-    TBDockHeight = 100
     DirectDrag = False
-    ShowHint = True
-    EnableCloseButton = True
     DockStyle = frmMain.jvDockVSNet
     Left = 8
     Top = 24

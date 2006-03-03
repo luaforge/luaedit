@@ -49,10 +49,10 @@ object frmContributors: TfrmContributors
     object Label2: TLabel
       Left = 96
       Top = 24
-      Width = 108
+      Width = 97
       Height = 13
       Cursor = crHandPoint
-      Caption = 'hay0b29@hotmail.com'
+      Caption = 'jf.goulet@luaedit.net'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clBlue
       Font.Height = -11
@@ -71,9 +71,9 @@ object frmContributors: TfrmContributors
     object Label4: TLabel
       Left = 96
       Top = 40
-      Width = 248
+      Width = 233
       Height = 13
-      Caption = 'Created and developed LuaEdit for Lua 5.0 in Delphi'
+      Caption = 'Created and developing LuaEdit in Delphi/Pascal'
     end
   end
   object GroupBox2: TGroupBox
@@ -93,10 +93,10 @@ object frmContributors: TfrmContributors
     object Label6: TLabel
       Left = 96
       Top = 24
-      Width = 98
+      Width = 144
       Height = 13
       Cursor = crHandPoint
-      Caption = 'shmuz@actcom.co.il'
+      Caption = 'shmuel.zeigerman@luaedit.net'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clBlue
       Font.Height = -11
@@ -115,9 +115,9 @@ object frmContributors: TfrmContributors
     object Label8: TLabel
       Left = 96
       Top = 40
-      Width = 284
+      Width = 232
       Height = 13
-      Caption = 'Tested LuaEdit for Lua 5.0 under several Operating Systems'
+      Caption = 'Testing LuaEdit under several Operating Systems'
     end
   end
   object GroupBox3: TGroupBox
@@ -137,10 +137,10 @@ object frmContributors: TfrmContributors
     object Label10: TLabel
       Left = 96
       Top = 24
-      Width = 94
+      Width = 147
       Height = 13
       Cursor = crHandPoint
-      Caption = 'max.maxm@tiscali.it'
+      Caption = 'massimo.magnano@luaedit.net'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clBlue
       Font.Height = -11
@@ -159,9 +159,9 @@ object frmContributors: TfrmContributors
     object Label12: TLabel
       Left = 96
       Top = 40
-      Width = 226
+      Width = 279
       Height = 13
-      Caption = 'Helped developing LuaEdit for Lua 5.0 in Delphi'
+      Caption = 'Contibuting to the development of LuaEdit in Delphi/Pascal'
     end
   end
 end

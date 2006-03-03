@@ -25,7 +25,6 @@ type
     Label10: TLabel;
     Label1: TLabel;
     Image2: TImage;
-    Image3: TImage;
     procedure imgLuaLogoClick(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -53,11 +52,6 @@ uses Math;
 
 {$R *.dfm}
 
-procedure TfrmAbout.imgLuaLogoClick(Sender: TObject);
-begin
-  ShellExecute(Self.Handle, 'open', 'http://www.lua.org', nil, nil, SW_SHOWNORMAL);
-end;
-
 procedure TfrmAbout.btnCloseClick(Sender: TObject);
 begin
   Self.Close;
@@ -81,24 +75,29 @@ begin
   Result := IntToStr(TotalMem)+' KB';
 end;
 
+procedure TfrmAbout.imgLuaLogoClick(Sender: TObject);
+begin
+  ShellExecute(Self.Handle, 'open', 'http://www.lua.org', nil, nil, SW_SHOWNORMAL);
+end;
+
 procedure TfrmAbout.Label7Click(Sender: TObject);
 begin
-  ShellExecute(Self.Handle, 'open', 'mailto:gouletje@vif.com?subject=About LuaEdit...', nil, nil, SW_SHOWNORMAL);
+  ShellExecute(Self.Handle, 'open', PChar('mailto:' + Label7.Caption + '?subject=About LuaEdit...'), nil, nil, SW_SHOWNORMAL);
 end;
 
 procedure TfrmAbout.Image1Click(Sender: TObject);
 begin
-  ShellExecute(Self.Handle, 'open', 'http://luaedit.luaforge.net', nil, nil, SW_SHOWNORMAL);
+  ShellExecute(Self.Handle, 'open', 'http://www.luaedit.net', nil, nil, SW_SHOWNORMAL);
 end;
 
 procedure TfrmAbout.Label1Click(Sender: TObject);
 begin
-  ShellExecute(Self.Handle, 'open', 'mailto:luaedit.support@vif.com?subject=LuaEdit Support...', nil, nil, SW_SHOWNORMAL);
+  ShellExecute(Self.Handle, 'open', PChar('mailto:' + Label1.Caption + '?subject=LuaEdit Support...'), nil, nil, SW_SHOWNORMAL);
 end;
 
 procedure TfrmAbout.Image3Click(Sender: TObject);
 begin
-  ShellExecute(Self.Handle, 'open', 'http://luaedit.luaforge.net', nil, nil, SW_SHOWNORMAL);
+  ShellExecute(Self.Handle, 'open', 'http://www.luaedit.net', nil, nil, SW_SHOWNORMAL);
 end;
 
 procedure TfrmAbout.Image2Click(Sender: TObject);

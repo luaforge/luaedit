@@ -6,7 +6,7 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, JvComponent, JvDockControlForm, ImgList, ComCtrls, ToolWin,
   StdCtrls, SHDocVW, ActnList, ExtCtrls, Registry, DateUtils, JvExControls,
-  JvAnimatedImage, JvGIFCtrl, OleCtrls, ActiveX, JvOutlookBar;
+  JvAnimatedImage, JvGIFCtrl, OleCtrls, ActiveX, JvOutlookBar, Misc;
 
 const
   // Mouse click basic events
@@ -59,13 +59,18 @@ type
     procedure actRefreshExecute(Sender: TObject);
     procedure actSearchExecute(Sender: TObject);
     procedure actGoExecute(Sender: TObject);
-    procedure InternalBrowserNavigateComplete2(Sender: TObject; const pDisp: IDispatch; var URL: OleVariant);
     procedure InternalBrowserCommandStateChange(Sender: TObject; Command: Integer; Enable: WordBool);
     procedure InternalBrowserBeforeNavigate2(Sender: TObject;
       const pDisp: IDispatch; var URL, Flags, TargetFrameName, PostData,
       Headers: OleVariant; var Cancel: WordBool);
     procedure cboURLKeyPress(Sender: TObject; var Key: Char);
+    procedure FormShow(Sender: TObject);
+    procedure InternalBrowserDocumentComplete(Sender: TObject;
+      const pDisp: IDispatch; var URL: OleVariant);
   private
+    {Private variables}
+    IsFirstTime: Boolean;
+    
     { Private declarations }
     FOleInPlaceActiveObject: IOleInPlaceActiveObject;
     procedure MsgHandler(var Msg: TMsg; var Handled: Boolean);
@@ -119,7 +124,7 @@ begin
 
     for x := 0 to lstValues.Count - 1 do
     begin
-      if StrToDateTime(lstValues.Strings[x]) < IncDay(Now, -10) then
+      if StrToDateTime(lstValues.Strings[x]) < IncDay(Now, 0 - HistoryMaxAge) then
       begin
         pReg.DeleteValue(lstValues.Strings[x]);
       end
@@ -136,7 +141,7 @@ begin
 
   lstValues.Free;
   pReg.Free;
-  actHome.Execute;
+  IsFirstTime := True;
 end;
 
 procedure TfrmInternalBrowser.FormDestroy(Sender: TObject);
@@ -252,7 +257,10 @@ end;
 
 procedure TfrmInternalBrowser.actHomeExecute(Sender: TObject);
 begin
-  InternalBrowser.GoHome;
+  if HomePage = '' then
+    InternalBrowser.GoHome
+  else
+    InternalBrowser.Navigate(HomePage);
 end;
 
 procedure TfrmInternalBrowser.actStopExecute(Sender: TObject);
@@ -267,20 +275,16 @@ end;
 
 procedure TfrmInternalBrowser.actSearchExecute(Sender: TObject);
 begin
-  InternalBrowser.GoSearch;
+  if SearchPage = '' then
+    InternalBrowser.GoSearch
+  else
+    InternalBrowser.Navigate(SearchPage);
 end;
 
 procedure TfrmInternalBrowser.actGoExecute(Sender: TObject);
 begin
   if cboURL.Text <> '' then
     InternalBrowser.Navigate(cboURL.Text);
-end;
-
-procedure TfrmInternalBrowser.InternalBrowserNavigateComplete2(Sender: TObject; const pDisp: IDispatch; var URL: OleVariant);
-begin
-  jvgifBrowser.Animate := False;
-  cboURL.Text := InternalBrowser.LocationURL;
-  AddURLToList(InternalBrowser.LocationURL);
 end;
 
 procedure TfrmInternalBrowser.InternalBrowserCommandStateChange(Sender: TObject; Command: Integer; Enable: WordBool);
@@ -301,6 +305,25 @@ procedure TfrmInternalBrowser.cboURLKeyPress(Sender: TObject; var Key: Char);
 begin
   if Ord(Key) = VK_RETURN then
     actGo.Execute;
+end;
+
+procedure TfrmInternalBrowser.FormShow(Sender: TObject);
+begin
+  if IsFirstTime then
+  begin
+    IsFirstTime := False;
+    actHome.Execute;
+  end;
+end;
+
+procedure TfrmInternalBrowser.InternalBrowserDocumentComplete(Sender: TObject; const pDisp: IDispatch; var URL: OleVariant);
+begin
+  if InternalBrowser.ReadyState = READYSTATE_COMPLETE then
+  begin
+    jvgifBrowser.Animate := False;
+    cboURL.Text := URL;
+    AddURLToList(URL);
+  end;
 end;
 
 initialization

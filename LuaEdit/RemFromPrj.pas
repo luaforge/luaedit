@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, Main, StdCtrls;
+  Dialogs, Main, StdCtrls, Misc;
 
 type
   TfrmRemoveFile = class(TForm)

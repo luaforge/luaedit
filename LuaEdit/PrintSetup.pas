@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ExtCtrls, IniFiles, Main;
+  Dialogs, StdCtrls, ExtCtrls, Registry, Main;
 
 type
   TfrmPrintSetup = class(TForm)
@@ -41,10 +41,10 @@ end;
 
 procedure TfrmPrintSetup.btnOkClick(Sender: TObject);
 var
-  pIniFile: TIniFile;
+  pReg: TRegistry;
 begin
-  pIniFile := TIniFile.Create(ExtractFilePath(Application.ExeName)+'\LuaEdit.ini');
-  
+  pReg := TRegistry.Create();
+
   //Printing Settings
   PrintUseColor := chkUseColors.Checked;
   PrintUseSyntax := chkUseHighLight.Checked;
@@ -52,13 +52,14 @@ begin
   PrintLineNumbers := chkShowLineNumbers.Checked;
   PrintLineNumbersInMargin := chkLineNumbersInMargin.Checked;
 
-  pIniFile.WriteBool('PrintSetup', 'UseColors', chkUseColors.Checked);
-  pIniFile.WriteBool('PrintSetup', 'UseSyntax', chkUseHighLight.Checked);
-  pIniFile.WriteBool('PrintSetup', 'UseWrapLines', chkWrapLines.Checked);
-  pIniFile.WriteBool('PrintSetup', 'LineNumbers', chkShowLineNumbers.Checked);
-  pIniFile.WriteBool('PrintSetup', 'LineNumbersInMargin', chkLineNumbersInMargin.Checked);
+  pReg.OpenKey('\Software\LuaEdit\PrintSetup', True);
+  pReg.WriteBool('UseColors', chkUseColors.Checked);
+  pReg.WriteBool('UseSyntax', chkUseHighLight.Checked);
+  pReg.WriteBool('UseWrapLines', chkWrapLines.Checked);
+  pReg.WriteBool('LineNumbers', chkShowLineNumbers.Checked);
+  pReg.WriteBool('LineNumbersInMargin', chkLineNumbersInMargin.Checked);
 
-  pIniFile.Free;
+  pReg.Free;
 end;
 
 procedure TfrmPrintSetup.FormShow(Sender: TObject);

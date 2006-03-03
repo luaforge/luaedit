@@ -4,7 +4,10 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, SynEdit, ComCtrls, ExtCtrls, IniFiles, Main, LuaSyntax;
+  Dialogs, StdCtrls, SynEdit, ComCtrls, ExtCtrls, IniFiles, Main, LuaSyntax,
+  Registry, ImgList, JvExControls, JvComponent, JvGroupHeader, JvPageList,
+  JvExComCtrls, JvPageListTreeView, Buttons, JvxSlider, Mask, JvExMask,
+  JvSpin, Misc, JvToolEdit, JvDotNetControls;
 
 const
   UM_MEASUREFONTS = WM_USER;
@@ -15,65 +18,99 @@ type
     Panel2: TPanel;
     btnCancel: TButton;
     btnOK: TButton;
-    pgcDebuggerSettings: TPageControl;
-    stabGeneral: TTabSheet;
-    Group1: TGroupBox;
-    chkAutoIndent: TCheckBox;
-    chkGroupUndo: TCheckBox;
-    chkScrollPastEOF: TCheckBox;
-    chkSmartTab: TCheckBox;
-    chkTrailBlanks: TCheckBox;
-    chkTabIndent: TCheckBox;
-    chkHideScrollBars: TCheckBox;
-    chkEHomeKey: TCheckBox;
-    Label1: TLabel;
-    txtUndoLimit: TEdit;
-    Label2: TLabel;
-    txtTabWidth: TEdit;
-    stabDisplay: TTabSheet;
-    GroupBox2: TGroupBox;
-    GroupBox3: TGroupBox;
-    chkShowGutter: TCheckBox;
-    chkShowLineNumbers: TCheckBox;
-    Label3: TLabel;
-    txtGutterWidth: TEdit;
-    cboGutterColor: TColorBox;
-    Label4: TLabel;
-    chkLeadingZeros: TCheckBox;
-    cboFonts: TComboBox;
-    Label5: TLabel;
-    Label6: TLabel;
-    cboFontSize: TComboBox;
-    pnlPreview: TPanel;
-    stabColors: TTabSheet;
-    synSample: TSynEdit;
-    lstElement: TListBox;
-    Label7: TLabel;
-    cboForeground: TColorBox;
-    Label8: TLabel;
-    Label9: TLabel;
-    cboBackground: TColorBox;
-    chkBold: TCheckBox;
-    chkItalic: TCheckBox;
-    chkUnderline: TCheckBox;
-    chkTabsToSpaces: TCheckBox;
-    chkScrollPastEOL: TCheckBox;
-    chkKeepCaretX: TCheckBox;
-    chkRightMouseMovesCursor: TCheckBox;
-    GroupBox1: TGroupBox;
-    chkFileAssociate: TCheckBox;
     imgNotify: TImage;
     lblNotify: TLabel;
+    jvSettingsTVSettings: TJvSettingsTreeView;
+    jvPageListSettings: TJvPageList;
+    JvStandardPage1: TJvStandardPage;
+    JvGroupHeader1: TJvGroupHeader;
+    chkFileAssociate: TCheckBox;
+    chkKeepReportOpened: TCheckBox;
+    chkShowExSaveDlg: TCheckBox;
     chkSaveProjectsInc: TCheckBox;
     chkSaveUnitsInc: TCheckBox;
     chkSaveBreakpoints: TCheckBox;
-    chkShowExSaveDlg: TCheckBox;
-    TabSheet1: TTabSheet;
-    GroupBox4: TGroupBox;
-    txtLibraries: TEdit;
+    JvStandardPage2: TJvStandardPage;
+    txtTabWidth: TEdit;
+    txtUndoLimit: TEdit;
+    Label1: TLabel;
+    Label2: TLabel;
+    chkAutoIndent: TCheckBox;
+    chkSmartTab: TCheckBox;
+    chkTabIndent: TCheckBox;
+    chkGroupUndo: TCheckBox;
+    chkRightMouseMovesCursor: TCheckBox;
+    chkEHomeKey: TCheckBox;
+    chkTabsToSpaces: TCheckBox;
+    chkHideScrollBars: TCheckBox;
+    chkTrailBlanks: TCheckBox;
+    chkKeepCaretX: TCheckBox;
+    chkScrollPastEOL: TCheckBox;
+    chkScrollPastEOF: TCheckBox;
+    JvGroupHeader2: TJvGroupHeader;
+    imlEditorSettings: TImageList;
+    JvStandardPage3: TJvStandardPage;
+    JvStandardPage4: TJvStandardPage;
     Label10: TLabel;
+    txtLibraries: TEdit;
     btnBrowseLibraries: TButton;
-    chkKeepReportOpened: TCheckBox;
+    JvGroupHeader3: TJvGroupHeader;
+    JvGroupHeader4: TJvGroupHeader;
+    JvStandardPage5: TJvStandardPage;
+    chkShowGutter: TCheckBox;
+    chkShowLineNumbers: TCheckBox;
+    chkLeadingZeros: TCheckBox;
+    cboGutterColor: TColorBox;
+    Label4: TLabel;
+    txtGutterWidth: TEdit;
+    Label3: TLabel;
+    JvGroupHeader5: TJvGroupHeader;
+    JvStandardPage6: TJvStandardPage;
+    pnlPreview: TPanel;
+    cboFonts: TComboBox;
+    Label5: TLabel;
+    cboFontSize: TComboBox;
+    Label6: TLabel;
+    JvGroupHeader6: TJvGroupHeader;
+    JvStandardPage7: TJvStandardPage;
+    synSample: TSynEdit;
+    lstElement: TListBox;
+    Label7: TLabel;
+    chkBold: TCheckBox;
+    chkItalic: TCheckBox;
+    chkUnderline: TCheckBox;
+    Label8: TLabel;
+    cboForeground: TColorBox;
+    Label9: TLabel;
+    cboBackground: TColorBox;
+    JvGroupHeader7: TJvGroupHeader;
+    Label11: TLabel;
+    cboColorSet: TComboBox;
+    bitbtnDelete: TBitBtn;
+    bitbtnSave: TBitBtn;
+    bitbtnNew: TBitBtn;
+    Splitter1: TSplitter;
+    jvslAnimatedTabsSpeed: TJvxSlider;
+    Label12: TLabel;
+    Label13: TLabel;
+    Label14: TLabel;
+    chkShowStatusBar: TCheckBox;
+    JvGroupHeader8: TJvGroupHeader;
+    JvGroupHeader9: TJvGroupHeader;
+    JvGroupHeader10: TJvGroupHeader;
+    JvGroupHeader11: TJvGroupHeader;
+    JvGroupHeader12: TJvGroupHeader;
+    JvGroupHeader13: TJvGroupHeader;
+    JvGroupHeader14: TJvGroupHeader;
+    txtHomePage: TEdit;
+    txtSearchPage: TEdit;
+    chkHomePage: TCheckBox;
+    chkSearchPage: TCheckBox;
+    jvspinHistoryMaxAge: TJvSpinEdit;
+    Label15: TLabel;
+    Label16: TLabel;
+    Label17: TLabel;
+    txtTempFolder: TJvDotNetDirectoryEdit;
     procedure cboFontsMeasureItem(Control: TWinControl; Index: Integer;  var Height: Integer);
     procedure cboFontsDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
     procedure FormCreate(Sender: TObject);
@@ -97,6 +134,13 @@ type
     procedure chkFileAssociateClick(Sender: TObject);
     procedure cboFontSizeMeasureItem(Control: TWinControl; Index: Integer; var Height: Integer);
     procedure btnBrowseLibrariesClick(Sender: TObject);
+    procedure cboColorSetClick(Sender: TObject);
+    procedure btnCancelClick(Sender: TObject);
+    procedure bitbtnDeleteClick(Sender: TObject);
+    procedure bitbtnNewClick(Sender: TObject);
+    procedure bitbtnSaveClick(Sender: TObject);
+    procedure chkHomePageClick(Sender: TObject);
+    procedure chkSearchPageClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -105,6 +149,8 @@ type
     procedure NotifyRestart(Notify: Boolean);
     procedure LoadEditorSettings;
     procedure WriteEditorSettings;
+    procedure WriteColorSet;
+    procedure BuildColorSetList;
   end;
 
 var
@@ -269,11 +315,11 @@ end;
 
 procedure TfrmEditorSettings.WriteEditorSettings;
 var
-  pIniFile: TIniFile;
+  pReg: TRegistry;
   x: Integer;
 begin
   Screen.Cursor := crHourGlass;
-  pIniFile := TIniFile.Create(ExtractFilePath(Application.ExeName)+'LuaEdit.ini');
+  pReg := TRegistry.Create();
 
   //Writing general settings
   if chkAutoIndent.Checked then
@@ -336,15 +382,26 @@ begin
   else
     Options := Options - [eoRightMouseMovesCursor];
 
-  pIniFile.WriteInteger('General', 'EditorOptions', Integer(Options));
-  pIniFile.WriteInteger('General', 'UndoLimit', StrToInt(txtUndoLimit.Text));
-  pIniFile.WriteInteger('General', 'TabWidth', StrToInt(txtTabWidth.Text));
-  pIniFile.WriteBool('General', 'SaveProjectsInc', chkSaveProjectsInc.Checked);
-  pIniFile.WriteBool('General', 'SaveBreakpoints', chkSaveBreakpoints.Checked);
-  pIniFile.WriteBool('General', 'SaveUnitsInc', chkSaveUnitsInc.Checked);
-  pIniFile.WriteBool('General', 'AssociateFiles', chkFileAssociate.Checked);
-  pIniFile.WriteBool('General', 'ShowExSaveDlg', chkShowExSaveDlg.Checked);
-  pIniFile.WriteBool('General', 'KeepSIFWindowOpened', chkKeepReportOpened.Checked);
+  pReg.OpenKey('\Software\LuaEdit\EditorSettings\General', True);
+  pReg.WriteInteger('EditorOptions', Integer(Options));
+  pReg.WriteInteger('UndoLimit', StrToInt(txtUndoLimit.Text));
+  pReg.WriteInteger('TabWidth', StrToInt(txtTabWidth.Text));
+  pReg.WriteInteger('AnimatedTabsSpeed', 2001 - jvslAnimatedTabsSpeed.Value);
+  pReg.WriteInteger('HistoryMaxAge', Trunc(jvspinHistoryMaxAge.Value));
+  pReg.WriteBool('SaveProjectsInc', chkSaveProjectsInc.Checked);
+  pReg.WriteBool('SaveBreakpoints', chkSaveBreakpoints.Checked);
+  pReg.WriteBool('SaveUnitsInc', chkSaveUnitsInc.Checked);
+  pReg.WriteBool('AssociateFiles', chkFileAssociate.Checked);
+  pReg.WriteBool('ShowExSaveDlg', chkShowExSaveDlg.Checked);
+  pReg.WriteBool('KeepSIFWindowOpened', chkKeepReportOpened.Checked);
+  pReg.WriteBool('ShowStatusBar', chkShowStatusBar.Checked);
+  pReg.WriteString('HomePage', txtHomePage.Text);
+  pReg.WriteString('SearchPage', txtSearchPage.Text);
+  pReg.WriteString('TempFolder', txtTempFolder.Text);
+
+  // Clean up old temporary folder if set to new one
+  if TempFolder <> txtTempFolder.Text then
+    frmMain.CleanUpTempDir();
 
   if AssociateFiles <> chkFileAssociate.Checked then
   begin
@@ -372,47 +429,63 @@ begin
     if Application.MessageBox('You must restart your computer for some of the changes to take effect. Do you want to restart your computer now?', 'LuaEdit', MB_ICONQUESTION+MB_YESNO) = IDYES then
     begin
       if not WinExit(EWX_REBOOT) then
-      begin
         Application.MessageBox('LuaEdit was unable to restart your computer!', 'LuaEdit', MB_OK+MB_ICONERROR);
-      end;
     end;
   end;
 
   // Writing environement settings
-  pIniFile.WriteString('Environement', 'LibrariesSearchPaths', '"'+txtLibraries.Text+'"');
+  pReg.OpenKey('\Software\LuaEdit\EditorSettings\Environment', True);
+  pReg.WriteString('LibrariesSearchPaths', '"'+txtLibraries.Text+'"');
 
   //Writing display settings
-  pIniFile.WriteBool('Display', 'ShowGutter', chkShowGutter.Checked);
-  pIniFile.WriteBool('Display', 'ShowLineNumbers', chkShowLineNumbers.Checked);
-  piniFile.WriteBool('Display', 'LeadingZeros', chkLeadingZeros.Checked);
-  pIniFile.WriteInteger('Display', 'GutterWidth', StrToInt(txtGutterWidth.Text));
-  pIniFile.WriteString('Display', 'GutterColor', ColorToString(cboGutterColor.Selected));
-  pIniFile.WriteString('Display', 'FontName', cboFonts.Text);
-  pIniFile.WriteInteger('Display', 'FontSize', StrToInt(cboFontSize.Text));
+  pReg.OpenKey('\Software\LuaEdit\EditorSettings\Display', True);
+  pReg.WriteBool('ShowGutter', chkShowGutter.Checked);
+  pReg.WriteBool('ShowLineNumbers', chkShowLineNumbers.Checked);
+  pReg.WriteBool('LeadingZeros', chkLeadingZeros.Checked);
+  pReg.WriteInteger('GutterWidth', StrToInt(txtGutterWidth.Text));
+  pReg.WriteString('GutterColor', ColorToString(cboGutterColor.Selected));
+  pReg.WriteString('FontName', cboFonts.Text);
+  pReg.WriteInteger('FontSize', StrToInt(cboFontSize.Text));
+  pReg.WriteString('ColorSet', cboColorSet.Text);
 
-  pIniFile.UpdateFile;
-  pIniFile.Free;
-  pIniFile := TIniFile.Create(ExtractFilePath(Application.ExeName)+'\LuaEdit.dat');
+  pReg.Free;
+  WriteColorSet;    
 
-  //Writing colors settings
-  for x := 0 to lstElement.Items.Count - 1 do
-  begin
-    pIniFile.WriteBool(lstElement.Items.Strings[x], 'IsBold', TEditorColors(lstElement.Items.Objects[x]).IsBold);
-    pIniFile.WriteBool(lstElement.Items.Strings[x], 'IsItalic', TEditorColors(lstElement.Items.Objects[x]).IsItalic);
-    pIniFile.WriteBool(lstElement.Items.Strings[x], 'IsUnderline', TEditorColors(lstElement.Items.Objects[x]).IsUnderline);
-    pIniFile.WriteString(lstElement.Items.Strings[x], 'ForegroundColor', TEditorColors(lstElement.Items.Objects[x]).Foreground);
-    pIniFile.WriteString(lstElement.Items.Strings[x], 'BackgroundColor', TEditorColors(lstElement.Items.Objects[x]).Background);
-  end;
-
-  pIniFile.UpdateFile;
-  pIniFile.Free;
-  frmMain.LoadEditorSettings;
+  frmMain.LoadEditorSettingsFromReg;
   for x := 0 to LuaOpenedUnits.Count - 1 do
     frmMain.ApplyValuesToEditor(TLuaUnit(LuaOpenedUnits.Items[x]).synUnit, EditorColors);
   Screen.Cursor := crDefault;
 end;
 
+procedure TfrmEditorSettings.WriteColorSet;
+var
+  pColorSet: TIniFile;
+  x: Integer;
+begin
+  // Create .\Data directory if innexistant
+  if not DirectoryExists(GetLuaEditInstallPath()+'\Data') then
+    CreateDirectory(PChar(GetLuaEditInstallPath()+'\Data'), nil);
+
+  // Creating/opening file
+  pColorSet := TIniFile.Create(GetLuaEditInstallPath()+'\Data\' + cboColorSet.Text + '.dat');
+
+  //Writing colors settings
+  for x := 0 to lstElement.Items.Count - 1 do
+  begin
+    pColorSet.WriteBool(lstElement.Items.Strings[x], 'IsBold', TEditorColors(lstElement.Items.Objects[x]).IsBold);
+    pColorSet.WriteBool(lstElement.Items.Strings[x], 'IsItalic', TEditorColors(lstElement.Items.Objects[x]).IsItalic);
+    pColorSet.WriteBool(lstElement.Items.Strings[x], 'IsUnderline', TEditorColors(lstElement.Items.Objects[x]).IsUnderline);
+    pColorSet.WriteString(lstElement.Items.Strings[x], 'ForegroundColor', TEditorColors(lstElement.Items.Objects[x]).Foreground);
+    pColorSet.WriteString(lstElement.Items.Strings[x], 'BackgroundColor', TEditorColors(lstElement.Items.Objects[x]).Background);
+  end;
+
+  pColorSet.UpdateFile;
+  pColorSet.Free;
+end;
+
 procedure TfrmEditorSettings.LoadEditorSettings;
+var
+  x: Integer;
 begin
   lstEditorColorsTemp.Assign(EditorColors);
   Options := EditorOptions;
@@ -483,6 +556,8 @@ begin
   chkShowExSaveDlg.Checked := ShowExSaveDlg;
   chkSaveBreakpoints.Checked := SaveBreakpoints;
   chkKeepReportOpened.Checked := KeepSIFWindowOpened;
+  chkShowStatusBar.Checked := ShowStatusBar;
+  jvslAnimatedTabsSpeed.Value := 2001 - AnimatedTabsSpeed;
   txtUndoLimit.Text := IntToStr(Main.UndoLimit);
   txtTabWidth.Text := IntToStr(Main.TabWidth);
   txtLibraries.Text := LibrariesSearchPaths.CommaText;
@@ -493,6 +568,23 @@ begin
   cboGutterColor.Selected := StringToColor(Main.GutterColor);
   cboFonts.ItemIndex := cboFonts.Items.IndexOf(Main.FontName);
   cboFontSize.ItemIndex := cboFontSize.Items.IndexOf(IntToStr(Main.FontSize));
+  txtHomePage.Text := HomePage;
+  chkHomePage.Checked := (txtHomePage.Text <> '');
+  txtHomePage.Enabled := chkHomePage.Checked;
+  txtSearchPage.Text := SearchPage;
+  chkSearchPage.Checked := (txtSearchPage.Text <> '');
+  txtSearchPage.Enabled := chkSearchPage.Checked;
+  txtTempFolder.Text := TempFolder;
+  jvspinHistoryMaxAge.Value := HistoryMaxAge;
+
+  if cboColorSet.ItemIndex = -1 then
+  begin
+    for x := 0 to cboColorSet.Items.Count - 1 do
+    begin
+      if Main.ColorSet = cboColorSet.Items[x] then
+        cboColorSet.ItemIndex := x;
+    end;
+  end;
 
   lstElement.Items.Clear;
   lstElement.Items.AddObject('Background', lstEditorColorsTemp.Items[0]);
@@ -517,21 +609,27 @@ begin
   
   if ((txtUndoLimit.Text = '0') or (txtUndoLimit.Text = '')) then
   begin
-    pgcDebuggerSettings.ActivePageIndex := 0;
+    jvPageListSettings.ActivePageIndex := 1;
     Application.MessageBox('The limit of undo must be higher than zero.', 'LuaEdit', MB_OK+MB_ICONERROR);
     txtUndoLimit.SetFocus;
   end
   else if ((txtTabWidth.Text = '0') or (txtTabWidth.Text = '')) then
   begin
-    pgcDebuggerSettings.ActivePageIndex := 0;
+    jvPageListSettings.ActivePageIndex := 1;
     Application.MessageBox('The tab width must be higher than zero.', 'LuaEdit', MB_OK+MB_ICONERROR);
     txtTabWidth.SetFocus;
   end
   else if ((txtGutterWidth.Text = '0') or (txtGutterWidth.Text = '')) then
   begin
-    pgcDebuggerSettings.ActivePageIndex := 1;
+    jvPageListSettings.ActivePageIndex := 4;
     Application.MessageBox('The gutter width must be higher than zero.', 'LuaEdit', MB_OK+MB_ICONERROR);
     txtGutterWidth.SetFocus;
+  end
+  else if cboColorSet.Text = '' then
+  begin
+    jvPageListSettings.ActivePageIndex := 6;
+    Application.MessageBox('The color set name can''t be empty.', 'LuaEdit', MB_OK+MB_ICONERROR);
+    cboColorSet.SetFocus;
   end
   else
   begin
@@ -628,12 +726,31 @@ end;
 
 procedure TfrmEditorSettings.FormShow(Sender: TObject);
 begin
-  pgcDebuggerSettings.ActivePageIndex := 0;
+  jvPageListSettings.ActivePageIndex := 0;
+  jvSettingsTVSettings.Selected := jvSettingsTVSettings.Items[1];
   lstEditorColorsTemp.Clear;
+  BuildColorSetList;
+
+  // Initializing settings
   LoadEditorSettings;
 
   // Hide notification
   NotifyRestart(False);
+end;
+
+procedure TfrmEditorSettings.BuildColorSetList;
+var
+  srSearchRec: TSearchRec;
+begin
+  cboColorSet.Clear;
+
+  // Fill content of ColorSet combo box
+  if FindFirst(GetLuaEditInstallPath()+'\Data\*.dat', faAnyFile, srSearchRec) = 0 then
+  begin
+    repeat
+      cboColorSet.AddItem(Copy(srSearchRec.Name, 1, Length(srSearchRec.Name) - 4), nil);
+    until FindNext(srSearchRec) <> 0;
+  end;
 end;
 
 procedure TfrmEditorSettings.FormDestroy(Sender: TObject);
@@ -660,7 +777,7 @@ procedure TfrmEditorSettings.btnBrowseLibrariesClick(Sender: TObject);
 begin
   // Initialize search path form
   frmSearchPath := TfrmSearchPath.Create(nil);
-  frmSearchPath.InitSearchPathForm(txtLibraries.Text, 'Libraries Search Paths', 'Select libraries search paths for LuaEdit to use when looking for *.lib and *.def files:');
+  frmSearchPath.InitSearchPathForm(txtLibraries.Text, 'Libraries Search Paths', 'Select libraries search paths for LuaEdit to use when looking for *.lib files:');
 
   // Show form and replace current path string by the new one
   if frmSearchPath.ShowModal = mrOk then
@@ -668,6 +785,92 @@ begin
 
   // Free search path form
   frmSearchPath.Free;
+end;
+
+procedure TfrmEditorSettings.cboColorSetClick(Sender: TObject);
+begin
+  frmMain.GetColorSet(cboColorSet.Items[cboColorSet.ItemIndex]);
+  LoadEditorSettings;
+end;
+
+procedure TfrmEditorSettings.btnCancelClick(Sender: TObject);
+begin
+  frmMain.LoadEditorSettingsFromReg;
+end;
+
+procedure TfrmEditorSettings.bitbtnDeleteClick(Sender: TObject);
+begin
+  if Application.MessageBox(PChar('Are you sure you want to delete color set "' + cboColorSet.Text + '"?'), 'LuaEdit', MB_ICONQUESTION+MB_YESNO) = IDYES then
+  begin
+    DeleteFile(GetLuaEditInstallPath()+'\Data\'+cboColorSet.Text+'.dat');
+    BuildColorSetList;
+    cboColorSet.ItemIndex := 0;
+  end;
+end;
+
+procedure TfrmEditorSettings.bitbtnNewClick(Sender: TObject);
+var
+  sColorSet: String;
+  x: Integer;
+begin
+  sColorSet := 'New Color Set';
+  
+  if InputQuery('Add Color Set', 'Enter the name of the new color set:', sColorSet) then
+  begin
+    if sColorSet <> '' then
+    begin
+      if not FileExists(GetLuaEditInstallPath()+'\Data\'+sColorSet+'.dat') then
+      begin
+        if not DirectoryExists(GetLuaEditInstallPath()+'\Data\') then
+          CreateDirectory(PChar(GetLuaEditInstallPath()+'\Data\'), nil);
+
+        CloseHandle(CreateFile(PChar(GetLuaEditInstallPath()+'\Data\'+sColorSet+'.dat'), GENERIC_WRITE, FILE_SHARE_WRITE, nil, CREATE_NEW, 0, 0));
+        BuildColorSetList;
+
+        for x := 0 to cboColorSet.Items.Count - 1 do
+        begin
+          if sColorSet = cboColorSet.Items[x] then
+            cboColorSet.ItemIndex := x;
+        end;
+
+        frmMain.GetColorSet(cboColorSet.Items[cboColorSet.ItemIndex]);
+        LoadEditorSettings;
+      end
+      else
+        Application.MessageBox('The specified color set name already exists!', 'LuaEdit', MB_ICONERROR);
+    end
+    else
+      Application.MessageBox('Invalid color set name!', 'LuaEdit', MB_ICONERROR);
+  end;
+end;
+
+procedure TfrmEditorSettings.bitbtnSaveClick(Sender: TObject);
+begin
+  if Application.MessageBox(PChar('Save changes to "' + cboColorSet.Text + '"?'), 'LuaEdit', MB_ICONQUESTION+MB_YESNO) = IDYES then
+    WriteColorSet;
+
+  {if cboColorSet.Items.Count > 0 then
+  begin
+    cboColorSet.ItemIndex := 0;
+    frmMain.GetColorSet(cboColorSet.Items[cboColorSet.ItemIndex]);
+    LoadEditorSettings;
+  end;}
+end;
+
+procedure TfrmEditorSettings.chkHomePageClick(Sender: TObject);
+begin
+  if not chkHomePage.Checked then
+    txtHomePage.Text := '';
+
+  txtHomePage.Enabled := chkHomePage.Checked;
+end;
+
+procedure TfrmEditorSettings.chkSearchPageClick(Sender: TObject);
+begin
+  if not chkSearchPage.Checked then
+    txtSearchPage.Text := '';
+
+  txtSearchPage.Enabled := chkSearchPage.Checked;
 end;
 
 end.

@@ -4,12 +4,13 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, JvComponent, JvDockControlForm, ComCtrls, StdCtrls;
+  Dialogs, JvComponent, JvDockControlForm, ComCtrls, StdCtrls,
+  JvExStdCtrls, JvListBox;
 
 type
   TfrmLuaLocals = class(TForm)
     JvDockClient1: TJvDockClient;
-    lstLocals: TListBox;
+    lstLocals: TJvListBox;
   private
     { Private declarations }
   public

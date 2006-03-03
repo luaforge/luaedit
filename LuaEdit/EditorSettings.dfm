@@ -1,11 +1,11 @@
 object frmEditorSettings: TfrmEditorSettings
-  Left = 492
+  Left = 457
   Top = 161
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Editor Settings'
-  ClientHeight = 416
-  ClientWidth = 492
+  ClientHeight = 408
+  ClientWidth = 632
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -22,14 +22,14 @@ object frmEditorSettings: TfrmEditorSettings
   TextHeight = 13
   object Panel1: TPanel
     Left = 0
-    Top = 375
-    Width = 492
+    Top = 367
+    Width = 632
     Height = 41
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 0
     DesignSize = (
-      492
+      632
       41)
     object imgNotify: TImage
       Left = 20
@@ -84,7 +84,7 @@ object frmEditorSettings: TfrmEditorSettings
       Caption = 'Some changes will require to restart your system'
     end
     object btnCancel: TButton
-      Left = 410
+      Left = 550
       Top = 11
       Width = 75
       Height = 25
@@ -93,9 +93,10 @@ object frmEditorSettings: TfrmEditorSettings
       Caption = '&Cancel'
       ModalResult = 2
       TabOrder = 1
+      OnClick = btnCancelClick
     end
     object btnOK: TButton
-      Left = 328
+      Left = 468
       Top = 11
       Width = 75
       Height = 25
@@ -110,432 +111,811 @@ object frmEditorSettings: TfrmEditorSettings
   object Panel2: TPanel
     Left = 0
     Top = 0
-    Width = 492
-    Height = 375
+    Width = 632
+    Height = 367
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
-    object pgcDebuggerSettings: TPageControl
+    object Splitter1: TSplitter
+      Left = 153
+      Top = 0
+      Width = 4
+      Height = 367
+    end
+    object jvSettingsTVSettings: TJvSettingsTreeView
       Left = 0
       Top = 0
-      Width = 492
-      Height = 375
-      ActivePage = stabGeneral
-      Align = alClient
+      Width = 153
+      Height = 367
+      PageDefault = 0
+      PageList = jvPageListSettings
+      Align = alLeft
+      Images = imlEditorSettings
+      Indent = 19
       TabOrder = 0
-      object stabGeneral: TTabSheet
-        Caption = 'General'
+      Items.Data = {
+        0300000025000000010000000100000000000000FFFFFFFF0000000003000000
+        0C456E7669726F6E656D656E7420000000FFFFFFFFFFFFFFFF01000000FFFFFF
+        FF00000000000000000747656E6572616C25000000FFFFFFFFFFFFFFFF010000
+        00FFFFFFFF02000000000000000C53656172636820506174687324000000FFFF
+        FFFFFFFFFFFF02000000FFFFFFFF03000000000000000B5765622042726F7773
+        6572240000000100000001000000FFFFFFFFFFFFFFFF01000000020000000B54
+        65787420456469746F7220000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0100
+        0000000000000747656E6572616C1D000000FFFFFFFFFFFFFFFFFFFFFFFFFFFF
+        FFFF050000000000000004466F6E74200000000100000001000000FFFFFFFFFF
+        FFFFFF040000000200000007446973706C61791F000000FFFFFFFFFFFFFFFFFF
+        FFFFFFFFFFFFFF0400000000000000064775747465722C000000FFFFFFFFFFFF
+        FFFFFFFFFFFFFFFFFFFF06000000000000001353796E74617820486967686C69
+        676874696E67}
+      Items.Links = {
+        0A00000000000000000000000200000003000000010000000100000005000000
+        040000000400000006000000}
+    end
+    object jvPageListSettings: TJvPageList
+      Left = 157
+      Top = 0
+      Width = 475
+      Height = 367
+      ActivePage = JvStandardPage1
+      PropagateEnable = False
+      ShowDesignCaption = sdcNone
+      Align = alClient
+      object JvStandardPage1: TJvStandardPage
+        Left = 0
+        Top = 0
+        Width = 475
+        Height = 367
+        Caption = '[Environement] - General'
+        DesignSize = (
+          475
+          367)
+        object JvGroupHeader1: TJvGroupHeader
+          Left = 0
+          Top = 0
+          Width = 475
+          Height = 17
+          Align = alTop
+          Caption = 'Settings'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
+        end
+        object Label12: TLabel
+          Left = 24
+          Top = 204
+          Width = 108
+          Height = 13
+          Caption = 'Animated Tabs Speed:'
+        end
+        object Label13: TLabel
+          Left = 117
+          Top = 226
+          Width = 6
+          Height = 13
+          Caption = '+'
+        end
+        object Label14: TLabel
+          Left = 24
+          Top = 226
+          Width = 3
+          Height = 13
+          Caption = '-'
+        end
+        object JvGroupHeader8: TJvGroupHeader
+          Left = 0
+          Top = 364
+          Width = 475
+          Height = 3
+          Align = alBottom
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
+        end
+        object Label17: TLabel
+          Left = 24
+          Top = 144
+          Width = 85
+          Height = 13
+          Caption = 'Temporary Folder:'
+        end
+        object chkFileAssociate: TCheckBox
+          Left = 24
+          Top = 32
+          Width = 225
+          Height = 17
+          Caption = 'Associate LuaEdit with Common Lua Files'
+          TabOrder = 0
+          OnClick = chkFileAssociateClick
+        end
+        object chkKeepReportOpened: TCheckBox
+          Left = 24
+          Top = 56
+          Width = 225
+          Height = 17
+          Caption = 'Keep Find in Files Report Opened'
+          TabOrder = 1
+        end
+        object chkShowExSaveDlg: TCheckBox
+          Left = 24
+          Top = 80
+          Width = 217
+          Height = 17
+          Caption = 'Show Extended Save Dialog on Exit'
+          TabOrder = 2
+        end
+        object chkSaveProjectsInc: TCheckBox
+          Left = 272
+          Top = 32
+          Width = 161
+          Height = 17
+          Caption = 'Save Projects Incrementally'
+          TabOrder = 3
+        end
+        object chkSaveUnitsInc: TCheckBox
+          Left = 272
+          Top = 56
+          Width = 161
+          Height = 17
+          Caption = 'Save Units Incrementally'
+          TabOrder = 4
+        end
+        object chkSaveBreakpoints: TCheckBox
+          Left = 272
+          Top = 80
+          Width = 161
+          Height = 17
+          Caption = 'Save Breakpoints'
+          TabOrder = 5
+        end
+        object jvslAnimatedTabsSpeed: TJvxSlider
+          Left = 29
+          Top = 220
+          Width = 89
+          Height = 25
+          ImageHThumb.Data = {
+            EE030000424DEE03000000000000360000002800000012000000110000000100
+            180000000000B803000000000000000000000000000000000000FF00FFFF00FF
+            FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00
+            FFFF00FFFF00FFFF00FFFF00FFFF00FF0000FF00FFFF00FFFF00FFFF00FFFF00
+            FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF
+            00FFFF00FFFF00FF0000FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF
+            00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF
+            0000FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF
+            FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF0000FF00FFFF00FF
+            404040404040404040404040404040FF00FFFF00FFFF00FFFF00FF4040404040
+            40404040404040404040FF00FFFF00FF0000FF00FFFF00FFFFFFFF8080808080
+            80808080404040FF00FFFF00FFFF00FFFF00FFFFFFFF80808080808080808040
+            4040FF00FFFF00FF0000FF00FFFF00FFFFFFFFC8D0D4C8D0D4808080404040FF
+            00FFFF00FFFF00FFFF00FFFFFFFFC8D0D4C8D0D4808080404040FF00FFFF00FF
+            0000FF00FFFF00FFFFFFFFC8D0D4C8D0D4808080404040FF00FFFF00FFFF00FF
+            FF00FFFFFFFFC8D0D4C8D0D4808080404040FF00FFFF00FF0000FF00FFFF00FF
+            FFFFFFC8D0D4C8D0D4808080404040FF00FFFF00FFFF00FFFF00FFFFFFFFC8D0
+            D4C8D0D4808080404040FF00FFFF00FF0000FF00FFFF00FFFFFFFFC8D0D4C8D0
+            D4808080404040FF00FFFF00FFFF00FFFF00FFFFFFFFC8D0D4C8D0D480808040
+            4040FF00FFFF00FF0000FF00FFFF00FFFFFFFFC8D0D4C8D0D4808080404040FF
+            00FFFF00FFFF00FFFF00FFFFFFFFC8D0D4C8D0D4808080404040FF00FFFF00FF
+            0000FF00FFFF00FFFFFFFFC8D0D4C8D0D4808080404040FF00FFFF00FFFF00FF
+            FF00FFFFFFFFC8D0D4C8D0D4808080404040FF00FFFF00FF0000FF00FFFF00FF
+            FFFFFFC8D0D4C8D0D4808080404040FF00FFFF00FFFF00FFFF00FFFFFFFFC8D0
+            D4C8D0D4808080404040FF00FFFF00FF0000FF00FFFF00FFFFFFFFFFFFFFFFFF
+            FFFFFFFF404040FF00FFFF00FFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFF40
+            4040FF00FFFF00FF0000FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF
+            00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF
+            0000FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF
+            FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF0000FF00FFFF00FF
+            FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00
+            FFFF00FFFF00FFFF00FFFF00FFFF00FF0000}
+          Increment = 1
+          MinValue = 1
+          MaxValue = 2000
+          Options = [soShowFocus, soSmooth]
+          TabOrder = 6
+          Value = 50
+          UserImages = {01}
+        end
+        object chkShowStatusBar: TCheckBox
+          Left = 24
+          Top = 104
+          Width = 105
+          Height = 17
+          Caption = 'Show Status Bar'
+          TabOrder = 7
+        end
+        object txtTempFolder: TJvDotNetDirectoryEdit
+          Left = 24
+          Top = 160
+          Width = 424
+          Height = 21
+          AcceptFiles = False
+          DialogKind = dkWin32
+          AutoCompleteFileOptions = []
+          DialogOptions = [sdAllowCreate, sdPerformCreate]
+          Anchors = [akLeft, akRight, akBottom]
+          TabOrder = 8
+        end
+      end
+      object JvStandardPage2: TJvStandardPage
+        Left = 0
+        Top = 0
+        Width = 475
+        Height = 367
+        Caption = '[Text Editor] - General'
         object Label1: TLabel
-          Left = 16
-          Top = 291
+          Left = 24
+          Top = 206
           Width = 53
           Height = 13
           Caption = 'Undo Limit:'
         end
         object Label2: TLabel
-          Left = 152
-          Top = 291
+          Left = 160
+          Top = 206
           Width = 53
           Height = 13
           Caption = 'Tab Width:'
         end
-        object Group1: TGroupBox
-          Left = 16
-          Top = 135
-          Width = 457
-          Height = 145
-          Caption = 'Editor Options'
-          TabOrder = 2
-          object chkAutoIndent: TCheckBox
-            Left = 16
-            Top = 32
-            Width = 97
-            Height = 17
-            Caption = 'Auto Indent'
-            TabOrder = 0
-          end
-          object chkGroupUndo: TCheckBox
-            Left = 16
-            Top = 56
-            Width = 97
-            Height = 17
-            Caption = 'Group Undo'
-            TabOrder = 1
-          end
-          object chkScrollPastEOF: TCheckBox
-            Left = 312
-            Top = 32
-            Width = 97
-            Height = 17
-            Caption = 'Scroll Past EOF'
-            TabOrder = 8
-          end
-          object chkSmartTab: TCheckBox
-            Left = 16
-            Top = 104
-            Width = 97
-            Height = 17
-            Caption = 'Use Smart Tabs'
-            TabOrder = 3
-          end
-          object chkTrailBlanks: TCheckBox
-            Left = 312
-            Top = 104
-            Width = 121
-            Height = 17
-            Caption = 'Keep Trailing Blanks'
-            TabOrder = 11
-          end
-          object chkTabIndent: TCheckBox
-            Left = 16
-            Top = 80
-            Width = 97
-            Height = 17
-            Caption = 'Use Tab Indent'
-            TabOrder = 2
-          end
-          object chkHideScrollBars: TCheckBox
-            Left = 128
-            Top = 104
-            Width = 169
-            Height = 17
-            Caption = 'Hide Scroll Bars When Useless'
-            TabOrder = 7
-          end
-          object chkEHomeKey: TCheckBox
-            Left = 128
-            Top = 56
-            Width = 145
-            Height = 17
-            Caption = 'Use Enhance Home Key'
-            TabOrder = 5
-          end
-          object chkTabsToSpaces: TCheckBox
-            Left = 128
-            Top = 80
-            Width = 135
-            Height = 17
-            Caption = 'Convert Tabs to Spaces'
-            TabOrder = 6
-          end
-          object chkScrollPastEOL: TCheckBox
-            Left = 312
-            Top = 56
-            Width = 97
-            Height = 17
-            Caption = 'Scroll Past EOL'
-            TabOrder = 9
-          end
-          object chkKeepCaretX: TCheckBox
-            Left = 312
-            Top = 80
-            Width = 129
-            Height = 17
-            Caption = 'Seek Caret X'
-            TabOrder = 10
-          end
-          object chkRightMouseMovesCursor: TCheckBox
-            Left = 128
-            Top = 32
-            Width = 145
-            Height = 17
-            Caption = 'Move Caret on Right Click'
-            TabOrder = 4
-          end
+        object JvGroupHeader2: TJvGroupHeader
+          Left = 0
+          Top = 0
+          Width = 475
+          Height = 17
+          Align = alTop
+          Caption = 'Settings'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
         end
-        object txtUndoLimit: TEdit
-          Left = 16
-          Top = 307
-          Width = 121
-          Height = 21
-          MaxLength = 5
-          TabOrder = 0
-          OnKeyPress = txtUndoLimitKeyPress
+        object JvGroupHeader9: TJvGroupHeader
+          Left = 0
+          Top = 364
+          Width = 475
+          Height = 3
+          Align = alBottom
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
         end
         object txtTabWidth: TEdit
-          Left = 152
-          Top = 307
+          Left = 160
+          Top = 222
           Width = 121
           Height = 21
           MaxLength = 2
-          TabOrder = 1
+          TabOrder = 0
           OnKeyPress = txtTabWidthKeyPress
         end
-        object GroupBox1: TGroupBox
-          Left = 16
-          Top = 16
-          Width = 457
-          Height = 105
-          Caption = 'General'
-          TabOrder = 3
-          object chkFileAssociate: TCheckBox
-            Left = 16
-            Top = 24
-            Width = 225
-            Height = 17
-            Caption = 'Associate LuaEdit with Common Lua Files'
-            TabOrder = 0
-            OnClick = chkFileAssociateClick
-          end
-          object chkSaveProjectsInc: TCheckBox
-            Left = 272
-            Top = 24
-            Width = 161
-            Height = 17
-            Caption = 'Save Projects Incrementally'
-            TabOrder = 3
-          end
-          object chkSaveUnitsInc: TCheckBox
-            Left = 272
-            Top = 48
-            Width = 161
-            Height = 17
-            Caption = 'Save Units Incrementally'
-            TabOrder = 4
-          end
-          object chkSaveBreakpoints: TCheckBox
-            Left = 272
-            Top = 72
-            Width = 161
-            Height = 17
-            Caption = 'Save Breakpoints'
-            TabOrder = 5
-          end
-          object chkShowExSaveDlg: TCheckBox
-            Left = 16
-            Top = 72
-            Width = 217
-            Height = 17
-            Caption = 'Show Extended Save Dialog on Exit'
-            TabOrder = 2
-          end
-          object chkKeepReportOpened: TCheckBox
-            Left = 16
-            Top = 48
-            Width = 225
-            Height = 17
-            Caption = 'Keep Find in Files Report Opened'
-            TabOrder = 1
-          end
-        end
-      end
-      object TabSheet1: TTabSheet
-        Caption = 'Environment'
-        ImageIndex = 3
-        object GroupBox4: TGroupBox
-          Left = 16
-          Top = 16
-          Width = 457
-          Height = 89
-          Caption = 'Search Path'
-          TabOrder = 0
-          DesignSize = (
-            457
-            89)
-          object Label10: TLabel
-            Left = 17
-            Top = 30
-            Width = 42
-            Height = 13
-            Caption = 'Libraries:'
-          end
-          object txtLibraries: TEdit
-            Left = 17
-            Top = 44
-            Width = 401
-            Height = 21
-            TabOrder = 0
-          end
-          object btnBrowseLibraries: TButton
-            Left = 424
-            Top = 46
-            Width = 20
-            Height = 17
-            Hint = 'Browse for Completion Proposal Search Paths...'
-            Anchors = [akTop, akRight]
-            Caption = '...'
-            ParentShowHint = False
-            ShowHint = True
-            TabOrder = 1
-            OnClick = btnBrowseLibrariesClick
-          end
-        end
-      end
-      object stabDisplay: TTabSheet
-        Caption = 'Display'
-        ImageIndex = 1
-        object GroupBox2: TGroupBox
-          Left = 16
-          Top = 16
-          Width = 457
-          Height = 105
-          Caption = 'Gutter'
-          TabOrder = 0
-          object Label3: TLabel
-            Left = 24
-            Top = 48
-            Width = 63
-            Height = 13
-            Caption = 'Gutter Width:'
-          end
-          object Label4: TLabel
-            Left = 192
-            Top = 48
-            Width = 59
-            Height = 13
-            Caption = 'Gutter Color:'
-          end
-          object chkShowGutter: TCheckBox
-            Left = 24
-            Top = 24
-            Width = 89
-            Height = 17
-            Caption = 'Show Gutter'
-            TabOrder = 0
-            OnClick = chkShowGutterClick
-          end
-          object chkShowLineNumbers: TCheckBox
-            Left = 192
-            Top = 24
-            Width = 129
-            Height = 17
-            Caption = 'Show Line Numbers'
-            TabOrder = 1
-          end
-          object txtGutterWidth: TEdit
-            Left = 24
-            Top = 64
-            Width = 153
-            Height = 21
-            MaxLength = 2
-            TabOrder = 3
-            OnKeyPress = txtGutterWidthKeyPress
-          end
-          object cboGutterColor: TColorBox
-            Left = 192
-            Top = 64
-            Width = 241
-            Height = 22
-            Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbCustomColor, cbPrettyNames]
-            Font.Charset = DEFAULT_CHARSET
-            Font.Color = clWindowText
-            Font.Height = -11
-            Font.Name = 'MS Sans Serif'
-            Font.Style = []
-            ItemHeight = 16
-            ParentFont = False
-            TabOrder = 4
-          end
-          object chkLeadingZeros: TCheckBox
-            Left = 336
-            Top = 24
-            Width = 97
-            Height = 17
-            Caption = 'Leading Zeros'
-            TabOrder = 2
-          end
-        end
-        object GroupBox3: TGroupBox
-          Left = 16
-          Top = 128
-          Width = 457
-          Height = 201
-          Caption = 'Editor Font'
+        object txtUndoLimit: TEdit
+          Left = 24
+          Top = 222
+          Width = 121
+          Height = 21
+          MaxLength = 5
           TabOrder = 1
-          object Label5: TLabel
-            Left = 24
-            Top = 32
-            Width = 24
-            Height = 13
-            Caption = 'Font:'
-          end
-          object Label6: TLabel
-            Left = 304
-            Top = 32
-            Width = 23
-            Height = 13
-            Caption = 'Size:'
-          end
-          object cboFonts: TComboBox
-            Left = 24
-            Top = 48
-            Width = 265
-            Height = 22
-            Style = csOwnerDrawVariable
-            ItemHeight = 16
-            TabOrder = 0
-            OnChange = cboFontsChange
-            OnDrawItem = cboFontsDrawItem
-            OnMeasureItem = cboFontsMeasureItem
-          end
-          object cboFontSize: TComboBox
-            Left = 304
-            Top = 48
-            Width = 129
-            Height = 22
-            Style = csOwnerDrawVariable
-            ItemHeight = 16
-            MaxLength = 2
-            TabOrder = 1
-            OnChange = cboFontSizeChange
-            OnKeyPress = cboFontSizeKeyPress
-            OnMeasureItem = cboFontSizeMeasureItem
-            Items.Strings = (
-              '8'
-              '10'
-              '11'
-              '12'
-              '14'
-              '18'
-              '24')
-          end
-          object pnlPreview: TPanel
-            Left = 24
-            Top = 80
-            Width = 409
-            Height = 105
-            BevelOuter = bvNone
-            BorderStyle = bsSingle
-            Caption = 'Sample Text'
-            TabOrder = 2
-          end
+          OnKeyPress = txtUndoLimitKeyPress
+        end
+        object chkAutoIndent: TCheckBox
+          Left = 24
+          Top = 32
+          Width = 97
+          Height = 17
+          Caption = 'Auto Indent'
+          TabOrder = 2
+        end
+        object chkSmartTab: TCheckBox
+          Left = 24
+          Top = 104
+          Width = 97
+          Height = 17
+          Caption = 'Use Smart Tabs'
+          TabOrder = 3
+        end
+        object chkTabIndent: TCheckBox
+          Left = 24
+          Top = 80
+          Width = 97
+          Height = 17
+          Caption = 'Use Tab Indent'
+          TabOrder = 4
+        end
+        object chkGroupUndo: TCheckBox
+          Left = 24
+          Top = 56
+          Width = 97
+          Height = 17
+          Caption = 'Group Undo'
+          TabOrder = 5
+        end
+        object chkRightMouseMovesCursor: TCheckBox
+          Left = 24
+          Top = 128
+          Width = 145
+          Height = 17
+          Caption = 'Move Caret on Right Click'
+          TabOrder = 6
+        end
+        object chkEHomeKey: TCheckBox
+          Left = 24
+          Top = 152
+          Width = 145
+          Height = 17
+          Caption = 'Use Enhance Home Key'
+          TabOrder = 7
+        end
+        object chkTabsToSpaces: TCheckBox
+          Left = 256
+          Top = 32
+          Width = 135
+          Height = 17
+          Caption = 'Convert Tabs to Spaces'
+          TabOrder = 8
+        end
+        object chkHideScrollBars: TCheckBox
+          Left = 256
+          Top = 56
+          Width = 169
+          Height = 17
+          Caption = 'Hide Scroll Bars When Useless'
+          TabOrder = 9
+        end
+        object chkTrailBlanks: TCheckBox
+          Left = 256
+          Top = 152
+          Width = 121
+          Height = 17
+          Caption = 'Keep Trailing Blanks'
+          TabOrder = 10
+        end
+        object chkKeepCaretX: TCheckBox
+          Left = 256
+          Top = 128
+          Width = 129
+          Height = 17
+          Caption = 'Seek Caret X'
+          TabOrder = 11
+        end
+        object chkScrollPastEOL: TCheckBox
+          Left = 256
+          Top = 104
+          Width = 97
+          Height = 17
+          Caption = 'Scroll Past EOL'
+          TabOrder = 12
+        end
+        object chkScrollPastEOF: TCheckBox
+          Left = 256
+          Top = 80
+          Width = 97
+          Height = 17
+          Caption = 'Scroll Past EOF'
+          TabOrder = 13
         end
       end
-      object stabColors: TTabSheet
-        Caption = 'Colors'
-        ImageIndex = 2
+      object JvStandardPage3: TJvStandardPage
+        Left = 0
+        Top = 0
+        Width = 475
+        Height = 367
+        Caption = '[Environment] - Search Paths'
+        DesignSize = (
+          475
+          367)
+        object Label10: TLabel
+          Left = 25
+          Top = 30
+          Width = 99
+          Height = 13
+          Caption = 'Completion Proposal:'
+        end
+        object JvGroupHeader3: TJvGroupHeader
+          Left = 0
+          Top = 0
+          Width = 475
+          Height = 17
+          Align = alTop
+          Caption = 'Settings'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
+        end
+        object JvGroupHeader10: TJvGroupHeader
+          Left = 0
+          Top = 364
+          Width = 475
+          Height = 3
+          Align = alBottom
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
+        end
+        object txtLibraries: TEdit
+          Left = 24
+          Top = 44
+          Width = 394
+          Height = 21
+          TabOrder = 0
+        end
+        object btnBrowseLibraries: TButton
+          Left = 435
+          Top = 46
+          Width = 20
+          Height = 17
+          Hint = 'Browse for Completion Proposal Search Paths...'
+          Anchors = [akTop, akRight]
+          Caption = '...'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 1
+          OnClick = btnBrowseLibrariesClick
+        end
+      end
+      object JvStandardPage4: TJvStandardPage
+        Left = 0
+        Top = 0
+        Width = 475
+        Height = 367
+        Caption = '[Environment] - Web Browser'
+        object JvGroupHeader4: TJvGroupHeader
+          Left = 0
+          Top = 0
+          Width = 475
+          Height = 17
+          Align = alTop
+          Caption = 'Settings'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
+        end
+        object JvGroupHeader11: TJvGroupHeader
+          Left = 0
+          Top = 364
+          Width = 475
+          Height = 3
+          Align = alBottom
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
+        end
+        object Label15: TLabel
+          Left = 24
+          Top = 152
+          Width = 116
+          Height = 13
+          Caption = 'Delete History older than'
+        end
+        object Label16: TLabel
+          Left = 189
+          Top = 152
+          Width = 25
+          Height = 13
+          Caption = 'days.'
+        end
+        object txtHomePage: TEdit
+          Left = 24
+          Top = 52
+          Width = 425
+          Height = 21
+          TabOrder = 0
+        end
+        object txtSearchPage: TEdit
+          Left = 24
+          Top = 100
+          Width = 425
+          Height = 21
+          TabOrder = 1
+        end
+        object chkHomePage: TCheckBox
+          Left = 24
+          Top = 32
+          Width = 137
+          Height = 17
+          Caption = 'Use Custom Home Page'
+          TabOrder = 2
+          OnClick = chkHomePageClick
+        end
+        object chkSearchPage: TCheckBox
+          Left = 24
+          Top = 80
+          Width = 145
+          Height = 17
+          Caption = 'Use Custom Search Page'
+          TabOrder = 3
+          OnClick = chkSearchPageClick
+        end
+        object jvspinHistoryMaxAge: TJvSpinEdit
+          Left = 144
+          Top = 148
+          Width = 41
+          Height = 21
+          MaxValue = 99.000000000000000000
+          MinValue = 1.000000000000000000
+          Value = 99.000000000000000000
+          TabOrder = 4
+        end
+      end
+      object JvStandardPage5: TJvStandardPage
+        Left = 0
+        Top = 0
+        Width = 475
+        Height = 367
+        Caption = '[Display] - Gutter'
+        object Label4: TLabel
+          Left = 192
+          Top = 120
+          Width = 59
+          Height = 13
+          Caption = 'Gutter Color:'
+        end
+        object Label3: TLabel
+          Left = 24
+          Top = 120
+          Width = 63
+          Height = 13
+          Caption = 'Gutter Width:'
+        end
+        object JvGroupHeader5: TJvGroupHeader
+          Left = 0
+          Top = 0
+          Width = 475
+          Height = 17
+          Align = alTop
+          Caption = 'Settings'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
+        end
+        object JvGroupHeader12: TJvGroupHeader
+          Left = 0
+          Top = 364
+          Width = 475
+          Height = 3
+          Align = alBottom
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
+        end
+        object chkShowGutter: TCheckBox
+          Left = 24
+          Top = 32
+          Width = 89
+          Height = 17
+          Caption = 'Show Gutter'
+          TabOrder = 0
+          OnClick = chkShowGutterClick
+        end
+        object chkShowLineNumbers: TCheckBox
+          Left = 24
+          Top = 56
+          Width = 129
+          Height = 17
+          Caption = 'Show Line Numbers'
+          TabOrder = 1
+        end
+        object chkLeadingZeros: TCheckBox
+          Left = 24
+          Top = 80
+          Width = 97
+          Height = 17
+          Caption = 'Leading Zeros'
+          TabOrder = 2
+        end
+        object cboGutterColor: TColorBox
+          Left = 192
+          Top = 136
+          Width = 249
+          Height = 22
+          Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbCustomColor, cbPrettyNames]
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'MS Sans Serif'
+          Font.Style = []
+          ItemHeight = 16
+          ParentFont = False
+          TabOrder = 3
+        end
+        object txtGutterWidth: TEdit
+          Left = 24
+          Top = 136
+          Width = 153
+          Height = 21
+          MaxLength = 2
+          TabOrder = 4
+          OnKeyPress = txtGutterWidthKeyPress
+        end
+      end
+      object JvStandardPage6: TJvStandardPage
+        Left = 0
+        Top = 0
+        Width = 475
+        Height = 367
+        Caption = '[Text Editor] - Font'
+        object Label5: TLabel
+          Left = 24
+          Top = 32
+          Width = 24
+          Height = 13
+          Caption = 'Font:'
+        end
+        object Label6: TLabel
+          Left = 336
+          Top = 32
+          Width = 23
+          Height = 13
+          Caption = 'Size:'
+        end
+        object JvGroupHeader6: TJvGroupHeader
+          Left = 0
+          Top = 0
+          Width = 475
+          Height = 17
+          Align = alTop
+          Caption = 'Settings'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
+        end
+        object JvGroupHeader13: TJvGroupHeader
+          Left = 0
+          Top = 364
+          Width = 475
+          Height = 3
+          Align = alBottom
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
+        end
+        object pnlPreview: TPanel
+          Left = 24
+          Top = 80
+          Width = 417
+          Height = 129
+          BevelOuter = bvNone
+          BorderStyle = bsSingle
+          Caption = 'Sample Text'
+          TabOrder = 0
+        end
+        object cboFonts: TComboBox
+          Left = 24
+          Top = 48
+          Width = 297
+          Height = 22
+          Style = csOwnerDrawVariable
+          ItemHeight = 16
+          TabOrder = 1
+          OnChange = cboFontsChange
+          OnDrawItem = cboFontsDrawItem
+          OnMeasureItem = cboFontsMeasureItem
+        end
+        object cboFontSize: TComboBox
+          Left = 336
+          Top = 48
+          Width = 105
+          Height = 22
+          Style = csOwnerDrawVariable
+          ItemHeight = 16
+          MaxLength = 2
+          TabOrder = 2
+          OnChange = cboFontSizeChange
+          OnKeyPress = cboFontSizeKeyPress
+          OnMeasureItem = cboFontSizeMeasureItem
+          Items.Strings = (
+            '8'
+            '10'
+            '11'
+            '12'
+            '14'
+            '18'
+            '24')
+        end
+      end
+      object JvStandardPage7: TJvStandardPage
+        Left = 0
+        Top = 0
+        Width = 475
+        Height = 367
+        Caption = '[Display] - Syntax Highlighting'
         object Label7: TLabel
-          Left = 16
-          Top = 16
+          Left = 24
+          Top = 75
           Width = 46
           Height = 13
           Caption = 'Elements:'
         end
         object Label8: TLabel
           Left = 288
-          Top = 17
+          Top = 76
           Width = 57
           Height = 13
           Caption = 'Foreground:'
         end
         object Label9: TLabel
           Left = 288
-          Top = 64
+          Top = 123
           Width = 61
           Height = 13
           Caption = 'Background:'
         end
+        object JvGroupHeader7: TJvGroupHeader
+          Left = 0
+          Top = 0
+          Width = 475
+          Height = 17
+          Align = alTop
+          Caption = 'Settings'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
+        end
+        object Label11: TLabel
+          Left = 24
+          Top = 32
+          Width = 46
+          Height = 13
+          Caption = 'Color Set:'
+        end
+        object JvGroupHeader14: TJvGroupHeader
+          Left = 0
+          Top = 364
+          Width = 475
+          Height = 3
+          Align = alBottom
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
+        end
         object synSample: TSynEdit
-          Left = 16
-          Top = 112
-          Width = 449
-          Height = 217
+          Left = 24
+          Top = 168
+          Width = 433
+          Height = 177
           Font.Charset = DEFAULT_CHARSET
           Font.Color = clWindowText
           Font.Height = -13
           Font.Name = 'Courier New'
           Font.Style = []
-          TabOrder = 6
+          TabOrder = 0
           Gutter.Font.Charset = DEFAULT_CHARSET
           Gutter.Font.Color = clWindowText
           Gutter.Font.Height = -11
@@ -562,63 +942,332 @@ object frmEditorSettings: TfrmEditorSettings
           WordWrapGlyph.Visible = False
         end
         object lstElement: TListBox
-          Left = 16
-          Top = 32
+          Left = 24
+          Top = 91
           Width = 145
           Height = 65
           ItemHeight = 13
           Sorted = True
-          TabOrder = 0
+          TabOrder = 1
           OnClick = lstElementClick
-        end
-        object cboForeground: TColorBox
-          Left = 288
-          Top = 33
-          Width = 177
-          Height = 22
-          Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbCustomColor, cbPrettyNames]
-          ItemHeight = 16
-          TabOrder = 4
-          OnChange = cboForegroundChange
-        end
-        object cboBackground: TColorBox
-          Left = 288
-          Top = 80
-          Width = 177
-          Height = 22
-          Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbCustomColor, cbPrettyNames]
-          ItemHeight = 16
-          TabOrder = 5
-          OnChange = cboBackgroundChange
         end
         object chkBold: TCheckBox
           Left = 192
-          Top = 30
+          Top = 89
           Width = 57
           Height = 17
           Caption = 'Bold'
-          TabOrder = 1
+          TabOrder = 2
           OnClick = chkBoldClick
         end
         object chkItalic: TCheckBox
           Left = 192
-          Top = 57
+          Top = 116
           Width = 57
           Height = 17
           Caption = 'Italic'
-          TabOrder = 2
+          TabOrder = 3
           OnClick = chkItalicClick
         end
         object chkUnderline: TCheckBox
           Left = 192
-          Top = 84
+          Top = 143
           Width = 73
           Height = 17
           Caption = 'Underline'
-          TabOrder = 3
+          TabOrder = 4
           OnClick = chkUnderlineClick
+        end
+        object cboForeground: TColorBox
+          Left = 287
+          Top = 92
+          Width = 170
+          Height = 22
+          Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbCustomColor, cbPrettyNames]
+          ItemHeight = 16
+          TabOrder = 5
+          OnChange = cboForegroundChange
+        end
+        object cboBackground: TColorBox
+          Left = 287
+          Top = 139
+          Width = 170
+          Height = 22
+          Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbCustomColor, cbPrettyNames]
+          ItemHeight = 16
+          TabOrder = 6
+          OnChange = cboBackgroundChange
+        end
+        object cboColorSet: TComboBox
+          Left = 24
+          Top = 48
+          Width = 353
+          Height = 21
+          AutoComplete = False
+          Style = csDropDownList
+          ItemHeight = 0
+          Sorted = True
+          TabOrder = 7
+          OnClick = cboColorSetClick
+        end
+        object bitbtnDelete: TBitBtn
+          Left = 384
+          Top = 48
+          Width = 22
+          Height = 20
+          Hint = 'Delete Selected Color Set'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 8
+          OnClick = bitbtnDeleteClick
+          Glyph.Data = {
+            36030000424D3603000000000000360000002800000010000000100000000100
+            1800000000000003000000000000000000000000000000000000FF00FFFF00FF
+            FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00
+            FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF
+            00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF
+            FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00
+            FFFF00FF000080FF00FFFF00FFFF00FFFF00FFFF00FF000080FFFFFFFF00FFFF
+            00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF
+            FF00FF000080000080000080FFFFFFFF00FFFF00FFFF00FFFF00FFFF00FFFF00
+            FF000080FFFFFFFF00FFFF00FFFF00FFFF00FF000080000080000080FFFFFFFF
+            00FFFF00FFFF00FFFF00FFFF00FF000080FFFFFFFF00FFFF00FFFF00FFFF00FF
+            FF00FFFF00FF000080000080000080FFFFFFFF00FFFF00FFFF00FF0000800000
+            80FFFFFFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF00008000008000
+            0080FFFFFFFF00FF000080000080FFFFFFFF00FFFF00FFFF00FFFF00FFFF00FF
+            FF00FFFF00FFFF00FFFF00FF000080000080000080000080000080FFFFFFFF00
+            FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF00
+            0080000080000080FFFFFFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF
+            FF00FFFF00FFFF00FFFF00FF000080000080000080000080000080FFFFFFFF00
+            FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF00008000008000
+            0080FFFFFFFF00FF000080FFFFFFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF
+            FF00FF000080000080000080000080FFFFFFFF00FFFF00FFFF00FF0000800000
+            80FFFFFFFF00FFFF00FFFF00FFFF00FF000080000080000080000080FFFFFFFF
+            00FFFF00FFFF00FFFF00FFFF00FF000080000080FFFFFFFF00FFFF00FFFF00FF
+            000080000080FFFFFFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00
+            FF000080000080FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF
+            00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF}
+        end
+        object bitbtnSave: TBitBtn
+          Left = 409
+          Top = 48
+          Width = 22
+          Height = 20
+          Hint = 'Save Changes to Current Color Set'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 9
+          OnClick = bitbtnSaveClick
+          Glyph.Data = {
+            36030000424D3603000000000000360000002800000010000000100000000100
+            1800000000000003000000000000000000000000000000000000FF00FFFF00FF
+            FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00
+            FFFF00FFFF00FFFF00FFFF00FFFF00FF42424242424242424242424242424242
+            4242424242424242424242424242424242424242424242FF00FFFF00FF424242
+            429D9D429D9D424242424242424242424242424242424242CECECECECECE4242
+            42429D9D424242FF00FFFF00FF424242429D9D429D9D42424242424242424242
+            4242424242424242CECECECECECE424242429D9D424242FF00FFFF00FF424242
+            429D9D429D9D424242424242424242424242424242424242CECECECECECE4242
+            42429D9D424242FF00FFFF00FF424242429D9D429D9D42424242424242424242
+            4242424242424242424242424242424242429D9D424242FF00FFFF00FF424242
+            429D9D429D9D429D9D429D9D429D9D429D9D429D9D429D9D429D9D429D9D429D
+            9D429D9D424242FF00FFFF00FF424242429D9D429D9D42424242424242424242
+            4242424242424242424242424242429D9D429D9D424242FF00FFFF00FF424242
+            429D9D424242CECECECECECECECECECECECECECECECECECECECECECECECE4242
+            42429D9D424242FF00FFFF00FF424242429D9D424242CECECECECECECECECECE
+            CECECECECECECECECECECECECECE424242429D9D424242FF00FFFF00FF424242
+            429D9D424242CECECECECECECECECECECECECECECECECECECECECECECECE4242
+            42429D9D424242FF00FFFF00FF424242429D9D424242CECECECECECECECECECE
+            CECECECECECECECECECECECECECE424242429D9D424242FF00FFFF00FF424242
+            429D9D424242CECECECECECECECECECECECECECECECECECECECECECECECE4242
+            42424242424242FF00FFFF00FF424242429D9D424242CECECECECECECECECECE
+            CECECECECECECECECECECECECECE424242CECECE424242FF00FFFF00FF424242
+            4242424242424242424242424242424242424242424242424242424242424242
+            42424242424242FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF
+            00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF}
+        end
+        object bitbtnNew: TBitBtn
+          Left = 434
+          Top = 48
+          Width = 22
+          Height = 20
+          Hint = 'Create New Empty Color Set'
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 10
+          OnClick = bitbtnNewClick
+          Glyph.Data = {
+            36030000424D3603000000000000360000002800000010000000100000000100
+            1800000000000003000000000000000000000000000000000000FF00FFFF00FF
+            FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00
+            FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF
+            00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF
+            0000000000000000000000000000000000000000000000000000000000000000
+            00FF00FFFF00FFFF00FFFF00FFFF00FF000000FFFFFFFFFFFFFFFFFFFFFFFFFF
+            FFFFFFFFFFFFFFFFFFFFFFFFFFFF000000FF00FFFF00FFFF00FFFF00FFFF00FF
+            000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000
+            00FF00FFFF00FFFF00FFFF00FFFF00FF000000FFFFFFFFFFFFFFFFFFFFFFFFFF
+            FFFFFFFFFFFFFFFFFFFFFFFFFFFF000000FF00FFFF00FFFF00FFFF00FFFF00FF
+            000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000
+            00FF00FFFF00FFFF00FFFF00FFFF00FF000000FFFFFFFFFFFFFFFFFFFFFFFFFF
+            FFFFFFFFFFFFFFFFFFFFFFFFFFFF000000FF00FFFF00FFFF00FFFF00FFFF00FF
+            000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000
+            00FF00FFFF00FFFF00FFFF00FFFF00FF000000FFFFFFFFFFFFFFFFFFFFFFFFFF
+            FFFFFFFFFFFFFFFFFFFFFFFFFFFF000000FF00FFFF00FFFF00FFFF00FFFF00FF
+            000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000
+            00FF00FFFF00FFFF00FFFF00FFFF00FF000000FFFFFFFFFFFFFFFFFFFFFFFFFF
+            FFFFFFFFFF000000000000000000000000FF00FFFF00FFFF00FFFF00FFFF00FF
+            000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000FFFFFF000000FF00
+            FFFF00FFFF00FFFF00FFFF00FFFF00FF000000FFFFFFFFFFFFFFFFFFFFFFFFFF
+            FFFFFFFFFF000000000000FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF
+            000000000000000000000000000000000000000000000000FF00FFFF00FFFF00
+            FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF
+            00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF}
         end
       end
     end
+  end
+  object imlEditorSettings: TImageList
+    Left = 397
+    Top = 377
+    Bitmap = {
+      494C010103000400040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      0000000000003600000028000000400000001000000001002000000000000010
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000084848400848484008484
+      8400848484008484840084848400848484008484840084848400848484008484
+      8400848484008484840000000000000000000000000000000000848484008484
+      8400848484008484840084848400848484008484840084848400848484008484
+      8400848484000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000000000000000000000000000000000008484840000000000C6C6
+      C60000FFFF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6
+      C60000FFFF0084848400000000000000000000000000848484000000000000FF
+      FF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6C60000FF
+      FF00000000008484840000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      00000000000000000000000000000000000000000000848484000000000000FF
+      FF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6C60000FF
+      FF00C6C6C600848484000000000000000000000000008484840000000000C6C6
+      C60000FFFF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6C60000FFFF008484
+      8400000000008484840000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000008484840000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000000000000000000000000000000000008484840000000000C6C6
+      C60000FFFF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6
+      C60000FFFF008484840000000000000000008484840000000000C6C6C60000FF
+      FF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6C6000000
+      0000848484008484840000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000008484840084848400000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      00000000000000000000000000000000000000000000848484000000000000FF
+      FF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6C60000FF
+      FF00C6C6C6008484840000000000000000008484840000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000FFFF008484840000000000000000000000000000000000000000000000
+      0000848484008484840084848400848484008484840084848400848484000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000000000000000000000000000000000008484840000000000C6C6
+      C60000FFFF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6
+      C60000FFFF008484840000000000000000008484840084848400848484008484
+      8400848484008484840084848400848484008484840084848400848484008484
+      8400C6C6C6008484840000000000000000000000000000000000000000000000
+      00008484840084848400C6C6C60084848400C6C6C60084848400C6C6C6008484
+      8400000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      00000000000000000000000000000000000000000000848484000000000000FF
+      FF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6C60000FF
+      FF00C6C6C600848484000000000000000000000000008484840000000000C6C6
+      C60000FFFF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6
+      C60000FFFF008484840000000000000000000000000000000000000000000000
+      000084848400C6C6C600C6C6C600C6C6C600C6C6C600C6C6C600C6C6C6008484
+      8400000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000084848400000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      00000000000084848400000000000000000000000000848484000000000000FF
+      FF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6C60000000000000000000000
+      0000000000008484840000000000000000000000000000000000000000000000
+      000084848400848484008484840084848400C6C6C600C6C6C600848484000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000084848400C6C6C60000FF
+      FF00C6C6C60000FFFF00C6C6C60000FFFF00C6C6C60084848400848484008484
+      8400848484008484840000000000000000000000000084848400000000000000
+      000000FFFF00C6C6C60000FFFF00000000000000000084848400848484008484
+      8400848484008484840000000000000000000000000000000000000000000000
+      000000000000000000000000000084848400C6C6C60084848400000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000000000000000000000000000000000000000000084848400C6C6
+      C60000FFFF00C6C6C60000FFFF00C6C6C6008484840000000000000000000000
+      0000000000000000000000000000000000000000000000000000848484000000
+      0000000000000000000000000000000000008484840000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000848484008484840000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000008484
+      8400848484008484840084848400848484000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000008484
+      8400848484008484840084848400848484000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000848484000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000000000000000000000000000424D3E000000000000003E000000
+      2800000040000000100000000100010000000000800000000000000000000000
+      000000000000000000000000FFFFFF00FFFFFFFFFFFF0000FFFFFFFFFFFF0000
+      C001E001FFFF00008001C001FEFF0000A001A001FE7F0000A001A001FE3F0000
+      A0014001F01F0000A0017FE1F00F0000A0010001F0070000A001A001F00F0000
+      BFF9A079F01F00008003B183FE3F0000C07FDF7FFE7F0000E0FFE0FFFEFF0000
+      FFFFFFFFFFFF0000FFFFFFFFFFFF000000000000000000000000000000000000
+      000000000000}
   end
 end

@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ComCtrls, CommCtrl, ExtCtrls, ImgList, Menus, JvComponent,
-  JvDockControlForm, JvExComCtrls, JvComCtrls, JvDotNetControls, Main,
+  JvDockControlForm, JvExComCtrls, JvComCtrls, JvDotNetControls, Main, Misc,
   VirtualTrees;
 
 type

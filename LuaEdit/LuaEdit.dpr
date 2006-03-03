@@ -29,8 +29,6 @@ uses
   LuaStack in 'LuaStack.pas' {frmLuaStack},
   PrintSetup in 'PrintSetup.pas' {frmPrintSetup},
   PrjSettings in 'PrjSettings.pas' {frmPrjOptions},
-  CntString in 'CntString.pas' {frmCntString},
-  Connecting in 'Connecting.pas' {frmConnecting},
   Contributors in 'Contributors.pas' {frmContributors},
   LuaOutput in 'LuaOutput.pas' {frmLuaOutput},
   LuaUtils in 'LuaCore\LuaUtils.pas',
@@ -50,7 +48,9 @@ uses
   FindInFiles in 'FindInFiles.pas' {frmFindInFiles},
   SIFReport in 'SIFReport.pas' {frmSIFReport},
   FindWindow1 in 'FindWindow1.pas' {frmFindWindow1},
-  FindWindow2 in 'FindWindow2.pas' {frmFindWindow2};
+  FindWindow2 in 'FindWindow2.pas' {frmFindWindow2},
+  Misc in 'Misc.pas',
+  UploadFiles in 'UploadFiles.pas' {frmUploadFiles};
 
 {$R *.res}
 
@@ -76,8 +76,6 @@ begin
   Application.CreateForm(TfrmErrorLookup, frmErrorLookup);
   Application.CreateForm(TfrmPrintSetup, frmPrintSetup);
   Application.CreateForm(TfrmPrjOptions, frmPrjOptions);
-  Application.CreateForm(TfrmCntString, frmCntString);
-  Application.CreateForm(TfrmConnecting, frmConnecting);
   Application.CreateForm(TfrmContributors, frmContributors);
   Application.CreateForm(TfrmAddBreakpoint, frmAddBreakpoint);
   Application.CreateForm(TfrmEditorSettings, frmEditorSettings);
@@ -91,7 +89,7 @@ begin
   frmSplash.Show;
   frmSplash.Update;
 
-  for i := 0 to 2 do
+  for i := 0 to 3 do
   begin
     Application.ProcessMessages;
     Sleep(1000);
@@ -101,6 +99,17 @@ begin
   frmSplash.Free;
 
   LoadDockTreeFromFile(ExtractFilePath(Application.ExeName) + 'LuaEdit.dck');
+
+  // Backward compatibility with the ini file
+  if FileExists(GetLuaEditInstallPath()+'\LuaEdit.ini') then
+  begin
+    frmMain.LoadEditorSettingsFromReg;
+    frmMain.LoadEditorSettingsFromIni;
+    DeleteFile(PChar(GetLuaEditInstallPath()+'\LuaEdit.ini'));
+    DeleteFile(PChar(GetLuaEditInstallPath()+'\LuaEdit.dat'));
+  end
+  else
+    frmMain.LoadEditorSettingsFromReg;
 
   if ParamCount > 0 then
   begin

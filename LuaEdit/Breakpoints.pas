@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, ExtCtrls, ComCtrls, ImgList, lua, lualib, lauxlib,
-  LuaUtils, Menus, JvExComCtrls, JvHeaderControl, JvComponent,
+  LuaUtils, Menus, JvExComCtrls, JvHeaderControl, JvComponent, Misc,
   JvDockControlForm, ToolWin, JvListView, JvDotNetControls, TypInfo;
 
 type

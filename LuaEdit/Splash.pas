@@ -8,7 +8,6 @@ uses
 
 type
   TfrmSplash = class(TForm)
-    Shape1: TShape;
     Label3: TLabel;
     lblVersion: TLabel;
     Label5: TLabel;
@@ -16,9 +15,8 @@ type
     Label7: TLabel;
     Label8: TLabel;
     imlLua: TImage;
-    imlLuaEditLogo: TImage;
-    imgLogo: TImage;
     Image1: TImage;
+    Image2: TImage;
     procedure FormShow(Sender: TObject);
   private
     { Private declarations }
@@ -40,7 +38,6 @@ uses Main;
 procedure TfrmSplash.FormShow(Sender: TObject);
 begin
   lblVersion.Caption := TCaption(GetFileVersion(PChar(Application.ExeName)));
-  frmMain.LoadEditorSettings;
 end;
 
 end.

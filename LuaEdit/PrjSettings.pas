@@ -5,7 +5,9 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, ExtCtrls, ComCtrls, Main, Mask, JvExMask, JvSpin,
-  JvExStdCtrls, JvEdit, JvValidateEdit;
+  JvExStdCtrls, JvEdit, JvValidateEdit, JvPageList, JvExControls, Misc,
+  JvComponent, JvExComCtrls, JvPageListTreeView, ImgList, JvGroupHeader,
+  JvBaseDlg, JvSelectDirectory;
 
 type
   TfrmPrjOptions = class(TForm)
@@ -13,42 +15,58 @@ type
     Panel2: TPanel;
     btnCancel: TButton;
     btnOk: TButton;
-    pgcPrjSettings: TPageControl;
-    stabGeneral: TTabSheet;
-    stabDebug: TTabSheet;
-    GroupBox1: TGroupBox;
+    odlgSelectFile: TOpenDialog;
+    Label8: TLabel;
+    jvPageListSettings: TJvPageList;
+    JvStandardPage1: TJvStandardPage;
     Label1: TLabel;
     txtPrjName: TEdit;
-    GroupBox2: TGroupBox;
-    Label2: TLabel;
-    txtDebugInitializer: TEdit;
-    btnBrowse: TButton;
-    odlgInitializer: TOpenDialog;
     Label7: TLabel;
     spinMajorVersion: TJvSpinEdit;
-    Label8: TLabel;
+    spinMinorVersion: TJvSpinEdit;
     Label9: TLabel;
     Label10: TLabel;
-    Label11: TLabel;
-    spinMinorVersion: TJvSpinEdit;
     spinReleaseVersion: TJvSpinEdit;
+    Label11: TLabel;
     spinRevisionVersion: TJvSpinEdit;
     chkAutoIncRevNumber: TCheckBox;
-    GroupBox3: TGroupBox;
+    JvStandardPage2: TJvStandardPage;
     Label3: TLabel;
     jvspinPort: TJvSpinEdit;
+    txtIP1: TEdit;
     Label4: TLabel;
     Label5: TLabel;
-    Label6: TLabel;
-    Label12: TLabel;
-    Label13: TLabel;
-    txtUploadDir: TEdit;
-    txtIP1: TEdit;
     txtIP2: TEdit;
+    Label6: TLabel;
     txtIP3: TEdit;
+    Label12: TLabel;
     txtIP4: TEdit;
+    txtUploadDir: TEdit;
+    Label13: TLabel;
+    JvStandardPage3: TJvStandardPage;
+    Label2: TLabel;
+    txtDebugInitializer: TEdit;
+    btnBrowseFile: TButton;
+    imlPrjSettings: TImageList;
+    jvSettingsTVSettings: TJvSettingsTreeView;
+    JvGroupHeader1: TJvGroupHeader;
+    JvGroupHeader2: TJvGroupHeader;
+    JvGroupHeader3: TJvGroupHeader;
+    JvGroupHeader4: TJvGroupHeader;
+    Label14: TLabel;
+    txtRuntimeDir: TEdit;
+    btnBrowseDir: TButton;
+    Label15: TLabel;
+    cboUnits: TComboBox;
+    jvSelectDir: TJvSelectDirectory;
+    Splitter1: TSplitter;
+    JvGroupHeader8: TJvGroupHeader;
+    JvGroupHeader5: TJvGroupHeader;
+    JvGroupHeader6: TJvGroupHeader;
+    jvspinConnectTimeOut: TJvSpinEdit;
+    Label16: TLabel;
     procedure FormShow(Sender: TObject);
-    procedure btnBrowseClick(Sender: TObject);
+    procedure btnBrowseFileClick(Sender: TObject);
     procedure btnOkClick(Sender: TObject);
     procedure txtIP1KeyPress(Sender: TObject; var Key: Char);
     procedure txtIP2KeyPress(Sender: TObject; var Key: Char);
@@ -58,6 +76,7 @@ type
     procedure txtIP2Exit(Sender: TObject);
     procedure txtIP3Exit(Sender: TObject);
     procedure txtIP4Exit(Sender: TObject);
+    procedure btnBrowseDirClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -77,7 +96,8 @@ implementation
 
 procedure TfrmPrjOptions.FormShow(Sender: TObject);
 begin
-  pgcPrjSettings.ActivePageIndex := 0;
+  jvPageListSettings.ActivePageIndex := 0;
+  jvSettingsTVSettings.Selected := jvSettingsTVSettings.Items[1];
 end;
 
 procedure TfrmPrjOptions.GetLuaProjectOptions(pLuaPrj: TLuaProject);
@@ -93,6 +113,25 @@ var
   begin
     Result := Copy(sIn, Pos('.', sIn) + 1, Length(sIn) - Pos('.', sIn));
   end;
+
+  procedure FillTargetList(pPrj: TLuaProject);
+  var
+    x: Integer;
+    pLuaUnit: TLuaUnit;
+  begin
+    cboUnits.Clear;
+    cboUnits.AddItem('[Current Unit]', nil);
+    cboUnits.ItemIndex := 0;
+
+    for x := 0 to pPrj.lstUnits.Count - 1 do
+    begin
+      pLuaUnit := pPrj.lstUnits[x];
+      cboUnits.AddItem(pLuaUnit.sName, pLuaUnit);
+
+      if pLuaUnit.sName = pPrj.sTargetLuaUnit then
+        cboUnits.ItemIndex := x + 1;
+    end;
+  end;
 begin
   // Get General Options
   txtPrjName.Text := pLuaPrj.sPrjName;
@@ -104,6 +143,7 @@ begin
 
   // Get Debug Options
   txtDebugInitializer.Text := pLuaPrj.sInitializer;
+  jvspinConnectTimeOut.Value := pLuaPrj.iConnectTimeOut;
   jvspinPort.Value := pLuaPrj.iRemotePort;
 
   // Extract all parts of the ip address
@@ -117,6 +157,8 @@ begin
   txtIP4.Text := sTemp;
 
   txtUploadDir.Text := pLuaPrj.sRemoteDirectory;
+  FillTargetList(pLuaPrj);
+  txtRuntimeDir.Text := pLuaPrj.sRuntimeDirectory;
 end;
 
 procedure TfrmPrjOptions.SetLuaProjectOptions(pLuaPrj: TLuaProject);
@@ -132,8 +174,16 @@ begin
   // Set debug options
   pLuaPrj.sInitializer := txtDebugInitializer.Text;
   pLuaPrj.iRemotePort := Trunc(jvspinPort.Value);
+  pLuaPrj.iConnectTimeOut := Trunc(jvspinConnectTimeOut.Value);
   pLuaPrj.sRemoteIP := txtIP1.Text + '.' + txtIP2.Text + '.' + txtIP3.Text + '.' + txtIP4.Text;
   pLuaPrj.sRemoteDirectory := txtUploadDir.Text;
+  pLuaPrj.sRuntimeDirectory := txtRuntimeDir.Text;
+  pLuaPrj.sTargetLuaUnit := cboUnits.Text;
+
+  if cboUnits.Items.Objects[cboUnits.ItemIndex] <> nil then
+    pLuaPrj.pTargetLuaUnit := TLuaUnit(cboUnits.Items.Objects[cboUnits.ItemIndex])
+  else
+    pLuaPrj.pTargetLuaUnit := nil;
 end;
 
 // Validate a Port number. Expected Format: x (x in [1024..65535])
@@ -185,12 +235,23 @@ begin
   end;
 end;
 
-procedure TfrmPrjOptions.btnBrowseClick(Sender: TObject);
+procedure TfrmPrjOptions.btnBrowseFileClick(Sender: TObject);
 begin
-  if odlgInitializer.Execute then
-  begin
-    txtDebugInitializer.Text := odlgInitializer.FileName;
-  end;
+  odlgSelectFile.InitialDir := ExtractFileDir(txtDebugInitializer.Text);
+  odlgSelectFile.Title := 'Select Initializer...';
+  odlgSelectFile.Filter := 'Application Extension (*.dll)|*.dll';
+
+  if odlgSelectFile.Execute then
+    txtDebugInitializer.Text := odlgSelectFile.FileName;
+end;
+
+procedure TfrmPrjOptions.btnBrowseDirClick(Sender: TObject);
+begin
+  jvSelectDir.InitialDir := txtRuntimeDir.Text;
+  jvSelectDir.Title := 'Select Runtime Directory...';
+
+  if jvSelectDir.Execute then
+    txtRuntimeDir.Text := jvSelectDir.Directory;
 end;
 
 procedure TfrmPrjOptions.btnOkClick(Sender: TObject);
@@ -200,19 +261,19 @@ begin
   if txtPrjName.Text = '' then
   begin
     Application.MessageBox('The project name can''t be empty.', 'LuaEdit', MB_OK+MB_ICONERROR);
-    pgcPrjSettings.ActivePageIndex := 0;
+    jvPageListSettings.ActivePageIndex := 0;
     txtPrjName.SetFocus;
   end
   else if not IsPortNumber(Trunc(jvspinPort.Value)) then
   begin
     Application.MessageBox('The remote port number is invalid. Value must be between 1024 and 65535.', 'LuaEdit', MB_OK+MB_ICONERROR);
-    pgcPrjSettings.ActivePageIndex := 1;
+    jvPageListSettings.ActivePageIndex := 1;
     jvspinPort.SetFocus;
   end
   else if not IsIP(txtIP1.Text + '.' + txtIP2.Text + '.' + txtIP3.Text + '.' + txtIP4.Text) then
   begin
     Application.MessageBox('The remote IP address is invalid.', 'LuaEdit', MB_OK+MB_ICONERROR);
-    pgcPrjSettings.ActivePageIndex := 1;
+    jvPageListSettings.ActivePageIndex := 1;
     txtIP1.SetFocus;
   end
   else

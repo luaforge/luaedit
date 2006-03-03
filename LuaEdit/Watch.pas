@@ -49,7 +49,6 @@ type
     tbtnAddWatch: TToolButton;
     ToolButton1: TToolButton;
     tbtnRefreshWatch: TToolButton;
-    imlWatch: TImageList;
     FEdit: TEdit;
     tbtnDelete: TToolButton;
     DeleteSelectedItem1: TMenuItem;

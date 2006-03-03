@@ -210,6 +210,7 @@ object frmProjectTree: TfrmProjectTree
       000000000000}
   end
   object ppmProjectTree: TPopupMenu
+    Images = frmMain.imlActions
     OnPopup = ppmProjectTreePopup
     Left = 8
     Top = 72

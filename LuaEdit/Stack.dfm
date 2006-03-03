@@ -23,7 +23,7 @@ object frmStack: TfrmStack
     Left = 0
     Top = 0
     Width = 442
-    Height = 116
+    Height = 123
     Align = alClient
     Columns = <
       item
@@ -46,11 +46,7 @@ object frmStack: TfrmStack
     ColumnsOrder = '0=250,1=138,2=50'
   end
   object JvDockClient1: TJvDockClient
-    LRDockWidth = 100
-    TBDockHeight = 100
     DirectDrag = False
-    ShowHint = True
-    EnableCloseButton = True
     DockStyle = frmMain.jvDockVSNet
     Left = 32
     Top = 24

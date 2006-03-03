@@ -6,7 +6,7 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, JvExStdCtrls, JvListBox, JvDotNetControls, ShellAPI,
   JvComponent, JvDockControlForm, ComCtrls, JvExComCtrls, JvListView,
-  ImgList, ToolWin;
+  ImgList, ToolWin, Misc;
 
 type
   TfrmFunctionList = class(TForm)
@@ -48,6 +48,10 @@ var
   si: TStartupInfo;
   pi: TProcessInformation;
 begin
+  // Create temp directory if required
+  if not DirectoryExists(TempFolder) then
+    CreateDir(TempFolder);
+
   // Free previously created TFctInfo objects...
   for x := 0 to lvwFunctions.Items.Count - 1 do
     TFctInfo(lvwFunctions.Items[x].Data).Free;
@@ -55,10 +59,10 @@ begin
   lstTags := TStringList.Create;
   lvwFunctions.Items.Clear;
   lvwFunctions.Items.BeginUpdate;
-
+                                   
   // Build executable and its parameters strings
-  CTagAppPath := '"' + ExtractFilePath(Application.ExeName) + 'ctags.exe"';
-  TagFile := ChangeFileExt(sFileName, '.tag');
+  CTagAppPath := '"' + GetLuaEditInstallPath() + '\ctags.exe"';
+  TagFile := TempFolder + '\' + ExtractFileName(ChangeFileExt(sFileName, '.tag'));
   CTagParams := '"-f' + TagFile + '" "--fields=+n+S+K" "' + sFileName + '"';
 
   // Initialize createprocess variables for call

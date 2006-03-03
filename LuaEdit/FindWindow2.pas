@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ComCtrls, CommCtrl, VirtualTrees, JvComponent, JvDockControlForm,
-  JvExComCtrls, JvListView, JvDotNetControls;
+  JvExComCtrls, JvListView, JvDotNetControls, Misc;
 
 type
   TfrmFindWindow2 = class(TForm)

@@ -19,27 +19,19 @@ object frmLuaLocals: TfrmLuaLocals
   Position = poOwnerFormCenter
   PixelsPerInch = 96
   TextHeight = 13
-  object lstLocals: TListBox
+  object lstLocals: TJvListBox
     Left = 0
     Top = 0
     Width = 507
-    Height = 218
+    Height = 225
     Align = alClient
-    Font.Charset = ANSI_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -11
-    Font.Name = 'Arial'
-    Font.Style = []
-    ItemHeight = 14
-    ParentFont = False
+    ItemHeight = 13
+    Background.FillMode = bfmTile
+    Background.Visible = False
     TabOrder = 0
   end
   object JvDockClient1: TJvDockClient
-    LRDockWidth = 100
-    TBDockHeight = 100
     DirectDrag = False
-    ShowHint = True
-    EnableCloseButton = True
     DockStyle = frmMain.jvDockVSNet
     Left = 24
     Top = 16

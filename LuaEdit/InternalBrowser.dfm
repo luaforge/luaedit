@@ -6,8 +6,6 @@ object frmInternalBrowser: TfrmInternalBrowser
   BorderStyle = bsSizeToolWin
   Caption = 'Internal Browser'
   Color = clBtnFace
-  Constraints.MinHeight = 200
-  Constraints.MinWidth = 200
   DockSite = True
   DragKind = dkDock
   DragMode = dmAutomatic
@@ -21,6 +19,7 @@ object frmInternalBrowser: TfrmInternalBrowser
   Position = poOwnerFormCenter
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object Panel2: TPanel
@@ -274,7 +273,7 @@ object frmInternalBrowser: TfrmInternalBrowser
     TabOrder = 1
     OnCommandStateChange = InternalBrowserCommandStateChange
     OnBeforeNavigate2 = InternalBrowserBeforeNavigate2
-    OnNavigateComplete2 = InternalBrowserNavigateComplete2
+    OnDocumentComplete = InternalBrowserDocumentComplete
     ControlData = {
       4C000000D8130000AE0B00000000000000000000000000000000000000000000
       000000004C000000000000000000000001000000E0D057007335CF11AE690800
@@ -283,11 +282,7 @@ object frmInternalBrowser: TfrmInternalBrowser
       00000000000000000100000000000000000000000000000000000000}
   end
   object JvDockClient1: TJvDockClient
-    LRDockWidth = 100
-    TBDockHeight = 100
     DirectDrag = False
-    ShowHint = True
-    EnableCloseButton = True
     DockStyle = frmMain.jvDockVSNet
     Left = 8
     Top = 112
