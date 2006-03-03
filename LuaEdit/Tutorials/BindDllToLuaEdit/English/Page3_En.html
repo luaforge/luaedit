@@ -29,7 +29,7 @@
 						  <br>
 						  <font face="Tahoma" size="2">
 						  <p style="text-align:justify">
-							Now, the script contains a solid basic frame/structure around which we will add
+							Now the script contains a solid basic frame/structure around which we will add
 							code to actually handle the game. This means sequence randomization algorythms,
 							key validations, point system logic, etc. Let's start by the game initialization
 							routine.
@@ -54,7 +54,7 @@
 							be used to generate "random" numbers. In other words, two sequences using the same seed will
 							be identical. To avoid this problem, many scripts/programs use the system's current time
 							as the random seed, which pratically makes it impossible for the user to get or even remember
-							having the same sequence. Here is how the simon:Initialize() function should looks like:
+							having the same sequence. Here is how the simon:Initialize() function should look like:
 						  </p> 
 						  <br>
 					</td>
@@ -120,7 +120,7 @@
 						  <br>	
 						  <p style="text-align:justify"> 
 						  	 Next, we will fill the simon:PlaySequence(Sequence) function. The main goal of
-							 this function is to play the sequence previously build via some calls to the
+							 this function is to play the sequence previously built via calls to the
 							 Simon<sup>®</sup> game's engine exported functions. In this function, we should
 							 parse the sequence table item by item and turn on the light that this item is worth.
 							 Let's be more specific:
@@ -165,17 +165,17 @@
 						  <br>	
 						  <p style="text-align:justify"> 
 						  	 The two local variables v and i are going to be use to retrieve the result
-							 of our calls to the next() function. The next() function is use to retrieve the
+							 of our calls to the next() function. The next() function is used to retrieve the
 							 next element in a lua table by specifiying the actual table and the index of
-							 the current element as arguments. The simon.LockControls() and simon.UnlockControls() functions
+							 the current element as parameters. The simon.LockControls() and simon.UnlockControls() functions
 							 are exported from the game's engine and their main goal is to lock/unlock the
-							 controls from the player to avoid any conflict in the code. In the previous sample
-							 of code, those calls will be made before and after the loop that is actually
-							 displaying the sequence to the player. Also, in the code sample the repeat...until
+							 controls from the player to avoid any conflict in the code. In the previous example
+							 of code, the calls to the simon.LockControls() and simon.UnlockControls() functions will be made before and after the loop that is actually
+							 displaying the sequence to the player. Also, in the code sample the "repeat...until"
 							 statement was used to allow the code to enter in the loop for the first iteration
 							 everytime it has to but any other loop syntax would have been a proper use as well.
 							 The first chunk in the loop is a call to the simon.SetLight() function using
-							 SIMON_NONE as first and only argument. This instruction will turn off all the lights
+							 SIMON_NONE as first and only parameter. This instruction will turn off all the lights
 							 in the game because we want to make sure that for each item no other light but the one
 							 of the current item will be on. Next, we have a Sleep() call of 300 miliseconds as
 							 the argument. This call, unlike the one in <a href=".\Page2_En.html">step 2</a> of
@@ -185,12 +185,12 @@
 						  </p> 
 						  <p style="text-align:justify"> 
 						  	 To finalize this step we will add some code to the simon:OnButtonClick(ButtonIndex)
-							 function. This function will be called the the Simon<sup>®</sup> game's engine everytime
+							 function. This function will be called by the Simon<sup>®</sup> game's engine every time
 							 the player pushes one of the four buttons in the game. Our main goal in that function
 							 is to validate the pushed button and start managing points for an eventual victory.
 							 To do so, the functions simon.GetScore() and simon.SetScore() will be used. View the
 							 simplicity of this function and the advancement in the tutorial, this function will
-							 not be explained in details. Just remember what we've dicuss so far in the turorial:
+							 not be explained in details. Just remember what we've dicussed so far in the turorial:
 						  </p> 
 						  <br>
 					</td>

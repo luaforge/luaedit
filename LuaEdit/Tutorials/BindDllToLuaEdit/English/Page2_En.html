@@ -29,7 +29,7 @@
 						  <br>
 						  <font face="Tahoma" size="2">
 						  <p style="text-align:justify">
-							Before starting programming logics of the Simon<sup>®</sup> game, there is actually some basics
+							Before you start programming logics of the Simon<sup>®</sup> game, there are actually some basics
 							code setups to do just like in any other script. Let's start by adding the following
 							variables at the begenning of script:
 						  </p>
@@ -56,8 +56,8 @@
 						  <br>
 						  <br>
 						  <p style="text-align:justify"> 
-						  	Those variables will actually be use "as if" they were constants since the concept
-							of constants does not really exists in Lua. This means that our code should never
+						  	These variables will actually be used as if they were constants since the concept
+							of constants does not really exist in Lua. This means that our code should never
 							modify their content. Next, we will add four "actual" variables (their content will
 							probably change during the execution of the script) to control the game's environment:
 						  </p> 
@@ -82,11 +82,11 @@
 						  <br>
 						  <br>
 						  <p style="text-align:justify"> 
-						  	The GameState variable is a boolean wich contains false if the game is over or true if not. MainSequence is
-							a table wich contains the whole sequence since the begenning of the new game. The variable SequenceCount is
+						  	The GameState variable is a boolean which is worth false if the game is over or true if not. MainSequence is
+							a table wich contains the whole sequence since the beginning of the new game. The variable SequenceCount is
 							an integer containing the actual total sequence's length. Finally, UserSequenceCount is an integer
 							containing the user's sequence length so far. Next, we will need to add four functions in wich we will add
-							some code later. Those functions will be nested into the the table simon wich will be created by the game
+							some code later. Those functions will be nested into the the table simon which will be created by the game
 							engine (simon.dll) when the script will initialize through the Initializer function:
 						  </p> 
 						  <br>
@@ -123,7 +123,7 @@
 							to be called by our own script to handle different steps during the game.
 							One last thing remains before the end of this step: creating the game's
 							frame. To do so, a main loop at the end of the script will be required as
-							followed:
+							follows:
 						  </p> 
 						  <br>
 					</td>
@@ -150,15 +150,15 @@
 						  <br>
 						  <br>
 						  <p style="text-align:justify"> 
-						  	This loop will handle the game from the beginning up to the end. An iteration
-							in this loop will be executed many times per seconds when there is no need for
-							it. That's why the game engine (simon.dll) has exported a functions called Sleep()
-							wich tells to the processor to sleep for a certain amount of time in miliseconds.
+						  	This loop will handle the game from the beginning to the end. An iteration
+							in this loop will be executed many times per second when there is no need for
+							it. That's why the game engine (simon.dll) has exported a function called Sleep()
+							which tells the processor to sleep for a certain amount of time in miliseconds.
 							In other words, by using this function we will ensure that the game isn't using 100% of the processor's resources
-							since we don't need it in this perticular case.	Also, as you probably noticed already, 
-							this code snipset include two function calls from the game engine: simon.Create() and
+							since we don't need it in this particular case.	Also, as you probably noticed already, 
+							this code snippet includes two function calls from the game engine: simon.Create() and
 							simon.Destroy(). The simon.Create() function create the Simon<sup>®</sup> game interface to interact
-							with the user when the simon.Destroy() function destroy this interface. In the next step, we
+							with the user when the simon.Destroy() function destroys this interface. In the next step, we
 							will add some code into the previously added functions.
 						  </p> 
 						  <br>
@@ -171,13 +171,13 @@
 							<ul type="square">						 
 								<li>The reserved word "local" used in the variables declarations code above is not
 									necessary for the code to work since this script isn't supposed to be loaded
-									in any other scripts. In the other hand, since those variables are going to be
+									in any other scripts. On the other hand, since these variables are going to be
 									used ONLY in the script's global scope, it would be recommended, to avoid any
 									potential problems, to keep the "local" instruction even if not necessary. See
 									section 2.6 of Lua 5.0 documentation for more details. (Available in LuaEdit
 									Help menu)</li>
 								<li>The Create() function has an optional argument you can pass to. This argument
-									manage how the interface will be created. When this argument is worth 1, it creates
+									manages how the interface will be created. When this argument is worth 1, it creates
 									the interface in a sizeable regular window. When it's worth 2, it creates the
 									interface in a sizeable tool window. When the argument is worth anything else
 									than 1 or 2, it creates the interface without any borders. In our example, this

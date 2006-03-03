@@ -29,8 +29,8 @@
 						  <br>
 						  <font face="Tahoma" size="2">
 						  <p style="text-align:justify">
-							 Now that we have quiet something to start with, it's time to actually control
-							 the game through that previously created main loop.
+							 Now that we have something to start with, it's time to actually control
+							 the game through that main loop.
 						  </p>
 						  <br> 
 						  </font>
@@ -97,8 +97,8 @@
 							 on. The simon.GetPlayerStatus() function returns 1 if the user pushed the "play" button.
 							 Calling simon.DisplayMessage() will display the specified string using the specified 
 							 color (for color codes, look at the "Delphi/C++ Builder" column of
-							 <a href="http://www.iocomp.com/support/helpvcl/ioc01592.htm">this website</a>) and
-							 and the specified length in miliseconds. In our case, this will be use to display whose turn it is.
+							 <a href="http://www.iocomp.com/support/helpvcl/ioc01592.htm">this website</a>)
+							 and the specified length in miliseconds. In our case, this will be used to display whose turn it is.
 							 The function simon.GetUserSequence() will prompt the user to enter its sequence. The first
 							 argument specifies the length of the sequence to retrieve and the second one specifies
 							 the timeout value in miliseconds to use before considering the turn as wrong. In terms of
@@ -119,7 +119,7 @@
 							 will be available through LuaEdit.
 						  </p>
 						  <br>
-						  <b>Delphi:</b> (This function must added in the "exports" instruction area of your code just like all the registred functions referenced in it)
+						  <b>Delphi:</b> (This function must be added in the "exports" instruction area of your code just like all the registred functions referenced in it)
 						  <br>
 						  <br>
 					</td>
@@ -177,7 +177,7 @@
 						  <font face="Tahoma" size="2">	
 						  <br>
 						  <br>
-						  <b>C/C++:</b> (This function must added in the "EXPORTS" instruction area of your *.def file just like all the registred functions referenced in it)
+						  <b>C/C++:</b> (This function must be added in the "EXPORTS" instruction area of your *.def file just like all the registred functions referenced in it)
 						  <br>
 						  <br>
 					</td>
@@ -237,16 +237,16 @@
 						  <br>	
 						  <p style="text-align:justify"> 
 						  	 The LuaRegisterCustom() and LuaRegister() functions will simplify the code's complexity
-							 since we would have had to repeat those 3 lines of code for every functions that
+							 since we would have had to repeat those 3 lines of code for every function that
 							 we needed to register in the Lua environment. Now, to complete this project/turotial,
-							 all you need to do inspired yourself from the supplied code and finish the dll. As mentioned
-							 higher, this part will not be explained in details.
+							 all you need to do is inspired yourself from the supplied code and finish the dll. As mentioned
+							 higher, this part will not be explained in detail.
 						  </p>
 						  <br>
 						  <p style="text-align:justify">
 						  	 Now you've seen enough to know how Lua works in interaction with LuaEdit to eventually
 							 build your own project that way so that Lua code can finally be an easy thing to debug.
-							 I hopped this tutorial helped you in many ways. If you still have questions you can always
+							 I hope this tutorial helped you in many ways. If you still have questions you can always
 							 post a new thread in the <a href="">"Tutorial" section</a> of our forum or feel free to
 							 contact me at the following address: <a href="mailto:jf.goulet@luaedit.net?subject=About Bind a Dll to LuaEdit (Tutorial)...">
 							 jf.goulet@luaedit.net</a>. Thank you very much for using this tutorial and good luck in your future projects!
