@@ -1,5 +1,6 @@
 dofile(".\\Function.lua")
 local addition = 0
+a = _G
 
 function test(param1)
    param1 = param1 + 5
