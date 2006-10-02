@@ -115,7 +115,7 @@ AutoIncBuild=1
 MajorVer=2
 MinorVer=0
 Release=1
-Build=133
+Build=154
 Debug=0
 PreRelease=0
 Special=0
@@ -126,7 +126,7 @@ CodePage=1252
 [Version Info Keys]
 CompanyName=Open Source (Jean-Francois Goulet - Creator)
 FileDescription=LuaEdit Dll for System Operations
-FileVersion=2.0.1.133
+FileVersion=2.0.1.154
 InternalName=LuaEditSys
 LegalCopyright=LuaEdit Copyright 2004 - 2005 ©
 LegalTrademarks=

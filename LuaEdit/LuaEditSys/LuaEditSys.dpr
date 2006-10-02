@@ -18,7 +18,7 @@ uses
 {$R *.res}
 
 exports GetFileLastTimeModified, GetFileReadOnlyAttr, ToggleFileReadOnlyAttr, GetFileVersion, GetOSInfo,
-        SetPrivilege, WinExit, GetFileSizeStr;
+        SetPrivilege, WinExit, GetFileSizeStr, BrowseURL, GetRunningProcesses, ParamStrEx, ParamCountEx;
 
 begin
 end.
