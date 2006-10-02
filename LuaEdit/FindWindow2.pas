@@ -80,7 +80,7 @@ begin
     // Extract one by one the
     while sSnipset <> '' do
     begin
-      StrPos := Pos(frmMain.sSearchInFilesString, sSnipset);
+      StrPos := Pos(frmLuaEditMain.sSearchInFilesString, sSnipset);
       if StrPos = 0 then
       begin
         // Retreive the rest of the string
@@ -157,7 +157,7 @@ begin
         end;
 
         // Retreive bold part of string
-        sOut := frmMain.sSearchInFilesString;
+        sOut := frmLuaEditMain.sSearchInFilesString;
         sSnipset := Copy(sSnipset, Length(sOut) + 1, Length(sSnipset) - Length(sOut) + 1);
 
         // Reset font style and color
@@ -198,7 +198,7 @@ procedure TfrmFindWindow2.lvwResultDblClick(Sender: TObject);
 begin
   // Bring the file in the editor and go directly to the line where it's defined
   if Assigned(lvwResult.Selected) then
-    frmMain.PopUpUnitToScreen(lvwResult.Selected.Caption, StrToInt(lvwResult.Selected.SubItems[0]), False, HIGHLIGHT_STACK);
+    frmLuaEditMain.PopUpUnitToScreen(lvwResult.Selected.Caption, StrToInt(lvwResult.Selected.SubItems[0]), False, HIGHLIGHT_STACK);
 end;
 
 end.

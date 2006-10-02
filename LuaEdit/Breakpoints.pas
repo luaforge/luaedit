@@ -68,44 +68,47 @@ procedure TfrmBreakpoints.RefreshBreakpointList;
 var
   x, y: Integer;
   SubItem: TListItem;
-  pLuaUnit: TLuaUnit;
+  pLuaUnit: TLuaEditUnit;
 begin
   // Begin update and claer actual list
   lvwBreakpoints.Items.BeginUpdate();
   lvwBreakpoints.Items.Clear();
 
   // Add all breakpoints in the listview
-  for x := 0 to LuaOpenedUnits.Count - 1 do
+  for x := 0 to LuaOpenedFiles.Count - 1 do
   begin
-    pLuaUnit := TLuaUnit(LuaOpenedUnits.Items[x]);
-
-    for y := 0 to pLuaUnit.pDebugInfos.lstBreakpoint.Count - 1 do
+    if TLuaEditBasicTextFile(LuaOpenedFiles.Items[x]).FileType in LuaEditDebugFilesTypeSet then
     begin
-      SubItem := lvwBreakpoints.Items.Add;
+      pLuaUnit := TLuaEditUnit(LuaOpenedFiles.Items[x]);
 
-      if TBreakpoint(pLuaUnit.pDebugInfos.lstBreakpoint.Items[y]).iStatus = BKPT_ENABLED then
+      for y := 0 to pLuaUnit.DebugInfos.lstBreakpoint.Count - 1 do
       begin
-        SubItem.Checked := True;
-        WasItemChecked := True;
-        Subitem.ImageIndex := 7;
-      end
-      else
-      begin
-        SubItem.Checked := False;
-        WasItemChecked := False;
-        Subitem.ImageIndex := 8;
+        SubItem := lvwBreakpoints.Items.Add;
+
+        if TBreakpoint(pLuaUnit.DebugInfos.lstBreakpoint.Items[y]).iStatus = BKPT_ENABLED then
+        begin
+          SubItem.Checked := True;
+          WasItemChecked := True;
+          Subitem.ImageIndex := 7;
+        end
+        else
+        begin
+          SubItem.Checked := False;
+          WasItemChecked := False;
+          Subitem.ImageIndex := 8;
+        end;
+
+        SubItem.Data := pLuaUnit;
+        SubItem.Caption := pLuaUnit.Name+', line '+IntToStr(TBreakpoint(pLuaUnit.DebugInfos.lstBreakpoint.Items[y]).iLine);
+
+        if TBreakpoint(pLuaUnit.DebugInfos.lstBreakpoint.Items[y]).sCondition <> '' then
+          SubItem.SubItems.Add(TBreakpoint(pLuaUnit.DebugInfos.lstBreakpoint.Items[y]).sCondition)
+        else
+          SubItem.SubItems.Add('(no condition)');
+
+        SubItem.SubItems.Add(IntToStr(TBreakpoint(pLuaUnit.DebugInfos.lstBreakpoint.Items[y]).iHitCount));
+        SubItem.SubItems.Add(IntToStr(TBreakpoint(pLuaUnit.DebugInfos.lstBreakpoint.Items[y]).iLine));
       end;
-
-      SubItem.Data := pLuaUnit;
-      SubItem.Caption := pLuaUnit.sName+', line '+IntToStr(TBreakpoint(pLuaUnit.pDebugInfos.lstBreakpoint.Items[y]).iLine);
-
-      if TBreakpoint(pLuaUnit.pDebugInfos.lstBreakpoint.Items[y]).sCondition <> '' then
-        SubItem.SubItems.Add(TBreakpoint(pLuaUnit.pDebugInfos.lstBreakpoint.Items[y]).sCondition)
-      else
-        SubItem.SubItems.Add('(no condition)');
-
-      SubItem.SubItems.Add(IntToStr(TBreakpoint(pLuaUnit.pDebugInfos.lstBreakpoint.Items[y]).iHitCount));
-      SubItem.SubItems.Add(IntToStr(TBreakpoint(pLuaUnit.pDebugInfos.lstBreakpoint.Items[y]).iLine));
     end;
   end;
 
@@ -124,7 +127,7 @@ begin
     tbtnAllRemove.Enabled := False;
   end;
 
-  if LuaOpenedUnits.Count = 0 then
+  if LuaOpenedFiles.Count = 0 then
     tbtnAdd.Enabled := False
   else
     tbtnAdd.Enabled := True;
@@ -138,16 +141,12 @@ begin
   begin
     ModalResult := mrOk;
 
-    if frmMain.GetAssociatedTab(TLuaUnit(lvwBreakpoints.Selected.Data)) = nil then
-    begin
-      frmMain.AddFileInTab(TLuaUnit(lvwBreakpoints.Selected.Data));
-    end
+    if not Assigned(TLuaEditUnit(lvwBreakpoints.Selected.Data).AssociatedTab) then
+      frmLuaEditMain.AddFileInTab(TLuaEditUnit(lvwBreakpoints.Selected.Data))
     else
-    begin
-      frmMain.jvUnitBar.SelectedTab := frmMain.GetAssociatedTab(TLuaUnit(lvwBreakpoints.Selected.Data));
-    end;
+      frmLuaEditMain.jvUnitBar.SelectedTab := TLuaEditUnit(lvwBreakpoints.Selected.Data).AssociatedTab; //frmMain.GetAssociatedTab(TLuaEditUnit(lvwBreakpoints.Selected.Data));
 
-    TLuaUnit(lvwBreakpoints.Selected.Data).synUnit.GotoLineAndCenter(StrToInt(lvwBreakpoints.Selected.SubItems.Strings[2]));
+    TLuaEditUnit(lvwBreakpoints.Selected.Data).synUnit.GotoLineAndCenter(StrToInt(lvwBreakpoints.Selected.SubItems.Strings[2]));
   end;
 end;
 
@@ -175,7 +174,7 @@ begin
       else
       begin
         lvwBreakpoints.Selected.SubItems.Strings[0] := Answer;
-        TLuaUnit(lvwBreakpoints.Selected.Data).pDebugInfos.GetBreakpointAtLine(StrToInt(lvwBreakpoints.Selected.SubItems.Strings[2])).sCondition := Answer;
+        TLuaEditUnit(lvwBreakpoints.Selected.Data).DebugInfos.GetBreakpointAtLine(StrToInt(lvwBreakpoints.Selected.SubItems.Strings[2])).sCondition := Answer;
       end;
 
       lua_close(L);
@@ -199,19 +198,19 @@ begin
     begin
       if Assigned(Item.Data) then
       begin
-        if TLuaUnit(Item.Data).pDebugInfos.GetBreakpointStatus(StrToInt(Item.SubItems.Strings[2])) = BKPT_DISABLED then
+        if TLuaEditUnit(Item.Data).DebugInfos.GetBreakpointStatus(StrToInt(Item.SubItems.Strings[2])) = BKPT_DISABLED then
         begin
-          TLuaUnit(Item.Data).pDebugInfos.GetBreakpointAtLine(StrToInt(Item.SubItems.Strings[2])).iStatus := BKPT_ENABLED;
+          TLuaEditUnit(Item.Data).DebugInfos.GetBreakpointAtLine(StrToInt(Item.SubItems.Strings[2])).iStatus := BKPT_ENABLED;
           Item.ImageIndex := 7;
         end
         else
         begin
-          TLuaUnit(Item.Data).pDebugInfos.GetBreakpointAtLine(StrToInt(Item.SubItems.Strings[2])).iStatus := BKPT_DISABLED;
+          TLuaEditUnit(Item.Data).DebugInfos.GetBreakpointAtLine(StrToInt(Item.SubItems.Strings[2])).iStatus := BKPT_DISABLED;
           Item.ImageIndex := 8;
         end;
 
-        if Assigned(frmMain.jvUnitBar.SelectedTab.Data) then
-          TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
+        if Assigned(frmLuaEditMain.jvUnitBar.SelectedTab.Data) then
+          TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).SynUnit.Refresh;
       end;
     end;
   end;
@@ -221,26 +220,26 @@ procedure TfrmBreakpoints.tbtnRemoveClick(Sender: TObject);
 begin
   if Assigned(lvwBreakpoints.Selected) then
   begin
-    TLuaUnit(lvwBreakpoints.Selected.Data).pDebugInfos.RemoveBreakpointAtLine(StrToInt(lvwBreakpoints.Selected.SubItems.Strings[2]));
+    TLuaEditUnit(lvwBreakpoints.Selected.Data).DebugInfos.RemoveBreakpointAtLine(StrToInt(lvwBreakpoints.Selected.SubItems.Strings[2]));
     lvwBreakpoints.Selected.Delete;
   end;
 
-  if Assigned(frmMain.jvUnitBar.SelectedTab.Data) then
-    TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
+  if Assigned(frmLuaEditMain.jvUnitBar.SelectedTab.Data) then
+    TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).SynUnit.Refresh;
 end;
 
 procedure TfrmBreakpoints.tbtnToggleClick(Sender: TObject);
 begin
   if Assigned(lvwBreakpoints.Selected) then
   begin
-    if TLuaUnit(lvwBreakpoints.Selected.Data).pDebugInfos.GetBreakpointStatus(StrToInt(lvwBreakpoints.Selected.SubItems.Strings[2])) = BKPT_DISABLED then
+    if TLuaEditUnit(lvwBreakpoints.Selected.Data).DebugInfos.GetBreakpointStatus(StrToInt(lvwBreakpoints.Selected.SubItems.Strings[2])) = BKPT_DISABLED then
       lvwBreakpoints.Selected.Checked := True
     else
       lvwBreakpoints.Selected.Checked := False;
   end;
 
-  if Assigned(frmMain.jvUnitBar.SelectedTab.Data) then
-    TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
+  if Assigned(frmLuaEditMain.jvUnitBar.SelectedTab.Data) then
+    TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).SynUnit.Refresh;
 end;
 
 procedure TfrmBreakpoints.lvwBreakpointsDblClick(Sender: TObject);
@@ -257,8 +256,8 @@ begin
     lvwBreakpoints.Items[x].Checked := False;
   end;
 
-  if Assigned(frmMain.jvUnitBar.SelectedTab.Data) then
-    TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
+  if Assigned(frmLuaEditMain.jvUnitBar.SelectedTab.Data) then
+    TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
 end;
 
 procedure TfrmBreakpoints.tbtnEnableAllBreakpointsClick(Sender: TObject);
@@ -270,8 +269,8 @@ begin
     lvwBreakpoints.Items[x].Checked := True;
   end;
 
-  if Assigned(frmMain.jvUnitBar.SelectedTab.Data) then
-    TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
+  if Assigned(frmLuaEditMain.jvUnitBar.SelectedTab.Data) then
+    TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
 end;
 
 procedure TfrmBreakpoints.tbtnAllRemoveClick(Sender: TObject);
@@ -280,12 +279,12 @@ begin
   begin
     while Assigned(lvwBreakpoints.Items[0]) do
     begin
-      TLuaUnit(lvwBreakpoints.Items[0].Data).pDebugInfos.RemoveBreakpointAtLine(StrToInt(lvwBreakpoints.Items[0].SubItems.Strings[2]));
+      TLuaEditUnit(lvwBreakpoints.Items[0].Data).DebugInfos.RemoveBreakpointAtLine(StrToInt(lvwBreakpoints.Items[0].SubItems.Strings[2]));
       lvwBreakpoints.Items[0].Delete;
     end;
 
-    if Assigned(frmMain.jvUnitBar.SelectedTab.Data) then
-      TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
+    if Assigned(frmLuaEditMain.jvUnitBar.SelectedTab.Data) then
+      TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).SynUnit.Refresh;
   end;
 end;
 

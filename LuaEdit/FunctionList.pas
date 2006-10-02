@@ -119,11 +119,11 @@ end;
 
 procedure TfrmFunctionList.tbtnRefreshClick(Sender: TObject);
 begin
-  if Assigned(frmMain.jvUnitBar.SelectedTab) then
+  if Assigned(frmLuaEditMain.jvUnitBar.SelectedTab) then
   begin
-    if Assigned(frmMain.jvUnitBar.SelectedTab.Data) then
+    if Assigned(frmLuaEditMain.jvUnitBar.SelectedTab.Data) then
     begin
-      RefreshList(TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).sUnitPath);
+      RefreshList(TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).Path);
     end;
   end;
 end;
@@ -131,7 +131,7 @@ end;
 procedure TfrmFunctionList.tbtnGotoDefClick(Sender: TObject);
 begin
   if Assigned(lvwFunctions.Selected) then
-    frmMain.PopUpUnitToScreen(TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).sUnitPath, TFctInfo(lvwFunctions.Selected.Data).Line, False, HIGHLIGHT_STACK)
+    frmLuaEditMain.PopUpUnitToScreen(TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).Path, TFctInfo(lvwFunctions.Selected.Data).Line, False, HIGHLIGHT_STACK)
 end;
 
 end.

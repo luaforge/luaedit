@@ -2,7 +2,7 @@ object frmAddToPrj: TfrmAddToPrj
   Left = 468
   Top = 287
   Width = 408
-  Height = 217
+  Height = 253
   Caption = 'Add File to Project'
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -20,7 +20,7 @@ object frmAddToPrj: TfrmAddToPrj
   TextHeight = 13
   object Panel1: TPanel
     Left = 0
-    Top = 150
+    Top = 193
     Width = 400
     Height = 33
     Align = alBottom
@@ -56,7 +56,7 @@ object frmAddToPrj: TfrmAddToPrj
     Left = 0
     Top = 0
     Width = 400
-    Height = 150
+    Height = 193
     Align = alClient
     BevelOuter = bvNone
     Constraints.MinHeight = 150
@@ -64,7 +64,7 @@ object frmAddToPrj: TfrmAddToPrj
     TabOrder = 1
     DesignSize = (
       400
-      150)
+      193)
     object lblEG1: TLabel
       Left = 56
       Top = 44
@@ -107,23 +107,43 @@ object frmAddToPrj: TfrmAddToPrj
       TabOrder = 0
       OnClick = chkExistingClick
     end
-    object chkNew: TRadioButton
+    object chkNewUnit: TRadioButton
       Left = 24
       Top = 112
       Width = 113
       Height = 17
       Caption = 'New Unit'
-      Checked = True
       TabOrder = 3
+      OnClick = chkNewUnitClick
+    end
+    object chkNewMacro: TRadioButton
+      Left = 24
+      Top = 136
+      Width = 113
+      Height = 17
+      Caption = 'New Macro'
+      TabOrder = 4
+      OnClick = chkNewUnitClick
+    end
+    object chkNewTextFile: TRadioButton
+      Left = 24
+      Top = 160
+      Width = 113
+      Height = 17
+      Caption = 'New Text File'
+      Checked = True
+      TabOrder = 5
       TabStop = True
-      OnClick = chkNewClick
+      OnClick = chkNewUnitClick
     end
   end
   object odlgOpenUnit: TOpenDialog
-    Filter = 'Lua Units (*.lua)|*.lua'
+    Filter = 
+      'Lua Units (*.lua)|*.lua|LuaEdit Macros (*.lmc)|*.lmc|Text Files ' +
+      '(*.txt)|*.txt|All Files (*.*)|*.*'
     InitialDir = 'C:\'
     Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]
     Left = 200
-    Top = 145
+    Top = 193
   end
 end

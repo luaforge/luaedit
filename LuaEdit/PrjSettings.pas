@@ -7,7 +7,7 @@ uses
   Dialogs, StdCtrls, ExtCtrls, ComCtrls, Main, Mask, JvExMask, JvSpin,
   JvExStdCtrls, JvEdit, JvValidateEdit, JvPageList, JvExControls, Misc,
   JvComponent, JvExComCtrls, JvPageListTreeView, ImgList, JvGroupHeader,
-  JvBaseDlg, JvSelectDirectory;
+  JvBaseDlg, JvSelectDirectory, JvDotNetControls;
 
 type
   TfrmPrjOptions = class(TForm)
@@ -16,7 +16,6 @@ type
     btnCancel: TButton;
     btnOk: TButton;
     odlgSelectFile: TOpenDialog;
-    Label8: TLabel;
     jvPageListSettings: TJvPageList;
     JvStandardPage1: TJvStandardPage;
     Label1: TLabel;
@@ -65,6 +64,12 @@ type
     JvGroupHeader6: TJvGroupHeader;
     jvspinConnectTimeOut: TJvSpinEdit;
     Label16: TLabel;
+    Label17: TLabel;
+    txtCompileDir: TEdit;
+    Label8: TLabel;
+    btnBrowseDir2: TButton;
+    Label18: TLabel;
+    txtCompileExt: TEdit;
     procedure FormShow(Sender: TObject);
     procedure btnBrowseFileClick(Sender: TObject);
     procedure btnOkClick(Sender: TObject);
@@ -77,11 +82,15 @@ type
     procedure txtIP3Exit(Sender: TObject);
     procedure txtIP4Exit(Sender: TObject);
     procedure btnBrowseDirClick(Sender: TObject);
+    procedure txtUploadDirExit(Sender: TObject);
+    procedure btnBrowseDir2Click(Sender: TObject);
+    procedure txtCompileExtExit(Sender: TObject);
+    procedure txtCompileDirExit(Sender: TObject);
   private
     { Private declarations }
   public
-    procedure GetLuaProjectOptions(pLuaPrj: TLuaProject);
-    procedure SetLuaProjectOptions(pLuaPrj: TLuaProject);
+    procedure GetLuaProjectOptions(pLuaPrj: TLuaEditProject);
+    procedure SetLuaProjectOptions(pLuaPrj: TLuaEditProject);
     function IsIP(IP: String): Boolean;
     function IsPortNumber(Port: Integer): Boolean;
     function GetLastChar(sLine: String): String;
@@ -100,7 +109,7 @@ begin
   jvSettingsTVSettings.Selected := jvSettingsTVSettings.Items[1];
 end;
 
-procedure TfrmPrjOptions.GetLuaProjectOptions(pLuaPrj: TLuaProject);
+procedure TfrmPrjOptions.GetLuaProjectOptions(pLuaPrj: TLuaEditProject);
 var
   sTemp: String;
 
@@ -114,10 +123,10 @@ var
     Result := Copy(sIn, Pos('.', sIn) + 1, Length(sIn) - Pos('.', sIn));
   end;
 
-  procedure FillTargetList(pPrj: TLuaProject);
+  procedure FillTargetList(pPrj: TLuaEditProject);
   var
     x: Integer;
-    pLuaUnit: TLuaUnit;
+    pLuaUnit: TLuaEditUnit;
   begin
     cboUnits.Clear;
     cboUnits.AddItem('[Current Unit]', nil);
@@ -126,15 +135,15 @@ var
     for x := 0 to pPrj.lstUnits.Count - 1 do
     begin
       pLuaUnit := pPrj.lstUnits[x];
-      cboUnits.AddItem(pLuaUnit.sName, pLuaUnit);
+      cboUnits.AddItem(pLuaUnit.Name, pLuaUnit);
 
-      if pLuaUnit.sName = pPrj.sTargetLuaUnit then
+      if pLuaUnit.Name = pPrj.sTargetLuaUnit then
         cboUnits.ItemIndex := x + 1;
     end;
   end;
 begin
   // Get General Options
-  txtPrjName.Text := pLuaPrj.sPrjName;
+  txtPrjName.Text := pLuaPrj.Name;
   spinMajorVersion.Value := pLuaPrj.iVersionMajor;
   spinMinorVersion.Value := pLuaPrj.iVersionMinor;
   spinReleaseVersion.Value := pLuaPrj.iVersionRelease;
@@ -159,12 +168,14 @@ begin
   txtUploadDir.Text := pLuaPrj.sRemoteDirectory;
   FillTargetList(pLuaPrj);
   txtRuntimeDir.Text := pLuaPrj.sRuntimeDirectory;
+  txtCompileDir.Text := pLuaPrj.sCompileDirectory;
+  txtCompileExt.Text := pLuaPrj.sCompileExtension;
 end;
 
-procedure TfrmPrjOptions.SetLuaProjectOptions(pLuaPrj: TLuaProject);
+procedure TfrmPrjOptions.SetLuaProjectOptions(pLuaPrj: TLuaEditProject);
 begin
   //Set general options
-  pLuaPrj.sPrjName := txtPrjName.Text;
+  pLuaPrj.Name := txtPrjName.Text;
   pLuaPrj.iVersionMajor := Round(spinMajorVersion.Value);
   pLuaPrj.iVersionMinor := Round(spinMinorVersion.Value);
   pLuaPrj.iVersionRelease := Round(spinReleaseVersion.Value);
@@ -179,9 +190,11 @@ begin
   pLuaPrj.sRemoteDirectory := txtUploadDir.Text;
   pLuaPrj.sRuntimeDirectory := txtRuntimeDir.Text;
   pLuaPrj.sTargetLuaUnit := cboUnits.Text;
+  pLuaPrj.sCompileDirectory := txtCompileDir.Text;
+  pLuaPrj.sCompileExtension := txtCompileExt.Text;
 
   if cboUnits.Items.Objects[cboUnits.ItemIndex] <> nil then
-    pLuaPrj.pTargetLuaUnit := TLuaUnit(cboUnits.Items.Objects[cboUnits.ItemIndex])
+    pLuaPrj.pTargetLuaUnit := TLuaEditUnit(cboUnits.Items.Objects[cboUnits.ItemIndex])
   else
     pLuaPrj.pTargetLuaUnit := nil;
 end;
@@ -251,7 +264,22 @@ begin
   jvSelectDir.Title := 'Select Runtime Directory...';
 
   if jvSelectDir.Execute then
+  begin
     txtRuntimeDir.Text := jvSelectDir.Directory;
+    txtRuntimeDir.SetFocus;
+  end;
+end;
+
+procedure TfrmPrjOptions.btnBrowseDir2Click(Sender: TObject);
+begin
+  jvSelectDir.InitialDir := txtCompileDir.Text;
+  jvSelectDir.Title := 'Select Compilation Output Directory...';
+
+  if jvSelectDir.Execute then
+  begin
+    txtCompileDir.Text := jvSelectDir.Directory;
+    txtCompileDir.SetFocus;
+  end;
 end;
 
 procedure TfrmPrjOptions.btnOkClick(Sender: TObject);
@@ -263,6 +291,12 @@ begin
     Application.MessageBox('The project name can''t be empty.', 'LuaEdit', MB_OK+MB_ICONERROR);
     jvPageListSettings.ActivePageIndex := 0;
     txtPrjName.SetFocus;
+  end
+  else if txtCompileExt.Text = '' then
+  begin
+    Application.MessageBox('The compilation extension can''t be empty.', 'LuaEdit', MB_OK+MB_ICONERROR);
+    jvPageListSettings.ActivePageIndex := 2;
+    txtCompileExt.SetFocus;
   end
   else if not IsPortNumber(Trunc(jvspinPort.Value)) then
   begin
@@ -282,7 +316,10 @@ end;
 
 function TfrmPrjOptions.GetLastChar(sLine: String): String;
 begin
-  Result := Copy(sLine, Length(sLine), 1);
+  Result := '';
+
+  if sLine <> '' then
+    Result := sLine[Length(sLine)];
 end;
 
 procedure TfrmPrjOptions.txtIP1KeyPress(Sender: TObject; var Key: Char);
@@ -416,6 +453,30 @@ procedure TfrmPrjOptions.txtIP4Exit(Sender: TObject);
 begin
   if txtIP4.Text = '' then
     txtIP4.Text := '0';
+end;
+
+procedure TfrmPrjOptions.txtUploadDirExit(Sender: TObject);
+begin
+  if ((txtUploadDir.Text <> '') and (txtUploadDir.Text[Length(txtUploadDir.Text)] <> '\')) then
+    txtUploadDir.Text := txtUploadDir.Text + '\';
+end;
+
+procedure TfrmPrjOptions.txtCompileExtExit(Sender: TObject);
+begin
+  if txtCompileExt.Text <> '' then
+  begin
+    if txtCompileExt.Text[1] <> '.' then
+      txtCompileExt.Text := '.' + txtCompileExt.Text;
+  end;
+end;
+
+procedure TfrmPrjOptions.txtCompileDirExit(Sender: TObject);
+begin
+  if txtCompileDir.Text <> '' then
+  begin
+    if GetLastChar(txtCompileDir.Text) <> '\' then
+      txtCompileDir.Text := txtCompileDir.Text + '\';
+  end;
 end;
 
 end.

@@ -1,8 +1,8 @@
 object frmInternalBrowser: TfrmInternalBrowser
   Left = 534
   Top = 346
-  Width = 200
-  Height = 200
+  Width = 195
+  Height = 166
   BorderStyle = bsSizeToolWin
   Caption = 'Internal Browser'
   Color = clBtnFace
@@ -25,16 +25,16 @@ object frmInternalBrowser: TfrmInternalBrowser
   object Panel2: TPanel
     Left = 0
     Top = 0
-    Width = 192
+    Width = 187
     Height = 60
     Align = alTop
     BevelOuter = bvNone
     TabOrder = 0
     DesignSize = (
-      192
+      187
       60)
     object jvgifBrowser: TJvGIFAnimator
-      Left = 162
+      Left = 157
       Top = 3
       Width = 25
       Height = 25
@@ -230,18 +230,18 @@ object frmInternalBrowser: TfrmInternalBrowser
     object Panel1: TPanel
       Left = 0
       Top = 28
-      Width = 192
+      Width = 187
       Height = 27
       Anchors = [akLeft, akTop, akRight]
       BevelOuter = bvNone
       TabOrder = 1
       DesignSize = (
-        192
+        187
         27)
       object cboURL: TComboBox
         Left = 1
         Top = 4
-        Width = 156
+        Width = 151
         Height = 21
         AutoDropDown = True
         Anchors = [akLeft, akTop, akRight, akBottom]
@@ -251,7 +251,7 @@ object frmInternalBrowser: TfrmInternalBrowser
         OnKeyPress = cboURLKeyPress
       end
       object btnGo: TButton
-        Left = 163
+        Left = 158
         Top = 5
         Width = 23
         Height = 19
@@ -267,15 +267,15 @@ object frmInternalBrowser: TfrmInternalBrowser
   object InternalBrowser: TWebBrowser
     Left = 0
     Top = 60
-    Width = 192
-    Height = 113
+    Width = 187
+    Height = 79
     Align = alClient
     TabOrder = 1
     OnCommandStateChange = InternalBrowserCommandStateChange
     OnBeforeNavigate2 = InternalBrowserBeforeNavigate2
     OnDocumentComplete = InternalBrowserDocumentComplete
     ControlData = {
-      4C000000D8130000AE0B00000000000000000000000000000000000000000000
+      4C000000541300002A0800000000000000000000000000000000000000000000
       000000004C000000000000000000000001000000E0D057007335CF11AE690800
       2B2E126209000000000000004C0000000114020000000000C000000000000046
       8000000000000000000000000000000000000000000000000000000000000000
@@ -283,7 +283,7 @@ object frmInternalBrowser: TfrmInternalBrowser
   end
   object JvDockClient1: TJvDockClient
     DirectDrag = False
-    DockStyle = frmMain.jvDockVSNet
+    DockStyle = frmLuaEditMain.jvDockVSNet
     Left = 8
     Top = 112
   end

@@ -4,15 +4,14 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, ComCtrls, CommCtrl, ExtCtrls, ImgList, Menus, JvComponent,
+  Dialogs, ComCtrls, CommCtrl, ExtCtrls, ImgList, Menus, JvComponent, ShellAPI,
   JvDockControlForm, JvExComCtrls, JvComCtrls, JvDotNetControls, Main, Misc,
   VirtualTrees;
 
 type
   PProjectTreeData = ^TProjectTreeData;
   TProjectTreeData = record
-    pLuaUnit: TLuaUnit;
-    pLuaPrj: TLuaProject;
+    pLuaEditFile: TLuaEditFile;
     ActiveProject: Boolean;
     ToKeep: Boolean;
     Deleting: Boolean;
@@ -31,6 +30,7 @@ type
     RemoveUnitFromProject1: TMenuItem;
     Options1: TMenuItem;
     vstProjectTree: TVirtualStringTree;
+    mnuFindTarget: TMenuItem;
     procedure UnloadFileProject1Click(Sender: TObject);
     procedure ppmProjectTreePopup(Sender: TObject);
     procedure vstProjectTreeGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: WideString);
@@ -41,6 +41,11 @@ type
     procedure vstProjectTreeMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure vstProjectTreeAfterItemPaint(Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode; ItemRect: TRect);
     function GetNodeInTree(sFileName, sProjectName: String): PVirtualNode;
+    procedure mnuFindTargetClick(Sender: TObject);
+    procedure vstProjectTreeGetHint(Sender: TBaseVirtualTree;
+      Node: PVirtualNode; Column: TColumnIndex;
+      var LineBreakStyle: TVTTooltipLineBreakStyle;
+      var HintText: WideString);
   private
     { Private declarations }
   public
@@ -59,7 +64,7 @@ procedure TfrmProjectTree.vstProjectTreeDblClick(Sender: TObject);
 var
   pNode: PVirtualNode;
   pData: PProjectTreeData;
-  pLuaUnit: TLuaUnit;
+  pFile: TLuaEditBasicTextFile;
 begin
   pNode := vstProjectTree.GetFirstSelected;
 
@@ -67,34 +72,20 @@ begin
   begin
     pData := vstProjectTree.GetNodeData(pNode);
 
-    if Assigned(pData.pLuaUnit) then
+    if pData.pLuaEditFile.FileType in LuaEditTextFilesTypeSet then
     begin
-      pLuaUnit := pData.pLuaUnit;
+      pFile := TLuaEditBasicTextFile(pData.pLuaEditFile);
 
-      if pLuaUnit.IsLoaded then
+      if pFile.IsLoaded then
       begin
-        if LuaOpenedUnits.IndexOf(pLuaUnit) = -1 then
-        begin
-          // Insert new tab in the page control to view the requested unit
-          frmMain.AddFileInTab(pLuaUnit);
-        end
-        else
-        begin
-          // Activate the tab associated to the requested unit
-          frmMain.jvUnitBar.SelectedTab := frmMain.GetAssociatedTab(pLuaUnit);
-
-          if pLuaUnit.HasChanged then
-            frmMain.stbMain.Panels[2].Text := 'Modified'
-          else
-            frmMain.stbMain.Panels[2].Text := '';
-
-          frmMain.synEditClick(pLuaUnit.synUnit);
-        end;
+        frmLuaEditMain.PopUpUnitToScreen(pFile.Path);
       end;
-    end;
+    end
+    else if pData.pLuaEditFile.FileType = otLuaEditForm then
+      frmLuaEditMain.DoBringGUIFormToFrontExecute();
   end;
 
-  frmMain.CheckButtons;
+  frmLuaEditMain.CheckButtons;
 end;
 
 function TfrmProjectTree.GetNodeInTree(sFileName, sProjectName: String): PVirtualNode;
@@ -111,11 +102,11 @@ begin
 
     if sProjectName <> '' then
     begin
-      if (Assigned(pData.pLuaUnit) and (not pData.Deleting)) then
+      if ((pData.pLuaEditFile.FileType in LuaEditTextFilesTypeSet) and (not pData.Deleting)) then
       begin
-        if ((pData.pLuaUnit.pPrjOwner.sPrjName = sProjectName) or (sProjectName = '[@@SingleUnits@@]')) then
+        if ((pData.pLuaEditFile.PrjOwner.Name = sProjectName) or (sProjectName = '[@@SingleUnits@@]')) then
         begin
-          if pData.pLuaUnit.sName = sFileName then
+          if pData.pLuaEditFile.Name = sFileName then
           begin
             Result := pNode;
             Break;
@@ -125,9 +116,9 @@ begin
     end
     else
     begin
-      if Assigned(pData.pLuaPrj) then
+      if pData.pLuaEditFile.FileType = otLuaEditProject then
       begin
-        if pData.pLuaPrj.sPrjName = sFileName then
+        if pData.pLuaEditFile.Name = sFileName then
         begin
           Result := pNode;
           Break;
@@ -141,9 +132,9 @@ end;
 
 procedure TfrmProjectTree.BuildProjectTree(HandleNotifier: Boolean);
 var
-  pTempPrj: TLuaProject;
+  pTempPrj: TLuaEditProject;
   pPrjNode, pUnitNode, pSingleUnitLastNode: PVirtualNode;
-  pData: PProjectTreeData;
+  pData, pDataGUIForm: PProjectTreeData;
   x, y: Integer;
 
   // Go through all nodes of the tree and set their ToKeep flag to false
@@ -184,7 +175,7 @@ var
       pNode := pTree.GetNext(pNode);
     end;
   end;
-  
+
 begin
   // Initialize stuff
   pPrjNode := nil;
@@ -194,8 +185,8 @@ begin
   // If the changes notifier is handled, we stop it while building the tree
   if HandleNotifier then
   begin
-    frmMain.jvchnNotifier.Active := False;
-    frmMain.jvchnNotifier.Notifications.Clear;
+    frmLuaEditMain.jvchnNotifier.Active := False;
+    frmLuaEditMain.jvchnNotifier.Notifications.Clear;
   end;
 
   vstProjectTree.BeginUpdate;
@@ -203,25 +194,24 @@ begin
 
   for x := 0 to LuaProjects.Count - 1 do
   begin
-    pTempPrj := TLuaProject(LuaProjects.Items[x]);
-    pPrjNode := GetNodeInTree(pTempPrj.sPrjName, '');
+    pTempPrj := TLuaEditProject(LuaProjects.Items[x]);
+    pPrjNode := GetNodeInTree(pTempPrj.Name, '');
 
     if not Assigned(pPrjNode) then
     begin
-      if pTempPrj.sPrjName <> '[@@SingleUnits@@]' then
+      if pTempPrj.Name <> '[@@SingleUnits@@]' then
       begin
         // Create the node
         pPrjNode := vstProjectTree.AddChild(vstProjectTree.RootNode);
         pData := vstProjectTree.GetNodeData(pPrjNode);
-        pData.pLuaUnit := nil;
-        pData.pLuaPrj := pTempPrj;
+        pData.pLuaEditFile := pTempPrj;
         pData.ActiveProject := (pTempPrj = ActiveProject);
         pData.ToKeep := True;
         pData.Deleting := False;
 
         // Adding project root to change notifier...
         if ((not pTempPrj.IsNew) and HandleNotifier) then
-          frmMain.AddToNotifier(ExtractFileDir(pTempPrj.sPrjPath));
+          frmLuaEditMain.AddToNotifier(ExtractFileDir(pTempPrj.Path));
       end
       else
           pPrjNode := pSingleUnitLastNode;
@@ -230,25 +220,24 @@ begin
     begin
       // Update the node's data
       pData := vstProjectTree.GetNodeData(pPrjNode);
-      pData.pLuaUnit := nil;
-      pData.pLuaPrj := pTempPrj;
+      pData.pLuaEditFile := pTempPrj;
       pData.ActiveProject := (pTempPrj = ActiveProject);
       pData.ToKeep := True;
       pData.Deleting := False;
 
       // Adding project root to change notifier...
       if ((not pTempPrj.IsNew) and HandleNotifier) then
-        frmMain.AddToNotifier(ExtractFileDir(pTempPrj.sPrjPath));
+        frmLuaEditMain.AddToNotifier(ExtractFileDir(pTempPrj.Path));
     end;
 
     for y := 0 to pTempPrj.lstUnits.Count - 1 do
     begin
-      pUnitNode := GetNodeInTree(TLuaUnit(pTempPrj.lstUnits.Items[y]).sName, pTempPrj.sPrjName);
+      pUnitNode := GetNodeInTree(TLuaEditUnit(pTempPrj.lstUnits.Items[y]).Name, pTempPrj.Name);
 
       if not Assigned(pUnitNode) then
       begin
         // Adding single unit (projectless) to the tree
-        if pTempPrj.sPrjName = '[@@SingleUnits@@]' then
+        if pTempPrj.Name = '[@@SingleUnits@@]' then
         begin
           if not Assigned(pPrjNode) then
             pUnitNode := vstProjectTree.InsertNode(vstProjectTree.RootNode, amInsertBefore)
@@ -262,29 +251,39 @@ begin
 
         // Create the node
         pData := vstProjectTree.GetNodeData(pUnitNode);
-        pData.pLuaUnit := TLuaUnit(pTempPrj.lstUnits.Items[y]);
-        pData.pLuaPrj := nil;
+        pData.pLuaEditFile := pTempPrj.lstUnits.Items[y];
         pData.ActiveProject := False;
         pData.ToKeep := True;
         pData.Deleting := False;
 
         // Adding unit root to change notifier...
-        if ((not TLuaUnit(pTempPrj.lstUnits.Items[y]).IsNew) and HandleNotifier) then
-          frmMain.AddToNotifier(ExtractFileDir(TLuaUnit(pTempPrj.lstUnits.Items[y]).sUnitPath));
+        if ((not TLuaEditUnit(pTempPrj.lstUnits.Items[y]).IsNew) and HandleNotifier) then
+          frmLuaEditMain.AddToNotifier(ExtractFileDir(TLuaEditUnit(pTempPrj.lstUnits.Items[y]).Path));
+
+        // Special handling for gui forms
+        if pData.pLuaEditFile.FileType = otLuaEditForm then
+        begin
+          pDataGUIForm := pData;
+          pUnitNode := vstProjectTree.AddChild(pUnitNode);
+          pData := vstProjectTree.GetNodeData(pUnitNode);
+          pData.pLuaEditFile := TLuaEditGUIForm(pDataGUIForm.pLuaEditFile).LinkedDebugFile;
+          pData.ActiveProject := False;
+          pData.ToKeep := True;
+          pData.Deleting := False;
+        end;
       end
       else
       begin
         // Update the node's data
         pData := vstProjectTree.GetNodeData(pUnitNode);
-        pData.pLuaUnit := TLuaUnit(pTempPrj.lstUnits.Items[y]);
-        pData.pLuaPrj := nil;
+        pData.pLuaEditFile := pTempPrj.lstUnits.Items[y];
         pData.ActiveProject := False;
         pData.ToKeep := True;
         pData.Deleting := False;
 
         // Adding unit root to change notifier...
-        if ((not TLuaUnit(pTempPrj.lstUnits.Items[y]).IsNew) and HandleNotifier) then
-          frmMain.AddToNotifier(ExtractFileDir(TLuaUnit(pTempPrj.lstUnits.Items[y]).sUnitPath));
+        if ((not TLuaEditUnit(pTempPrj.lstUnits.Items[y]).IsNew) and HandleNotifier) then
+          frmLuaEditMain.AddToNotifier(ExtractFileDir(TLuaEditUnit(pTempPrj.lstUnits.Items[y]).Path));
       end;
     end;
   end;
@@ -293,14 +292,14 @@ begin
   vstProjectTree.EndUpdate;
 
   // Set back on the changes notifier if required
-  if ((frmMain.jvchnNotifier.Notifications.Count > 0) and HandleNotifier) then
-    frmMain.jvchnNotifier.Active := True;
+  if ((frmLuaEditMain.jvchnNotifier.Notifications.Count > 0) and HandleNotifier) then
+    frmLuaEditMain.jvchnNotifier.Active := True;
 end;
 
 procedure TfrmProjectTree.UnloadFileProject1Click(Sender: TObject);
 var
-  pLuaPrj: TLuaProject;
-  pLuaUnit: TLuaUnit;
+  pLuaPrj: TLuaEditProject;
+  pFile: TLuaEditBasicTextFile;
   Answer, x: Integer;
   UnitsToDelete: TList;
   pNode: PVirtualNode;
@@ -314,24 +313,24 @@ begin
     UnitsToDelete := TList.Create;
 
     // Case where the selected file was a project
-    if Assigned(pData.pLuaPrj) then
+    if pData.pLuaEditFile.FileType = otLuaEditProject then
     begin
-      pLuaPrj := pData.pLuaPrj;
+      pLuaPrj := TLuaEditProject(pData.pLuaEditFile);
 
       // Ssaving any new or modified project's files
       for x := 0 to pLuaPrj.lstUnits.Count - 1 do
       begin
-        pLuaUnit := TLuaUnit(pLuaPrj.lstUnits.Items[x]);
+        pFile := TLuaEditBasicTextFile(pLuaPrj.lstUnits.Items[x]);
         
-        if ((pLuaUnit.HasChanged) or (pLuaUnit.IsNew)) then
+        if ((pFile.HasChanged) or (pFile.IsNew)) then
         begin
-          Answer := Application.MessageBox(PChar('Save changes to unit "'+pLuaUnit.sName+'"?'), 'LuaEdit', MB_YESNOCANCEL+MB_ICONQUESTION);
+          Answer := Application.MessageBox(PChar('Save changes to unit "'+pFile.Name+'"?'), 'LuaEdit', MB_YESNOCANCEL+MB_ICONQUESTION);
           if Answer = IDYES then
           begin
             if SaveUnitsInc then
-              pLuaUnit.SaveUnitInc(pLuaUnit.sUnitPath)
+              pFile.SaveUnitInc(pFile.Path)
             else
-              pLuaUnit.SaveUnit(pLuaUnit.sUnitPath);
+              pFile.SaveUnit(pFile.Path);
           end
           else if Answer = IDCANCEL then
           begin
@@ -340,19 +339,19 @@ begin
           end;
         end;
 
-        UnitsToDelete.Add(pLuaUnit);
+        UnitsToDelete.Add(pFile);
       end;
 
       // saving any new or modified project
       if ((pLuaPrj.HasChanged) or (pLuaPrj.IsNew)) then
       begin
-        Answer := Application.MessageBox(PChar('Save changes to project "'+pLuaPrj.sPrjName+'"?'), 'LuaEdit', MB_YESNOCANCEL+MB_ICONQUESTION);
+        Answer := Application.MessageBox(PChar('Save changes to project "'+pLuaPrj.Name+'"?'), 'LuaEdit', MB_YESNOCANCEL+MB_ICONQUESTION);
         if Answer = IDYES then
         begin
           if SaveProjectsInc then
-            pLuaPrj.SaveProjectInc(pLuaPrj.sPrjPath)
+            pLuaPrj.SaveProjectInc(pLuaPrj.Path)
           else
-            pLuaPrj.SaveProject(pLuaPrj.sPrjPath);
+            pLuaPrj.SaveProject(pLuaPrj.Path);
         end
         else if Answer = IDCANCEL then
         begin
@@ -361,21 +360,21 @@ begin
         end;
       end;
     end
-    else if Assigned(pData.pLuaUnit) then
+    else if pData.pLuaEditFile.FileType in LuaEditTextFilesTypeSet then
     begin
-      pLuaUnit := pData.pLuaUnit;
+      pFile := TLuaEditBasicTextFile(pData.pLuaEditFile);
 
-      if pLuaUnit.pPrjOwner.sPrjName = '[@@SingleUnits@@]' then
+      if pFile.PrjOwner.Name = '[@@SingleUnits@@]' then
       begin
-        if ((pLuaUnit.HasChanged) or (pLuaUnit.IsNew)) then
+        if ((pFile.HasChanged) or (pFile.IsNew)) then
         begin
-          Answer := Application.MessageBox(PChar('Save changes to unit "'+pLuaUnit.sName+'"?'), 'LuaEdit', MB_YESNOCANCEL+MB_ICONQUESTION);
+          Answer := Application.MessageBox(PChar('Save changes to unit "'+pFile.Name+'"?'), 'LuaEdit', MB_YESNOCANCEL+MB_ICONQUESTION);
           if Answer = IDYES then
           begin
             if SaveUnitsInc then
-              pLuaUnit.SaveUnitInc(pLuaUnit.sUnitPath)
+              pFile.SaveUnitInc(pFile.Path)
             else
-              pLuaUnit.SaveUnit(pLuaUnit.sUnitPath);
+              pFile.SaveUnit(pFile.Path);
           end
           else if Answer = IDCANCEL then
           begin
@@ -384,24 +383,25 @@ begin
           end;
         end;
 
-        UnitsToDelete.Add(pLuaUnit);
+        UnitsToDelete.Add(pFile);
       end;
     end;
     
     // Free and close units and project
     for x := UnitsToDelete.Count - 1 downto 0 do
     begin
-      pLuaUnit := TLuaUnit(UnitsToDelete.Items[x]);
+      pFile := TLuaEditBasicTextFile(UnitsToDelete.Items[x]);
 
-      if frmMain.GetAssociatedTab(pLuaUnit) <> nil then
+      if Assigned(pFile.AssociatedTab) then
       begin
-        frmMain.jvUnitBar.Tabs.Delete(frmMain.GetAssociatedTab(pLuaUnit).Index);
-        LuaOpenedUnits.Remove(pLuaUnit);
+        frmLuaEditMain.jvUnitBar.Tabs.Delete(pFile.AssociatedTab.Index);
+        pFile.AssociatedTab := nil;
+        LuaOpenedFiles.Remove(pFile);
       end;
 
       pData.Deleting := True;
-      pLuaUnit.pPrjOwner.lstUnits.Remove(pLuaUnit);
-      pLuaUnit.Free;
+      pFile.PrjOwner.lstUnits.Remove(pFile);
+      pFile.Free;
     end;
 
     if Assigned(pLuaPrj) then
@@ -418,18 +418,44 @@ begin
 
     // Reset LuaEdit main form caption to its initial value
     if not Assigned(ActiveProject) then
-        frmMain.Caption := 'LuaEdit';
+        frmLuaEditMain.Caption := 'LuaEdit';
 
     // Initialize stuff...
     UnitsToDelete.Free;
     BuildProjectTree;
-    frmMain.CheckButtons;
+    frmLuaEditMain.CheckButtons;
+  end;
+end;
+
+procedure TfrmProjectTree.mnuFindTargetClick(Sender: TObject);
+var
+  pData: PProjectTreeData;
+  pNode: PVirtualNode;
+begin
+  pNode := vstProjectTree.GetFirstSelected;
+
+  if Assigned(pNode) then
+  begin
+    pData := vstProjectTree.GetNodeData(pNode);
+    ShellExecute(Self.Handle, 'explore', PChar(ExtractFileDir(pData.pLuaEditFile.Path)), nil, nil, SW_SHOWNORMAL);
   end;
 end;
 
 procedure TfrmProjectTree.ppmProjectTreePopup(Sender: TObject);
+var
+  pData: PProjectTreeData;
+  pNode: PVirtualNode;
 begin
-  frmMain.DoMainMenuProjectExecute;
+  pNode := vstProjectTree.GetFirstSelected;
+  mnuFindTarget.Enabled := Assigned(pNode);
+
+  if Assigned(pNode) then
+  begin
+    pData := vstProjectTree.GetNodeData(pNode);
+    mnuFindTarget.Enabled := ((not pData.pLuaEditFile.IsNew) and (FileExists(pData.pLuaEditFile.Path)));
+  end;
+
+  frmLuaEditMain.DoMainMenuProjectExecute;
 end;
 
 procedure TfrmProjectTree.vstProjectTreeGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: WideString);
@@ -444,21 +470,14 @@ begin
       begin
         pData := Sender.GetNodeData(Node);
         pData.ToKeep := True;
-
-        if Assigned(pData.pLuaPrj) then
-          CellText := pData.pLuaPrj.sPrjName
-        else
-          CellText := pData.pLuaUnit.sName;
+        CellText := pData.pLuaEditFile.Name;
       end;
-      1:
+      1: CellText := '';
+      2:
       begin
         pData := Sender.GetNodeData(Node);
         pData.ToKeep := True;
-        
-        if Assigned(pData.pLuaPrj) then
-          CellText := pData.pLuaPrj.sPrjPath
-        else
-          CellText := pData.pLuaUnit.sUnitPath;
+        CellText := pData.pLuaEditFile.Path;
       end;
     end;
   end;
@@ -470,19 +489,19 @@ var
 begin
   pData := Sender.GetNodeData(Node);
 
-  if Assigned(pData.pLuaPrj) then
+  if pData.pLuaEditFile.FileType = otLuaEditProject then
   begin
     // Set bold style on the active project node
     if pData.ActiveProject then
     begin
       TargetCanvas.Font.Style := [fsBold];
-      frmMain.Caption := 'LuaEdit - ' + TLuaProject(pData.pLuaPrj).sPrjName;
+      frmLuaEditMain.Caption := 'LuaEdit - ' + pData.pLuaEditFile.Path;
     end;
   end
   else
   begin
     // Set disabled color for non-loaded units
-    if not pData.pLuaUnit.IsLoaded then
+    if not pData.pLuaEditFile.IsLoaded then
     begin
       TargetCanvas.Font.Color := clInactiveCaption;
       TargetCanvas.Pen.Color := clInactiveCaption;
@@ -499,16 +518,73 @@ begin
   begin
     pData := Sender.GetNodeData(Node);
 
-    if Assigned(pData.pLuaPrj) then
+    if pData.pLuaEditFile.FileType = otLuaEditProject then
+      ImageIndex := 0
+    else if pData.pLuaEditFile.FileType = otLuaEditUnit then
     begin
-      ImageIndex := 0;
-    end
-    else
-    begin
-      if pData.pLuaUnit.IsLoaded then
+      if pData.pLuaEditFile.IsLoaded then
         ImageIndex := 1
       else
         ImageIndex := 2;
+    end
+    else if pData.pLuaEditFile.FileType = otLuaEditMacro then
+    begin
+      if pData.pLuaEditFile.IsLoaded then
+        ImageIndex := 3
+      else
+        ImageIndex := 4;
+    end
+    else if pData.pLuaEditFile.FileType = otTextFile then
+    begin
+      if pData.pLuaEditFile.IsLoaded then
+        ImageIndex := 5
+      else
+        ImageIndex := 6;
+    end
+    else if pData.pLuaEditFile.FileType = otLuaEditForm then
+    begin
+      if pData.pLuaEditFile.IsLoaded then
+        ImageIndex := 7
+      else
+        ImageIndex := 8;
+    end;
+  end
+  else if Column = 1 then
+  begin
+    pData := Sender.GetNodeData(Node);
+
+    if pData.pLuaEditFile.IsNew then
+      ImageIndex := 9
+    else if not pData.pLuaEditFile.IsLoaded then
+      ImageIndex := 10
+    else if pData.pLuaEditFile.IsReadOnly then
+      ImageIndex := 11
+    else if pData.pLuaEditFile.HasChanged then
+      ImageIndex := 12
+    else
+      ImageIndex := 13;
+  end;
+end;
+
+procedure TfrmProjectTree.vstProjectTreeGetHint(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle; var HintText: WideString);
+var
+  pData: PProjectTreeData;
+begin
+  case Column of
+    1:
+    begin
+      pData := Sender.GetNodeData(Node);
+
+      if pData.pLuaEditFile.IsNew then
+        HintText := 'File is New'
+      else if not pData.pLuaEditFile.IsLoaded then
+        HintText := 'File could not be loaded'
+      else if pData.pLuaEditFile.IsReadOnly then
+        HintText := 'File is Read-Only'
+      else if pData.pLuaEditFile.HasChanged then
+        HintText := 'File is Modified'
+      else
+        HintText := 'File is All Right and Saved';
     end;
   end;
 end;
@@ -520,7 +596,7 @@ end;
 
 procedure TfrmProjectTree.vstProjectTreeMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  frmMain.CheckButtons;
+  frmLuaEditMain.CheckButtons;
 end;
 
 procedure TfrmProjectTree.vstProjectTreeAfterItemPaint(Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode; ItemRect: TRect);

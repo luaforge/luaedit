@@ -36,12 +36,8 @@ object frmLuaStack: TfrmLuaStack
     TabOrder = 0
   end
   object JvDockClient1: TJvDockClient
-    LRDockWidth = 100
-    TBDockHeight = 100
     DirectDrag = False
-    ShowHint = True
-    EnableCloseButton = True
-    DockStyle = frmMain.jvDockVSNet
+    DockStyle = frmLuaEditMain.jvDockVSNet
     Left = 24
     Top = 16
   end

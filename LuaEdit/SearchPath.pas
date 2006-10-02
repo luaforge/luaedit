@@ -55,8 +55,16 @@ begin
 end;
 
 function TfrmSearchPath.GetSearchPathString(): String;
+var
+  x: Integer;
 begin
-  Result := lstSearchPath.Items.CommaText;
+  for x := 0 to lstSearchPath.Items.Count - 1 do
+  begin
+    if x = 0 then
+      Result := '"' + lstSearchPath.Items[x] + '"'
+    else
+      Result := Result + ', "' + lstSearchPath.Items[x] + '"';
+  end;
 end;
 
 procedure TfrmSearchPath.FormShow(Sender: TObject);

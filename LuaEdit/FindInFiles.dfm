@@ -1,6 +1,7 @@
 object frmFindInFiles: TfrmFindInFiles
   Left = 485
   Top = 245
+  BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'Find Text'
   ClientHeight = 313

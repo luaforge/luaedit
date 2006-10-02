@@ -64,7 +64,7 @@ begin
     Exit;
   end;
 
-  if TLuaUnit(cboUnits.Items.Objects[cboUnits.ItemIndex]).pDebugInfos.GetBreakpointAtLine(StrToInt(txtLine.Text)) <> nil then
+  if TLuaEditUnit(cboUnits.Items.Objects[cboUnits.ItemIndex]).DebugInfos.GetBreakpointAtLine(StrToInt(txtLine.Text)) <> nil then
   begin
     Application.MessageBox(PChar('There is already a breakpoint set at line number '+txtLine.Text+'!'), 'LuaEdit', MB_OK+MB_ICONERROR);
     txtLine.SetFocus;
@@ -95,9 +95,9 @@ begin
     txtLine.SetFocus;
     Exit;
   end
-  else if (StrToInt(txtLine.Text) > TLuaUnit(cboUnits.Items.Objects[cboUnits.ItemIndex]).synUnit.Lines.Count) or (StrToInt(txtLine.Text) < 1) then
+  else if (StrToInt(txtLine.Text) > TLuaEditUnit(cboUnits.Items.Objects[cboUnits.ItemIndex]).synUnit.Lines.Count) or (StrToInt(txtLine.Text) < 1) then
   begin
-    Application.MessageBox(PChar('The line number must stands between 1 and '+IntToStr(TLuaUnit(cboUnits.Items.Objects[cboUnits.ItemIndex]).synUnit.Lines.Count)+' for the unit "'+TLuaUnit(cboUnits.Items.Objects[cboUnits.ItemIndex]).sName+'"'), 'LuaEdit', MB_OK+MB_ICONERROR);
+    Application.MessageBox(PChar('The line number must stands between 1 and '+IntToStr(TLuaEditUnit(cboUnits.Items.Objects[cboUnits.ItemIndex]).synUnit.Lines.Count)+' for the unit "'+TLuaEditUnit(cboUnits.Items.Objects[cboUnits.ItemIndex]).Name+'"'), 'LuaEdit', MB_OK+MB_ICONERROR);
     txtLine.SetFocus;
     Exit;
   end;
@@ -112,11 +112,11 @@ begin
   pBreakpoint := TBreakpoint.Create;
   pBreakpoint.sCondition := txtCondition.Text;
   pBreakpoint.iLine := StrToInt(txtLine.Text);
-  TLuaUnit(cboUnits.Items.Objects[cboUnits.ItemIndex]).pDebugInfos.lstBreakpoint.Add(pBreakpoint);
+  TLuaEditUnit(cboUnits.Items.Objects[cboUnits.ItemIndex]).DebugInfos.lstBreakpoint.Add(pBreakpoint);
   frmBreakpoints.RefreshBreakpointList;
 
-  if Assigned(frmMain.jvUnitBar.SelectedTab.Data) then
-    TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
+  if Assigned(frmLuaEditMain.jvUnitBar.SelectedTab.Data) then
+    TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
     
   ModalResult := mrOk;
 end;
@@ -127,9 +127,9 @@ var
 begin
   cboUnits.Items.Clear;
 
-  for x := 0 to LuaOpenedUnits.Count - 1 do
+  for x := 0 to LuaOpenedFiles.Count - 1 do
   begin
-    cboUnits.AddItem(TLuaUnit(LuaOpenedUnits.Items[x]).sName, LuaOpenedUnits.Items[x]);
+    cboUnits.AddItem(TLuaEditUnit(LuaOpenedFiles.Items[x]).Name, LuaOpenedFiles.Items[x]);
   end;
 
   txtCondition.Text := '';

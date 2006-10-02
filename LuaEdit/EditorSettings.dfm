@@ -134,48 +134,50 @@ object frmEditorSettings: TfrmEditorSettings
       Indent = 19
       TabOrder = 0
       Items.Data = {
-        0300000025000000010000000100000000000000FFFFFFFF0000000003000000
+        0400000025000000000000000000000000000000FFFFFFFF0000000003000000
         0C456E7669726F6E656D656E7420000000FFFFFFFFFFFFFFFF01000000FFFFFF
         FF00000000000000000747656E6572616C25000000FFFFFFFFFFFFFFFF010000
         00FFFFFFFF02000000000000000C53656172636820506174687324000000FFFF
         FFFFFFFFFFFF02000000FFFFFFFF03000000000000000B5765622042726F7773
-        6572240000000100000001000000FFFFFFFFFFFFFFFF01000000020000000B54
-        65787420456469746F7220000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0100
-        0000000000000747656E6572616C1D000000FFFFFFFFFFFFFFFFFFFFFFFFFFFF
-        FFFF050000000000000004466F6E74200000000100000001000000FFFFFFFFFF
-        FFFFFF040000000200000007446973706C61791F000000FFFFFFFFFFFFFFFFFF
-        FFFFFFFFFFFFFF0400000000000000064775747465722C000000FFFFFFFFFFFF
-        FFFFFFFFFFFFFFFFFFFF06000000000000001353796E74617820486967686C69
-        676874696E67}
+        6572210000000000000000000000FFFFFFFFFFFFFFFF07000000010000000844
+        6562756767657220000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0700000000
+        0000000747656E6572616C240000000000000000000000FFFFFFFFFFFFFFFF01
+        000000020000000B5465787420456469746F7220000000FFFFFFFFFFFFFFFFFF
+        FFFFFFFFFFFFFF01000000000000000747656E6572616C1D000000FFFFFFFFFF
+        FFFFFFFFFFFFFFFFFFFFFF050000000000000004466F6E742000000000000000
+        00000000FFFFFFFFFFFFFFFF040000000200000007446973706C61791F000000
+        0200000002000000FFFFFFFFFFFFFFFF0400000000000000064775747465722C
+        000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF06000000000000001353796E74
+        617820486967686C69676874696E67}
       Items.Links = {
-        0A00000000000000000000000200000003000000010000000100000005000000
-        040000000400000006000000}
+        0C00000000000000000000000200000003000000070000000700000001000000
+        0100000005000000040000000400000006000000}
     end
     object jvPageListSettings: TJvPageList
-      Left = 157
+      Left = 169
       Top = 0
-      Width = 475
+      Width = 463
       Height = 367
-      ActivePage = JvStandardPage1
+      ActivePage = JvStandardPage8
       PropagateEnable = False
       ShowDesignCaption = sdcNone
       Align = alClient
       object JvStandardPage1: TJvStandardPage
         Left = 0
         Top = 0
-        Width = 475
+        Width = 463
         Height = 367
         Caption = '[Environement] - General'
         DesignSize = (
-          475
+          463
           367)
         object JvGroupHeader1: TJvGroupHeader
           Left = 0
           Top = 0
-          Width = 475
+          Width = 463
           Height = 17
           Align = alTop
-          Caption = 'Settings'
+          Caption = 'General'
           Font.Charset = DEFAULT_CHARSET
           Font.Color = clWindowText
           Font.Height = -11
@@ -204,25 +206,19 @@ object frmEditorSettings: TfrmEditorSettings
           Height = 13
           Caption = '-'
         end
-        object JvGroupHeader8: TJvGroupHeader
-          Left = 0
-          Top = 364
-          Width = 475
-          Height = 3
-          Align = alBottom
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = []
-          ParentFont = False
-        end
         object Label17: TLabel
           Left = 24
           Top = 144
           Width = 85
           Height = 13
           Caption = 'Temporary Folder:'
+        end
+        object Bevel2: TBevel
+          Left = 0
+          Top = 365
+          Width = 463
+          Height = 2
+          Align = alBottom
         end
         object chkFileAssociate: TCheckBox
           Left = 24
@@ -330,7 +326,7 @@ object frmEditorSettings: TfrmEditorSettings
         object txtTempFolder: TJvDotNetDirectoryEdit
           Left = 24
           Top = 160
-          Width = 424
+          Width = 412
           Height = 21
           AcceptFiles = False
           DialogKind = dkWin32
@@ -343,7 +339,7 @@ object frmEditorSettings: TfrmEditorSettings
       object JvStandardPage2: TJvStandardPage
         Left = 0
         Top = 0
-        Width = 475
+        Width = 463
         Height = 367
         Caption = '[Text Editor] - General'
         object Label1: TLabel
@@ -362,8 +358,22 @@ object frmEditorSettings: TfrmEditorSettings
         end
         object JvGroupHeader2: TJvGroupHeader
           Left = 0
-          Top = 0
+          Top = 185
           Width = 475
+          Height = 17
+          Align = alCustom
+          Caption = 'Tabs & Undos'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
+        end
+        object JvGroupHeader16: TJvGroupHeader
+          Left = 0
+          Top = 0
+          Width = 463
           Height = 17
           Align = alTop
           Caption = 'Settings'
@@ -374,18 +384,12 @@ object frmEditorSettings: TfrmEditorSettings
           Font.Style = []
           ParentFont = False
         end
-        object JvGroupHeader9: TJvGroupHeader
+        object Bevel1: TBevel
           Left = 0
-          Top = 364
-          Width = 475
-          Height = 3
+          Top = 365
+          Width = 463
+          Height = 2
           Align = alBottom
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = []
-          ParentFont = False
         end
         object txtTabWidth: TEdit
           Left = 160
@@ -505,11 +509,11 @@ object frmEditorSettings: TfrmEditorSettings
       object JvStandardPage3: TJvStandardPage
         Left = 0
         Top = 0
-        Width = 475
+        Width = 463
         Height = 367
         Caption = '[Environment] - Search Paths'
         DesignSize = (
-          475
+          463
           367)
         object Label10: TLabel
           Left = 25
@@ -521,10 +525,10 @@ object frmEditorSettings: TfrmEditorSettings
         object JvGroupHeader3: TJvGroupHeader
           Left = 0
           Top = 0
-          Width = 475
+          Width = 463
           Height = 17
           Align = alTop
-          Caption = 'Settings'
+          Caption = 'Search Path'
           Font.Charset = DEFAULT_CHARSET
           Font.Color = clWindowText
           Font.Height = -11
@@ -532,18 +536,12 @@ object frmEditorSettings: TfrmEditorSettings
           Font.Style = []
           ParentFont = False
         end
-        object JvGroupHeader10: TJvGroupHeader
+        object Bevel3: TBevel
           Left = 0
-          Top = 364
-          Width = 475
-          Height = 3
+          Top = 365
+          Width = 463
+          Height = 2
           Align = alBottom
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = []
-          ParentFont = False
         end
         object txtLibraries: TEdit
           Left = 24
@@ -553,7 +551,7 @@ object frmEditorSettings: TfrmEditorSettings
           TabOrder = 0
         end
         object btnBrowseLibraries: TButton
-          Left = 435
+          Left = 423
           Top = 46
           Width = 20
           Height = 17
@@ -569,29 +567,16 @@ object frmEditorSettings: TfrmEditorSettings
       object JvStandardPage4: TJvStandardPage
         Left = 0
         Top = 0
-        Width = 475
+        Width = 463
         Height = 367
         Caption = '[Environment] - Web Browser'
         object JvGroupHeader4: TJvGroupHeader
           Left = 0
           Top = 0
-          Width = 475
+          Width = 463
           Height = 17
           Align = alTop
-          Caption = 'Settings'
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = []
-          ParentFont = False
-        end
-        object JvGroupHeader11: TJvGroupHeader
-          Left = 0
-          Top = 364
-          Width = 475
-          Height = 3
-          Align = alBottom
+          Caption = 'Browser Settings'
           Font.Charset = DEFAULT_CHARSET
           Font.Color = clWindowText
           Font.Height = -11
@@ -602,9 +587,9 @@ object frmEditorSettings: TfrmEditorSettings
         object Label15: TLabel
           Left = 24
           Top = 152
-          Width = 116
+          Width = 118
           Height = 13
-          Caption = 'Delete History older than'
+          Caption = 'Delete History Older than'
         end
         object Label16: TLabel
           Left = 189
@@ -612,6 +597,13 @@ object frmEditorSettings: TfrmEditorSettings
           Width = 25
           Height = 13
           Caption = 'days.'
+        end
+        object Bevel4: TBevel
+          Left = 0
+          Top = 365
+          Width = 463
+          Height = 2
+          Align = alBottom
         end
         object txtHomePage: TEdit
           Left = 24
@@ -646,7 +638,7 @@ object frmEditorSettings: TfrmEditorSettings
           OnClick = chkSearchPageClick
         end
         object jvspinHistoryMaxAge: TJvSpinEdit
-          Left = 144
+          Left = 146
           Top = 148
           Width = 41
           Height = 21
@@ -659,7 +651,7 @@ object frmEditorSettings: TfrmEditorSettings
       object JvStandardPage5: TJvStandardPage
         Left = 0
         Top = 0
-        Width = 475
+        Width = 463
         Height = 367
         Caption = '[Display] - Gutter'
         object Label4: TLabel
@@ -679,10 +671,10 @@ object frmEditorSettings: TfrmEditorSettings
         object JvGroupHeader5: TJvGroupHeader
           Left = 0
           Top = 0
-          Width = 475
+          Width = 463
           Height = 17
           Align = alTop
-          Caption = 'Settings'
+          Caption = 'Gutter Settings'
           Font.Charset = DEFAULT_CHARSET
           Font.Color = clWindowText
           Font.Height = -11
@@ -690,18 +682,12 @@ object frmEditorSettings: TfrmEditorSettings
           Font.Style = []
           ParentFont = False
         end
-        object JvGroupHeader12: TJvGroupHeader
+        object Bevel5: TBevel
           Left = 0
-          Top = 364
-          Width = 475
-          Height = 3
+          Top = 365
+          Width = 463
+          Height = 2
           Align = alBottom
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = []
-          ParentFont = False
         end
         object chkShowGutter: TCheckBox
           Left = 24
@@ -756,7 +742,7 @@ object frmEditorSettings: TfrmEditorSettings
       object JvStandardPage6: TJvStandardPage
         Left = 0
         Top = 0
-        Width = 475
+        Width = 463
         Height = 367
         Caption = '[Text Editor] - Font'
         object Label5: TLabel
@@ -776,10 +762,10 @@ object frmEditorSettings: TfrmEditorSettings
         object JvGroupHeader6: TJvGroupHeader
           Left = 0
           Top = 0
-          Width = 475
+          Width = 463
           Height = 17
           Align = alTop
-          Caption = 'Settings'
+          Caption = 'Font Styles'
           Font.Charset = DEFAULT_CHARSET
           Font.Color = clWindowText
           Font.Height = -11
@@ -787,18 +773,12 @@ object frmEditorSettings: TfrmEditorSettings
           Font.Style = []
           ParentFont = False
         end
-        object JvGroupHeader13: TJvGroupHeader
+        object Bevel6: TBevel
           Left = 0
-          Top = 364
-          Width = 475
-          Height = 3
+          Top = 365
+          Width = 463
+          Height = 2
           Align = alBottom
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = []
-          ParentFont = False
         end
         object pnlPreview: TPanel
           Left = 24
@@ -847,7 +827,7 @@ object frmEditorSettings: TfrmEditorSettings
       object JvStandardPage7: TJvStandardPage
         Left = 0
         Top = 0
-        Width = 475
+        Width = 463
         Height = 367
         Caption = '[Display] - Syntax Highlighting'
         object Label7: TLabel
@@ -874,10 +854,10 @@ object frmEditorSettings: TfrmEditorSettings
         object JvGroupHeader7: TJvGroupHeader
           Left = 0
           Top = 0
-          Width = 475
+          Width = 463
           Height = 17
           Align = alTop
-          Caption = 'Settings'
+          Caption = 'Syntax Highlighting'
           Font.Charset = DEFAULT_CHARSET
           Font.Color = clWindowText
           Font.Height = -11
@@ -892,18 +872,12 @@ object frmEditorSettings: TfrmEditorSettings
           Height = 13
           Caption = 'Color Set:'
         end
-        object JvGroupHeader14: TJvGroupHeader
+        object Bevel7: TBevel
           Left = 0
-          Top = 364
-          Width = 475
-          Height = 3
+          Top = 365
+          Width = 463
+          Height = 2
           Align = alBottom
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = []
-          ParentFont = False
         end
         object synSample: TSynEdit
           Left = 24
@@ -1125,6 +1099,139 @@ object frmEditorSettings: TfrmEditorSettings
             00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF}
         end
       end
+      object JvStandardPage8: TJvStandardPage
+        Left = 0
+        Top = 0
+        Width = 463
+        Height = 367
+        Caption = '[Debugger] - General'
+        object JvGroupHeader15: TJvGroupHeader
+          Left = 0
+          Top = 0
+          Width = 463
+          Height = 17
+          Align = alTop
+          Caption = 'Automatic Loading of Libraries'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
+        end
+        object Label18: TLabel
+          Left = 16
+          Top = 144
+          Width = 161
+          Height = 13
+          Caption = 'Maximum Printable Size of Tables:'
+        end
+        object Bevel8: TBevel
+          Left = 0
+          Top = 365
+          Width = 463
+          Height = 2
+          Align = alBottom
+        end
+        object JvGroupHeader8: TJvGroupHeader
+          Left = 0
+          Top = 120
+          Width = 463
+          Height = 17
+          Align = alCustom
+          Caption = 'Lua Tables'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
+        end
+        object Label19: TLabel
+          Left = 16
+          Top = 192
+          Width = 133
+          Height = 13
+          Caption = 'Maximum Sub Tables Level:'
+        end
+        object jvspinMaxTablesSize: TJvSpinEdit
+          Left = 16
+          Top = 158
+          Width = 201
+          Height = 21
+          MaxValue = 65536.000000000000000000
+          MinValue = 256.000000000000000000
+          Value = 16384.000000000000000000
+          TabOrder = 0
+        end
+        object chkAutoLoadLibBasic: TCheckBox
+          Left = 16
+          Top = 24
+          Width = 185
+          Height = 17
+          Caption = 'Basic Library (Recommended)'
+          TabOrder = 1
+        end
+        object chkAutoLoadLibMath: TCheckBox
+          Left = 224
+          Top = 24
+          Width = 177
+          Height = 17
+          Caption = 'Mathematical Library'
+          TabOrder = 2
+        end
+        object chkAutoLoadLibString: TCheckBox
+          Left = 16
+          Top = 72
+          Width = 185
+          Height = 17
+          Caption = 'String Library'
+          TabOrder = 3
+        end
+        object chkAutoLoadLibTable: TCheckBox
+          Left = 16
+          Top = 48
+          Width = 201
+          Height = 17
+          Caption = 'Table Library'
+          TabOrder = 4
+        end
+        object chkAutoLoadLibOSIO: TCheckBox
+          Left = 224
+          Top = 48
+          Width = 201
+          Height = 17
+          Caption = 'I/O and Operating System Library'
+          TabOrder = 5
+        end
+        object chkAutoLoadLibDebug: TCheckBox
+          Left = 224
+          Top = 72
+          Width = 193
+          Height = 17
+          Caption = 'Debug Library'
+          TabOrder = 6
+        end
+        object jvspinMaxSubTablesLevel: TJvSpinEdit
+          Left = 16
+          Top = 206
+          Width = 201
+          Height = 21
+          MaxValue = 999.000000000000000000
+          MinValue = 1.000000000000000000
+          Value = 999.000000000000000000
+          TabOrder = 7
+        end
+      end
+    end
+    object Panel3: TPanel
+      Left = 157
+      Top = 0
+      Width = 12
+      Height = 367
+      Align = alLeft
+      BevelOuter = bvNone
+      TabOrder = 2
     end
   end
   object imlEditorSettings: TImageList

@@ -81,7 +81,6 @@ object frmRings: TfrmRings
         ParentColor = True
         TopButtonIndex = 0
       end>
-    ActivePageIndex = 2
     ThemedBackground = False
     OnCustomDraw = jvRingsCustomDraw
     Font.Charset = DEFAULT_CHARSET
@@ -93,12 +92,8 @@ object frmRings: TfrmRings
     TabOrder = 0
   end
   object JvDockClient1: TJvDockClient
-    LRDockWidth = 100
-    TBDockHeight = 100
     DirectDrag = False
-    ShowHint = True
-    EnableCloseButton = True
-    DockStyle = frmMain.jvDockVSNet
+    DockStyle = frmLuaEditMain.jvDockVSNet
     Left = 16
     Top = 112
   end

@@ -84,7 +84,7 @@ object frmProfiler: TfrmProfiler
   end
   object JvDockClient1: TJvDockClient
     DirectDrag = False
-    DockStyle = frmMain.jvDockVSNet
+    DockStyle = frmLuaEditMain.jvDockVSNet
     Left = 16
     Top = 32
   end

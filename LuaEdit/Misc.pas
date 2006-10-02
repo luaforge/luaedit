@@ -1,3 +1,10 @@
+////////////////////////////////////////////////////////////////
+// IMPORTANT NOTICE:
+//  Do not include ShareMem unit in the project. Faulting to
+//  such thing would cause an EInvalidPointer error when
+//  LuaEdit will close.
+////////////////////////////////////////////////////////////////
+
 unit Misc;
 
 interface
@@ -5,11 +12,13 @@ interface
 uses
   Registry, SysUtils, SynEdit, SynEditTypes, SynEditMiscClasses, Graphics,
   SynCompletionProposal, Variants, Classes, Windows, Messages, Lua, LuaLib,
-  LauxLib, LuaUtils, IniFiles, Forms, Dialogs, Controls, WinSock;
+  LauxLib, LuaUtils, LuaSyntax, IniFiles, Forms, Dialogs, Controls, WinSock,
+  StdCtrls, JvTabBar;
 
 const
-  otLuaProject  = 1;
-  otLuaUnit     = 2;
+  LUAEDIT_HINT_MSG    = 1;
+  LUAEDIT_WARNING_MSG = 2;
+  LUAEDIT_ERROR_MSG   = 3;
 
   LUA_DBGSTEPOVER = 1;
   LUA_DBGSTEPINTO = 2;
@@ -17,26 +26,36 @@ const
   LUA_DBGPLAY     = 4;
   LUA_DBGPAUSE    = 5;
 
-  HIGHLIGHT_STACK = 0;
-  HIGHLIGHT_ERROR = 1;
+  HIGHLIGHT_STACK     = 0;
+  HIGHLIGHT_ERROR     = 1;
   HIGHLIGHT_BREAKLINE = 2;
+  HIGHLIGHT_SELECT    = 3;
 
   BKPT_DISABLED = 0;
   BKPT_ENABLED  = 1;
 
-  SIF_ACTPROJECT = 0;
-  SIF_OPENED = 1;
-  SIF_DIRECTORY = 2;
+  SIF_ACTPROJECT  = 0;
+  SIF_OPENED      = 1;
+  SIF_DIRECTORY   = 2;
 
   JVPAGE_RING_FILES       = 0;
   JVPAGE_RING_CLIPBOARD   = 1;
   JVPAGE_RING_BRWHISTORY  = 2;
 
-  HOOK_MASK    = LUA_MASKCALL or LUA_MASKRET or LUA_MASKLINE;
-  PRINT_SIZE   = 2048;
-  ArgIdent     = 'arg';
+  RDBG_EMPTY = '@@N\A@@';
+
+  HOOK_MASK     = LUA_MASKCALL or LUA_MASKRET or LUA_MASKLINE;
+  PRINT_SIZE    = 16384;
+  SUB_TABLE_MAX = 99;
+  ArgIdent      = 'arg';
 
 type
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Copy data type
+  //////////////////////////////////////////////////////////////////////////////
+  TCopyDataType = (cdtAnsiString = 0, cdtWideString = 1, cdtBinary = 2);
+
   //////////////////////////////////////////////////////////////////////////////
   // Miscellaneous forwards and definitions
   //////////////////////////////////////////////////////////////////////////////
@@ -47,7 +66,7 @@ type
   TInitializer = function(L: PLua_State): Integer; stdcall;
   PTInitializer = ^TInitializer;
 
-  TLuaProject = class;
+  TLuaEditProject = class;
 
   //////////////////////////////////////////////////////////////////////////////
   // Remote debugging function templates (for "plugin" oriented logic)
@@ -170,67 +189,147 @@ type
     iStackMarker: Integer;
   public
     constructor Create;
-    destructor Destroy; override;
+    destructor  Destroy; override;
     
-    function IsBreakPointLine(iLine: Integer): Boolean;
-    function GetBreakpointStatus(iLine: Integer): Integer;
+    function  IsBreakPointLine(iLine: Integer): Boolean;
+    function  GetBreakpointStatus(iLine: Integer): Integer;
     procedure AddBreakpointAtLine(iLine: Integer);
     procedure EnableDisableBreakpointAtLine(iLine: Integer);
-    function GetBreakpointAtLine(iLine: Integer): TBreakpoint;
+    function  GetBreakpointAtLine(iLine: Integer): TBreakpoint;
     procedure RemoveBreakpointAtLine(iLine: Integer);
-    function GetLineCondition(iLine: Integer): String;
+    function  GetLineCondition(iLine: Integer): String;
   end;
 
   //////////////////////////////////////////////////////////////////////////////
-  // Editor's class
+  // Editor's classes
   //////////////////////////////////////////////////////////////////////////////
+  {
+      ** CLASS DIAGRAM - Indentation is relevant of inheritance **
+
+            TLuaEditFile .................................... Base class
+             |
+             |-TLuaEditGUIForm............................... GUI form file (linked with a lua file)
+             |
+             |-TLuaEditBasicTextFile ........................ Basic text file
+             |  |
+             |  |-TLuaEditDebugFile ......................... Basic text file which is debuggable
+             |     |
+             |     |-TLuaEditUnit ........................... Lua script file
+             |     |
+             |     |-TLuaEditMacro .......................... Lua script file used for user customized interface in LuaEdit
+             |
+             |-TLuaEditProject .............................. Lua project which contains other files
+  }
+
+  // Object type enumeration
+  TLuaEditFileType = (otTextFile, otLuaEditUnit, otLuaEditProject, otLuaEditMacro, otLuaEditForm);
+  TLuaEditDebugFilesTypeSet = set of TLuaEditFileType;
+  TLuaEditTextFilesTypeSet = set of TLuaEditFileType;
 
   {Base class for all major file classes}
-  {TLuaFile = class
-
-  end;}
-
-  {Class containing informations and functions about lua script files}
-  TLuaUnit = class
-    sName:            String;
-    sUnitPath:        String;
-    LastTimeModified: TDateTime;
-    IsReadOnly:       Boolean;
-    IsNew:            Boolean;
-    HasChanged:       Boolean;
-    IsLoaded:         Boolean;
-    synUnit:          TSynEdit;
-    LastEditedLine:   Integer;
-    PrevLineNumber:   Integer;
-    pPrjOwner:        TLuaProject;
-    lstFunctions:     TStringList;
-    synCompletion:    TSynCompletionProposal;
-    synParams:        TSynCompletionProposal;
-    pDebugPlugin:     TDebugSupportPlugin;
-    pDebugInfos:      TLineDebugInfos;
+  TLuaEditFile = class
+    FOTFileType:        TLuaEditFileType;
+    FLastTimeModified:  TDateTime;
+    FName:              String;
+    FPath:              String;
+    FIsReadOnly:        Boolean;
+    FIsNew:             Boolean;
+    FHasChanged:        Boolean;
+    FIsLoaded:          Boolean;
+    FPrjOwner:          TLuaEditProject;
   public
-    constructor Create(sPath: String);
-    destructor  Destroy; override;
-
-    function SaveUnit(sPath: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
-    function SaveUnitInc(sPath: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
-    procedure SaveBreakpoints();
-    procedure GetBreakpoints();
+    constructor Create(Path: String; otType: TLuaEditFileType = otTextFile);
+  published
+    property FileType: TLuaEditFileType read FOTFileType write FOTFileType;
+    property LastTimeModified: TDateTime read FLastTimeModified write FLastTimeModified;
+    property Name: String read FName write FName;
+    property Path: String read FPath write FPath;
+    property IsReadOnly: Boolean read FIsReadOnly write FIsReadOnly;
+    property IsNew: Boolean read FIsNew write FIsNew;
+    property HasChanged: Boolean read FHasChanged write FHasChanged;
+    property IsLoaded: Boolean read FIsLoaded write FIsLoaded;
+    property PrjOwner: TLuaEditProject read FPrjOwner write FPrjOwner;
   end;
 
-  {Class containing informations and functions about project files}
-  TLuaProject = class
-    sPrjName:           String;
-    sPrjPath:           String;
+  // Forward declaration
+  TLuaEditDebugFile = class;
+
+  TLuaEditGUIForm = class(TLuaEditFile)
+    FGUIDesignerForm: TForm;
+    FLinkedDebugFile: TLuaEditDebugFile;
+  public
+    constructor Create(Path: String; otType: TLuaEditFileType = otLuaEditForm);
+    destructor Destroy; override;
+  published
+    property GUIDesignerForm: TForm read FGUIDesignerForm write FGUIDesignerForm;
+    property LinkedDebugFile: TLuaEditDebugFile read FLinkedDebugFile write FLinkedDebugFile;
+  end;
+
+  TLuaEditBasicTextFile = class(TLuaEditFile)
+    FLastEditedLine:   Integer;
+    FSynUnit:          TSynEdit;
+    FAssociatedTab:    TJvTabBarItem;
+  public
+    constructor Create(Path: String; otType: TLuaEditFileType = otTextFile);
+    destructor Destroy; override;
+
+    function  SaveUnit(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; virtual;
+    function  SaveUnitInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; virtual;
+  published
+    property LastEditedLine:   Integer read FLastEditedLine write FLastEditedLine;
+    property SynUnit:          TSynEdit read FSynUnit write FSynUnit;
+    property AssociatedTab:    TJvTabBarItem read FAssociatedTab write FAssociatedTab;
+  end;
+
+  TLuaEditDebugFile = class(TLuaEditBasicTextFile)
+    FLinkedGUIForm:    TLuaEditGUIForm;
+    FSynCompletion:    TSynCompletionProposal;
+    FSynParams:        TSynCompletionProposal;
+    FDebugPlugin:      TDebugSupportPlugin;
+    FDebugInfos:       TLineDebugInfos;
+    FPrevLineNumber:   Integer;
+  public
+    constructor Create(Path: String; otType: TLuaEditFileType = otTextFile);
+    destructor Destroy; override;
+
+    function  SaveUnit(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; override;
+    function  SaveUnitInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; override;
+    procedure SaveBreakpoints();
+    procedure GetBreakpoints();
+  published
+    property LinkedGUIForm:   TLuaEditGUIForm read FLinkedGUIForm write FLinkedGUIForm;
+    property SynCompletion:   TSynCompletionProposal read FSynCompletion write FSynCompletion;
+    property SynParams:       TSynCompletionProposal read FSynParams write FSynParams;
+    property DebugPlugin:     TDebugSupportPlugin read FDebugPlugin write FDebugPlugin;
+    property DebugInfos:      TLineDebugInfos read FDebugInfos write FDebugInfos;
+    property PrevLineNumber:  Integer read FPrevLineNumber write FPrevLineNumber;
+  end;
+
+  {Class containing informations and functions about lua script files}
+  TLuaEditUnit = class(TLuaEditDebugFile)
+    lstFunctions:     TStringList;
+  public
+    constructor Create(Path: String; otType: TLuaEditFileType = otLuaEditUnit);
+    destructor  Destroy; override;
+  end;
+
+  {Class containing informations and functions about luaedit macro files}
+  TLuaEditMacro = class(TLuaEditDebugFile)
+    lstFunctions:     TStringList;
+  public
+    constructor Create(Path: String; otType: TLuaEditFileType = otLuaEditMacro);
+    destructor  Destroy; override;
+  end;
+
+  {Class containing informations and functions about lua project files}
+  TLuaEditProject = class(TLuaEditFile)
     sInitializer:       String;
     sRemoteIP:          String;
     sRemoteDirectory:   String;
     sRuntimeDirectory:  String;
     sTargetLuaUnit:     String;
-    LastTimeModified:   TDateTime;
-    IsReadOnly:         Boolean;
-    IsNew:              Boolean;
-    HasChanged:         Boolean;
+    sCompileDirectory:  String;
+    sCompileExtension:  String;
     AutoIncRevNumber:   Boolean;
     iVersionMajor:      Integer;
     iVersionMinor:      Integer;
@@ -239,21 +338,32 @@ type
     iRemotePort:        Integer;
     iConnectTimeOut:    Integer;
     lstUnits:           TList;
-    pTargetLuaUnit:     TLuaUnit;
+    pTargetLuaUnit:     TLuaEditUnit;
   public
-    constructor Create(sPath: String);
+    constructor Create(Path: String; otType: TLuaEditFileType = otLuaEditProject);
     destructor  Destroy; override;
 
-    procedure GetProjectFromDisk(sPath: String);
-    function SaveProject(sPath: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
-    function SaveProjectInc(sPath: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
+    procedure GetProjectFromDisk(Path: String);
+    function  SaveProject(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
+    function  SaveProjectInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
     procedure RealoadProject();
   end;
+
+// LuaEditSys.dll functions...
+function  GetFileLastTimeModified(const sFileName: PChar): TDateTime; cdecl; external 'LuaEditSys.dll';
+function  GetFileReadOnlyAttr(const sFileName: PChar): Boolean; cdecl; external 'LuaEditSys.dll';
+function  GetFileSizeStr(Size: Cardinal): PChar; cdecl; external 'LuaEditSys.dll';
+function  GetFileVersion(const FileName: PChar): PChar; cdecl; external 'LuaEditSys.dll';
+function  GetOSInfo: PChar; cdecl; external 'LuaEditSys.dll';
+function  SetPrivilege(sPrivilegeName : PChar; bEnabled : boolean): boolean; cdecl; external 'LuaEditSys.dll';
+procedure ToggleFileReadOnlyAttr(const sFileName: PChar); cdecl; external 'LuaEditSys.dll';
+function  WinExit(iFlags: integer): Boolean; cdecl; external 'LuaEditSys.dll';
+function  BrowseURL(URL: PChar): Boolean; cdecl; external 'LuaEditSys.dll';
   
 implementation
 
 uses
-  Main, Breakpoints, ReadOnlyMsgBox, ProjectTree;
+  Main, Breakpoints, ReadOnlyMsgBox, ProjectTree, GUIDesigner;
 
 ///////////////////////////////////////////////////////////////////
 // TAdvanceRegistry class
@@ -511,7 +621,7 @@ begin
 end;
 
 ///////////////////////////////////////////////////////////////////
-//TDebugSupportPlugin class
+// TDebugSupportPlugin class
 ///////////////////////////////////////////////////////////////////
 procedure TDebugSupportPlugin.AfterPaint(ACanvas: TCanvas; const AClip: TRect; FirstLine, LastLine: integer);
 begin
@@ -522,9 +632,9 @@ procedure TDebugSupportPlugin.PaintDebugGlyphs(ACanvas: TCanvas; AClip: TRect; F
 var
   LH, X, Y: integer;
   ImgIndex: integer;
-  pLuaUnit: TLuaUnit;
+  pLuaUnit: TLuaEditUnit;
 begin
-  pLuaUnit := TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data);
+  pLuaUnit := TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data);
 
   FirstLine := pLuaUnit.synUnit.RowToLine(FirstLine);
   LastLine := pLuaUnit.synUnit.RowToLine(LastLine);
@@ -533,29 +643,29 @@ begin
   while FirstLine <= LastLine do
   begin
     ImgIndex := -1;
-    Y := (LH - frmMain.imlActions.Height) div 2 + LH * (pLuaUnit.synUnit.LineToRow(FirstLine) - pLuaUnit.synUnit.TopLine);
+    Y := (LH - frmLuaEditMain.imlActions.Height) div 2 + LH * (pLuaUnit.synUnit.LineToRow(FirstLine) - pLuaUnit.synUnit.TopLine);
 
-    if pLuaUnit.pDebugInfos.IsBreakPointLine(FirstLine) then
+    if pLuaUnit.DebugInfos.IsBreakPointLine(FirstLine) then
     begin
-      if pLuaUnit.pDebugInfos.GetBreakpointStatus(FirstLine) = BKPT_ENABLED then
+      if pLuaUnit.DebugInfos.GetBreakpointStatus(FirstLine) = BKPT_ENABLED then
         ImgIndex := 27
       else
         ImgIndex := 28;
     end;
 
-    if TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).pDebugInfos.iCurrentLineDebug = FirstLine then
+    if TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).DebugInfos.iCurrentLineDebug = FirstLine then
       ImgIndex := 29;
 
-    if ((pLuaUnit.pDebugInfos.IsBreakPointLine(FirstLine)) and (TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).pDebugInfos.iCurrentLineDebug = FirstLine)) then
+    if ((pLuaUnit.DebugInfos.IsBreakPointLine(FirstLine)) and (TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).DebugInfos.iCurrentLineDebug = FirstLine)) then
     begin
-      if pLuaUnit.pDebugInfos.GetBreakpointStatus(FirstLine) = BKPT_ENABLED then
+      if pLuaUnit.DebugInfos.GetBreakpointStatus(FirstLine) = BKPT_ENABLED then
         ImgIndex := 30
       else
         ImgIndex := 43;
     end;
 
     if ImgIndex > 0 then
-      frmMain.imlActions.Draw(ACanvas, X, Y, ImgIndex);
+      frmLuaEditMain.imlActions.Draw(ACanvas, X, Y, ImgIndex);
 
     Inc(FirstLine);
   end;
@@ -563,16 +673,16 @@ end;
 
 procedure TDebugSupportPlugin.LinesInserted(FirstLine, Count: integer);
 var
-  pLuaUnit: TLuaUnit;
+  pLuaUnit: TLuaEditUnit;
   x: Integer;
 begin
-  pLuaUnit := TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data);
+  pLuaUnit := TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data);
 
-  for x := 0 to pLuaUnit.pDebugInfos.lstBreakpoint.Count - 1 do
+  for x := 0 to pLuaUnit.DebugInfos.lstBreakpoint.Count - 1 do
   begin
-    if TBreakpoint(pLuaUnit.pDebugInfos.lstBreakpoint.Items[x]).iLine >= FirstLine then
+    if TBreakpoint(pLuaUnit.DebugInfos.lstBreakpoint.Items[x]).iLine >= FirstLine then
     begin
-      TBreakpoint(pLuaUnit.pDebugInfos.lstBreakpoint.Items[x]).iLine := TBreakpoint(pLuaUnit.pDebugInfos.lstBreakpoint.Items[x]).iLine + Count;
+      TBreakpoint(pLuaUnit.DebugInfos.lstBreakpoint.Items[x]).iLine := TBreakpoint(pLuaUnit.DebugInfos.lstBreakpoint.Items[x]).iLine + Count;
     end;
   end;
 
@@ -582,16 +692,16 @@ end;
 
 procedure TDebugSupportPlugin.LinesDeleted(FirstLine, Count: integer);
 var
-  pLuaUnit: TLuaUnit;
+  pLuaUnit: TLuaEditUnit;
   x: Integer;
 begin
-  pLuaUnit := TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data);
+  pLuaUnit := TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data);
 
-  for x := 0 to pLuaUnit.pDebugInfos.lstBreakpoint.Count - 1 do
+  for x := 0 to pLuaUnit.DebugInfos.lstBreakpoint.Count - 1 do
   begin
-    if TBreakpoint(pLuaUnit.pDebugInfos.lstBreakpoint.Items[x]).iLine >= FirstLine then
+    if TBreakpoint(pLuaUnit.DebugInfos.lstBreakpoint.Items[x]).iLine >= FirstLine then
     begin
-      TBreakpoint(pLuaUnit.pDebugInfos.lstBreakpoint.Items[x]).iLine := TBreakpoint(pLuaUnit.pDebugInfos.lstBreakpoint.Items[x]).iLine - Count; 
+      TBreakpoint(pLuaUnit.DebugInfos.lstBreakpoint.Items[x]).iLine := TBreakpoint(pLuaUnit.DebugInfos.lstBreakpoint.Items[x]).iLine - Count;
     end;
   end;
 
@@ -600,10 +710,477 @@ begin
 end;
 
 ///////////////////////////////////////////////////////////////////
-//TLuaProject class
+// TLuaEditFile class
 ///////////////////////////////////////////////////////////////////
-constructor TLuaProject.Create(sPath: String);
+
+constructor TLuaEditFile.Create(Path: String; otType: TLuaEditFileType);
 begin
+  FOTFileType := otType;
+  FPath := Path;
+
+  // Get Last Time accessed and readonly state
+  if ((Path <> '') and FileExists(Path)) then
+  begin
+    FLastTimeModified := GetFileLastTimeModified(PChar(Path));
+    FIsReadOnly := GetFileReadOnlyAttr(PChar(Path));
+  end
+  else
+  begin
+    FLastTimeModified := Now;
+    FIsReadOnly := False;
+  end;
+end;
+
+///////////////////////////////////////////////////////////////////
+// TLuaEditGUIForm class
+///////////////////////////////////////////////////////////////////
+
+constructor TLuaEditGUIForm.Create(Path: String; otType: TLuaEditFileType);
+begin
+  inherited Create(Path, otType);
+
+  FLinkedDebugFile := nil;
+  FGUIDesignerForm := TGUIForm1.Create(nil);
+  TGUIForm1(FGUIDesignerForm).pLuaEditGUIForm := Self;
+end;
+
+destructor TLuaEditGUIForm.Destroy;
+begin
+  inherited Destroy;
+
+  if Assigned(FGUIDesignerForm) then
+    FGUIDesignerForm.Free;
+end;
+
+///////////////////////////////////////////////////////////////////
+// TLuaEditBasicTextFile class
+///////////////////////////////////////////////////////////////////
+
+constructor TLuaEditBasicTextFile.Create(Path: String; otType: TLuaEditFileType);
+begin
+  inherited Create(Path, otType);
+
+  FLastEditedLine := -1;
+  FAssociatedTab := nil;
+  FName := ExtractFileName(Path);
+
+  // Set some properties
+  FSynUnit := TSynEdit.Create(frmLuaEditMain.pnlMain);
+  FSynUnit.Parent := frmLuaEditMain.pnlMain;
+  FSynUnit.Visible := False;
+  FSynUnit.Align := alClient;
+  FSynUnit.MaxScrollWidth := 10000;
+  FSynUnit.WantTabs := True;
+  FSynUnit.ShowHint := True;
+  FSynUnit.PopupMenu := frmLuaEditMain.ppmEditor;
+  FSynUnit.BookMarkOptions.LeftMargin := 15;
+
+  // Set event handlers
+  FSynUnit.OnChange := frmLuaEditMain.synEditChange;
+  FSynUnit.OnScroll := frmLuaEditMain.synEditScroll;
+  FSynUnit.OnDblClick := frmLuaEditMain.synEditDblClick;
+  FSynUnit.OnMouseMove := frmLuaEditMain.synEditMouseMove;
+  FSynUnit.OnMouseCursor := frmLuaEditMain.synEditMouseCursor;
+  FSynUnit.OnReplaceText := frmLuaEditMain.SynEditReplaceText;
+  FSynUnit.OnKeyUp := frmLuaEditMain.synEditKeyUp;
+  FSynUnit.OnClick := frmLuaEditMain.synEditClick;
+  FSynUnit.OnSpecialLineColors := frmLuaEditMain.synEditSpecialLineColors;
+  FSynUnit.OnGutterClick := frmLuaEditMain.synEditGutterClick;
+
+  // Initialize lua highlighter engine
+  if otType in LuaEditDebugFilesTypeSet then
+    FSynUnit.Highlighter := TSynLuaSyn.Create(nil);
+
+  // Load content in the synedit control if required
+  if ((not IsNew) and FileExists(Path)) then
+    SynUnit.Lines.LoadFromFile(Path);
+end;
+
+destructor TLuaEditBasicTextFile.Destroy;
+begin
+  inherited Destroy;
+
+  FSynUnit.Free;
+end;
+
+function TLuaEditBasicTextFile.SaveUnitInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
+var
+  xPos, IncValue, iAnswer, TempIncValue: Integer;
+  bResult: Boolean;
+  pMsgBox: TfrmReadOnlyMsgBox;
+begin
+  frmLuaEditMain.jvchnNotifier.Active := False;
+  Result := True;
+
+  // save only if the file is opened in the tab...
+  // if not, there is no way that the file was modified so no needs to save
+  if Assigned(Self.AssociatedTab) then
+  begin
+    // Popup a open dialog according to parameters and the state of the file
+    if ((IsNew and not bNoDialog) or (bForceDialog)) then
+    begin
+      frmLuaEditMain.sdlgSaveAsUnit.FileName := ExtractFileName(FName);
+
+      if ExtractFileExt(FPath) = '.lua' then
+        frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 1
+      else if ExtractFileExt(FPath) = '.lmc' then
+        frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 2
+      else if ExtractFileExt(FPath) = '.txt' then
+        frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 3
+      else
+        frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 4;
+
+      if frmLuaEditMain.sdlgSaveAsUnit.Execute then
+      begin
+        Path := frmLuaEditMain.sdlgSaveAsUnit.FileName;
+
+        if IsNew then
+          frmLuaEditMain.MonitorFileToRecent(Path);
+      end
+      else
+      begin
+        // Return false because action was cancel and quit function
+        Result := False;
+        Exit;
+      end;
+    end;
+
+    // Getting currently assigned number
+    IncValue := -1;  // For future testing
+    xPos := Length(ExtractFileExt(Path)) + 1;  // Assign initial try position
+    bResult := True;  // For a first try
+    while bResult do
+    begin
+      bResult := TryStrToInt(Copy(Path, Length(Path) - xPos + 1, xPos - Length(ExtractFileExt(Path))), TempIncValue);
+      if bResult then
+      begin
+        IncValue := TempIncValue;
+        Inc(XPos);
+      end;
+    end;
+
+    if IncValue = -1 then
+      IncValue := 1 // Give an initial value
+    else
+      Inc(IncValue);  // Increment actual value
+
+    // Build the new name
+    Path := Copy(Self.Path, 1, Length(Self.Path) - xPos + 1) + IntToStr(IncValue) + ExtractFileExt(Self.Path);
+
+    // Check if file is read only first
+    while (GetFileReadOnlyAttr(PChar(Path)) and (FileExists(Path))) do
+    begin
+      pMsgBox := TfrmReadOnlyMsgBox.Create(nil);
+      iAnswer := pMsgBox.MessageBox('The project '+Path+' is read-only. Save anyway?      ', 'LuaEdit');
+      pMsgBox.Free;
+      if iAnswer = mrOk then
+      begin
+        ToggleFileReadOnlyAttr(PChar(Path));
+        // Now that we wrote on the disk we may retrieve the time it has been writen
+        LastTimeModified := GetFileLastTimeModified(PChar(Path));
+        IsReadOnly := False;
+      end
+      else if iAnswer = mrYes then
+      begin
+        // Popup an open dialog according to parameters and the state of the file
+        frmLuaEditMain.sdlgSaveAsUnit.FileName := ExtractFileName(Self.Name);
+
+        if frmLuaEditMain.sdlgSaveAsUnit.Execute then
+        begin
+          Path := frmLuaEditMain.sdlgSaveAsUnit.FileName;
+        end
+        else
+        begin
+          // Return false because action was cancel and quit function
+          Result := False;
+          Exit;
+        end;
+      end
+      else
+      begin
+        Result := False;
+        Exit;
+      end;
+    end;
+
+    FPath := Path;
+    PrjOwner.HasChanged := True;  // Since the name has changed, the project must be saved
+    SynUnit.Lines.SaveToFile(FPath);  // Save to file to hard drive
+    FName := ExtractFileName(FPath);  // Get short name for fast display
+    IsNew := False;  // The file is no more new
+    HasChanged := False;  // The has no more changes
+    SynUnit.Modified := False;  // The actual editor must not notice any changes now
+    LastTimeModified := GetFileLastTimeModified(PChar(Path));  // Now we wrote on the disk we may retrieve the time it has been writen
+
+    // Reinitialize stuff...
+    frmLuaEditMain.RefreshOpenedUnits;
+    frmLuaEditMain.jvUnitBarChange(frmLuaEditMain.jvUnitBar);
+    frmProjectTree.BuildProjectTree;
+    frmLuaEditMain.BuildReopenMenu;
+    frmLuaEditMain.stbMain.Panels[5].Text := '';
+    frmLuaEditMain.stbMain.Refresh;
+    SynUnit.Refresh;
+  end;
+
+  frmLuaEditMain.jvchnNotifier.Active := True;
+end;
+
+function TLuaEditBasicTextFile.SaveUnit(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
+var
+  iAnswer: Integer;
+  pMsgBox: TfrmReadOnlyMsgBox;
+begin
+  frmLuaEditMain.jvchnNotifier.Active := False;
+  Result := True;
+
+  // save only if the file is opened in the tab...
+  // if not, there is no way that the file was modified so no needs to save
+  if Assigned(Self.AssociatedTab) then
+  begin
+    // Popup a open dialog according to parameters and the state of the file
+    if ((IsNew and not bNoDialog) or (bForceDialog)) then
+    begin
+      frmLuaEditMain.sdlgSaveAsUnit.FileName := ExtractFileName(Self.Name);
+
+      if ExtractFileExt(FPath) = '.lua' then
+        frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 1
+      else if ExtractFileExt(FPath) = '.lmc' then
+        frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 2
+      else if ExtractFileExt(FPath) = '.txt' then
+        frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 3
+      else
+        frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 4;
+
+      if frmLuaEditMain.sdlgSaveAsUnit.Execute then
+      begin
+        Path := frmLuaEditMain.sdlgSaveAsUnit.FileName;
+        PrjOwner.HasChanged := True;
+
+        if IsNew then
+          frmLuaEditMain.MonitorFileToRecent(Path);
+      end
+      else
+      begin
+        // Return false because action was cancel and quit function
+        Result := False;
+        Exit;
+      end;
+    end;
+
+    // Check if file is read only first
+    while (GetFileReadOnlyAttr(PChar(Path)) and (FileExists(Path))) do
+    begin
+      pMsgBox := TfrmReadOnlyMsgBox.Create(nil);
+      iAnswer := pMsgBox.MessageBox('The project '+Path+' is read-only. Save anyway?      ', 'LuaEdit');
+      pMsgBox.Free;
+      if iAnswer = mrOk then
+      begin
+        ToggleFileReadOnlyAttr(PChar(Path));
+        // Now that we wrote on the disk we may retrieve the time it has been writen
+        LastTimeModified := GetFileLastTimeModified(PChar(Path));
+        IsReadOnly := False;
+      end
+      else if iAnswer = mrYes then
+      begin
+        // Popup an open dialog according to parameters and the state of the file
+        frmLuaEditMain.sdlgSaveAsUnit.FileName := ExtractFileName(Self.Name);
+
+        if frmLuaEditMain.sdlgSaveAsUnit.Execute then
+        begin
+          Path := frmLuaEditMain.sdlgSaveAsUnit.FileName;
+          PrjOwner.HasChanged := True;
+        end
+        else
+        begin
+          // Return false because action was cancel and quit function
+          Result := False;
+          Exit;
+        end;
+      end
+      else
+      begin
+        Result := False;
+        Exit;
+      end;
+    end;
+
+    synUnit.Lines.SaveToFile(Path);  // Save the file to hard drive
+    Self.Name := ExtractFileName(Path);  // Get short name for fast display
+    Self.Path := Path;  // Assign filepath to class filepath
+    IsNew := False;  // The file is not new anymore
+    HasChanged := False;  // The file does't have anymore changes
+    synUnit.Modified := False;  // The actual editor must not notice any changes now
+    LastTimeModified := GetFileLastTimeModified(PChar(Path));  // Now we wrote on the disk we may retrieve the time it has been writen
+
+    // Initialize stuff...
+    frmLuaEditMain.RefreshOpenedUnits;
+    frmLuaEditMain.jvUnitBarChange(frmLuaEditMain.jvUnitBar);
+    frmProjectTree.BuildProjectTree;
+    frmLuaEditMain.BuildReopenMenu;
+    frmLuaEditMain.stbMain.Panels[5].Text := '';
+    frmLuaEditMain.stbMain.Refresh;
+    synUnit.Refresh;
+  end;
+
+  frmLuaEditMain.jvchnNotifier.Active := True;
+end;
+
+///////////////////////////////////////////////////////////////////
+// TLuaEditDebugFile class
+///////////////////////////////////////////////////////////////////
+
+constructor TLuaEditDebugFile.Create(Path: String; otType: TLuaEditFileType);
+begin
+  inherited Create(Path, otType);
+
+  FLinkedGUIForm := nil;
+  FDebugInfos := TLineDebugInfos.Create;
+  FDebugPlugin := TDebugSupportPlugin.Create(SynUnit);
+  FSynCompletion := frmLuaEditMain.GetBaseCompletionProposal();
+  FSynCompletion.Editor := SynUnit;
+  FSynParams := frmLuaEditMain.GetBaseParamsProposal();
+  FSynParams.TriggerChars := '(';
+  FSynParams.Editor := SynUnit;
+  FPrevLineNumber := SynUnit.Lines.Count;
+end;
+
+destructor TLuaEditDebugFile.Destroy;
+begin
+  inherited Destroy;
+  
+  FDebugInfos.Free;
+  FSynCompletion.Free;
+  FSynParams.Free;
+end;
+
+function TLuaEditDebugFile.SaveUnit(Path: String; bNoDialog: Boolean; bForceDialog: Boolean): Boolean;
+begin
+  inherited SaveUnit(Path, bNoDialog, bForceDialog);
+
+  // Reinitialize variables
+  DebugInfos.iLineError := -1;  // Do not display anymore the current line error
+
+  // Save breakpoints if feature is enabled
+  if Main.SaveBreakpoints then
+    SaveBreakpoints();
+
+  // Refresh stuff...
+  frmLuaEditMain.stbMain.Refresh;
+  SynUnit.Refresh;
+end;
+
+function TLuaEditDebugFile.SaveUnitInc(Path: String; bNoDialog: Boolean; bForceDialog: Boolean): Boolean;
+begin
+  inherited SaveUnitInc(Path, bNoDialog, bForceDialog);
+
+  // Reinitialize variables
+  DebugInfos.iLineError := -1;  // Do not display anymore the current line error
+
+  // Save breakpoints if feature is enabled
+  if Main.SaveBreakpoints then
+    SaveBreakpoints();
+
+  // Refresh stuff...
+  frmLuaEditMain.stbMain.Refresh;
+  SynUnit.Refresh;
+end;
+
+procedure TLuaEditDebugFile.SaveBreakpoints();
+var
+  x, iBreakpointInc: Integer;
+  sSectionName: String;
+  pBreakpointFile: TIniFile;
+  pBreakpoint: TBreakpoint;
+begin
+  // Only if at least on breakpoint is present
+  if DebugInfos.lstBreakpoint.Count > 0 then
+  begin
+    // Erase existing file if any to ensure a new clean breakpoint file
+    // NOTE: IniFiles append datas when they already exists
+    if FileExists(ChangeFileExt(Path, '.lbf')) then
+      DeleteFile(PChar(ChangeFileExt(Path, '.lbf')));
+
+    // Create the ini file engine and the file on the hard drive
+    pBreakpointFile := TIniFile.Create(ChangeFileExt(Path, '.lbf'));
+
+    // Initialize stuff...
+    iBreakpointInc := 0;
+
+    // Go through all breakpoints and save them in the file
+    for x := 0 to DebugInfos.lstBreakpoint.Count - 1 do
+    begin
+      pBreakpoint := TBreakpoint(DebugInfos.lstBreakpoint[x]);  // Assign list object pointer to local pointer for easier usage
+
+      Inc(iBreakpointInc);  // Increase local incrementer number for unique section name
+      sSectionName := 'Breakpoint' + IntToStr(iBreakpointInc);  // Build unique section name
+
+      // Write datas
+      pBreakpointFile.WriteInteger(sSectionName, 'Line', pBreakpoint.iLine);
+      pBreakpointFile.WriteInteger(sSectionName, 'Status', pBreakpoint.iStatus);
+      pBreakpointFile.WriteString(sSectionName, 'Condition', pBreakpoint.sCondition);
+    end;
+
+    // Commit data in the file and free local pointer
+    pBreakpointFile.UpdateFile;
+    pBreakpointFile.Free;
+  end;
+end;
+
+procedure TLuaEditDebugFile.GetBreakpoints();
+var
+  x: Integer;
+  lstSections: TStringList;
+  pBreakpointFile: TIniFile;
+  pBreakpoint: TBreakpoint;
+begin
+  // Only if a .lbf file with the same name as the .lua file is existing
+  if FileExists(ChangeFileExt(Path, '.lbf')) then
+  begin
+    lstSections := TStringList.Create;  // Create the section list
+    pBreakpointFile := TIniFile.Create(ChangeFileExt(Path, '.lbf'));  // Create the ini file engine and the file on the hard drive
+
+    // Read all sections name
+    pBreakpointFile.ReadSections(lstSections);
+
+    // Empty actual list of breakpoints if any
+    for x := DebugInfos.lstBreakpoint.Count - 1 downto 0 do
+    begin
+      pBreakpoint := TBreakpoint(DebugInfos.lstBreakpoint[x]);
+      DebugInfos.lstBreakpoint.Delete(x);
+      pBreakpoint.Free;
+    end;
+
+    // Go through all section (one section = one breakpoint)
+    for x := 0 to lstSections.Count - 1 do
+    begin
+      // Create new object
+      pBreakpoint := TBreakpoint.Create;
+
+      // Read data from file and assign it to new object
+      pBreakpoint.iLine := pBreakpointFile.ReadInteger(lstSections.Strings[x], 'Line', 1);
+      pBreakpoint.iStatus := pBreakpointFile.ReadInteger(lstSections.Strings[x], 'Status', BKPT_ENABLED);
+      pBreakpoint.sCondition := pBreakpointFile.ReadString(lstSections.Strings[x], 'Condition', '');
+
+      // Add breakpoint object to unit breakpoint list
+      DebugInfos.lstBreakpoint.Add(pBreakpoint);
+    end;
+
+    // Free local pointers and refresh associated synedit
+    lstSections.Free;
+    pBreakpointFile.Free;
+    if Assigned(synUnit) then
+      synUnit.Refresh;
+  end;
+end;
+
+///////////////////////////////////////////////////////////////////
+// TLuaEditProject class
+///////////////////////////////////////////////////////////////////
+
+constructor TLuaEditProject.Create(Path: String; otType: TLuaEditFileType);
+begin
+  inherited Create(Path, otType);
+
   lstUnits := TList.Create;
   iVersionMajor := 1;
   iVersionMinor := 0;
@@ -613,38 +1190,30 @@ begin
   iRemotePort := 1024;
   sRemoteIP := '0.0.0.0';
   sRemoteDirectory := '';
-
-  // Get Last Time accessed and readonly state
-  if sPath <> '' then
-  begin
-    LastTimeModified := GetFileLastTimeModified(PChar(sPath));
-    IsReadOnly := GetFileReadOnlyAttr(PChar(sPath));
-  end
-  else
-  begin
-    LastTimeModified := Now;
-    IsReadOnly := False;
-  end;
+  sCompileDirectory := '';
+  sCompileExtension := '.luac';
 end;
 
-destructor TLuaProject.Destroy;
+destructor TLuaEditProject.Destroy;
 begin
+  inherited Destroy;
+  
   lstUnits.Free;
 end;
 
-procedure TLuaProject.GetProjectFromDisk(sPath: String);
+procedure TLuaEditProject.GetProjectFromDisk(Path: String);
 var
   x: Integer;
-  pLuaUnit: TLuaUnit;
+  pLuaUnit: TLuaEditUnit;
   fFile: TIniFile;
   lstTmpFiles: TStringList;
   sUnitName: String;
 begin
-  fFile := TIniFile.Create(sPath);
+  fFile := TIniFile.Create(Path);
   lstTmpFiles := TStringList.Create;
 
   // Read the [Description] section
-  sPrjName := fFile.ReadString('Description', 'Name', 'LuaProject');
+  FName := fFile.ReadString('Description', 'Name', 'LuaProject');
   iVersionMajor := fFile.ReadInteger('Description', 'VersionMajor', 1);
   iVersionMinor := fFile.ReadInteger('Description', 'VersionMinor', 0);
   iVersionRelease := fFile.ReadInteger('Description', 'VersionRelease', 0);
@@ -662,15 +1231,17 @@ begin
   iConnectTimeOut := fFile.ReadInteger('Debug', 'ConnectTimeOut', 10);
   sRuntimeDirectory := fFile.ReadString('Debug', 'RuntimeDirectory', 'C:\');
   sTargetLuaUnit := fFile.ReadString('Debug', 'TargetLuaUnit', '[Current Unit]');
+  sCompileDirectory := fFile.ReadString('Debug', 'CompileDirectory', '');
+  sCompileExtension := fFile.ReadString('Debug', 'CompileExtension', '.luac');
   pTargetLuaUnit := nil; // Will be filled later 
 
   // Initialize project variables and global variables
-  sPrjPath := sPath;
+  FPath := Path;
   IsNew := False;
   HasChanged := False;
   LuaProjects.Add(Self);
   ActiveProject := Self;
-  frmMain.MonitorFileToRecent(sPrjPath);
+  frmLuaEditMain.MonitorFileToRecent(FPath);
 
   // Read [Files] section
   fFile.ReadSection('Files', lstTmpFiles);
@@ -680,29 +1251,29 @@ begin
     // Open each individual
     for x := 0 to lstTmpFiles.Count - 1 do
     begin
-      sUnitName :=  ExpandUNCFileName(ExtractFilePath(sPrjPath) + fFile.ReadString('Files', lstTmpFiles.Strings[x], ''));
+      sUnitName :=  ExpandUNCFileName(ExtractFilePath(FPath) + fFile.ReadString('Files', lstTmpFiles.Strings[x], ''));
 
       if FileExists(sUnitName) then
       begin
         // Initialize unit and global variables considering the fact that open was a success
-        pLuaUnit := frmMain.AddFileInProject(sUnitName, False, Self);
-        pLuaUnit.sUnitPath := sUnitName;
-        pLuaUnit.sName := ExtractFileName(sUnitName);
+        pLuaUnit := TLuaEditUnit(frmLuaEditMain.AddFileInProject(sUnitName, False, Self));
+        pLuaUnit.Path := sUnitName;
+        pLuaUnit.Name := ExtractFileName(sUnitName);
         pLuaUnit.IsLoaded := True;
 
         // Add first loaded file in the tabs
         if x = 0 then
-          frmMain.AddFileInTab(pLuaUnit);
+          frmLuaEditMain.AddFileInTab(pLuaUnit);
       end
       else
       begin
         // Initialize unit and global variables considering the fact that open was a failure
         Application.MessageBox(PChar('The file "'+sUnitName+'" is innexistant!'), 'LuaEdit', MB_OK+MB_ICONERROR);
-        pLuaUnit := frmMain.AddFileInProject(sUnitName, False, Self);
+        pLuaUnit := TLuaEditUnit(frmLuaEditMain.AddFileInProject(sUnitName, False, Self));
         pLuaUnit.IsLoaded := False;
       end;
 
-      if pLuaUnit.sName = sTargetLuaUnit then
+      if pLuaUnit.Name = sTargetLuaUnit then
         pTargetLuaUnit := pLuaUnit;
     end;
   end;
@@ -711,24 +1282,24 @@ begin
   lstTmpFiles.Free;
 end;
 
-function TLuaProject.SaveProjectInc(sPath: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
+function TLuaEditProject.SaveProjectInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
 var
   pFile: TIniFile;
   x, xPos, IncValue, iAnswer, TempIncValue: integer;
   bResult: Boolean;
   pMsgBox: TfrmReadOnlyMsgBox;
 begin
-  frmMain.jvchnNotifier.Active := False;
+  frmLuaEditMain.jvchnNotifier.Active := False;
   Result := True;
 
   // Popup a open dialog according to parameters and the state of the file
   if ((IsNew and not bNoDialog) or (bForceDialog)) then
   begin
-    frmMain.sdlgSaveAsPrj.FileName := sPrjName + '.lpr';
+    frmLuaEditMain.sdlgSaveAsPrj.FileName := Self.Name + '.lpr';
     
-    if frmMain.sdlgSaveAsPrj.Execute then
+    if frmLuaEditMain.sdlgSaveAsPrj.Execute then
     begin
-      sPath := frmMain.sdlgSaveAsPrj.FileName;
+      Path := frmLuaEditMain.sdlgSaveAsPrj.FileName;
     end
     else
     begin
@@ -740,11 +1311,11 @@ begin
 
   // Getting currently assigned number
   IncValue := -1;  // For future testing
-  xPos := Length(ExtractFileExt(sPath)) + 1;  // Assign initial try position
+  xPos := Length(ExtractFileExt(Path)) + 1;  // Assign initial try position
   bResult := True;  // For a first try
   while bResult do
   begin
-    bResult := TryStrToInt(Copy(sPath, Length(sPath) - xPos + 1, xPos - Length(ExtractFileExt(sPath))), TempIncValue);
+    bResult := TryStrToInt(Copy(Path, Length(Path) - xPos + 1, xPos - Length(ExtractFileExt(Path))), TempIncValue);
     if bResult then
     begin
       IncValue := TempIncValue;
@@ -757,31 +1328,33 @@ begin
   else
     Inc(IncValue);  // Increment actual value
 
-  sPath := Copy(sPath, 1, Length(sPath) - xPos + 1) + IntToStr(IncValue) + ExtractFileExt(sPath);  // Build the new name
+  Path := Copy(Path, 1, Length(Path) - xPos + 1) + IntToStr(IncValue) + ExtractFileExt(Path);  // Build the new name
 
   // Check if file is read only first
-  while (GetFileReadOnlyAttr(PChar(sPath)) and (FileExists(sPath))) do
+  while (GetFileReadOnlyAttr(PChar(Path)) and (FileExists(Path))) do
   begin
     pMsgBox := TfrmReadOnlyMsgBox.Create(nil);
-    iAnswer := pMsgBox.MessageBox('The project '+sPath+' is read-only. Save anyway?      ', 'LuaEdit');
+    iAnswer := pMsgBox.MessageBox('The project '+Path+' is read-only. Save anyway?      ', 'LuaEdit');
     pMsgBox.Free;
+    
     if iAnswer = mrOk then
     begin
-      ToggleFileReadOnlyAttr(PChar(sPath));
-      // Now we wrote on the disk we may retrieve the time it has been writen
-      LastTimeModified := GetFileLastTimeModified(PChar(sPath));
+      ToggleFileReadOnlyAttr(PChar(Path));
+      // Now that we wrote on the disk we may retrieve the time it has been writen
+      LastTimeModified := GetFileLastTimeModified(PChar(Path));
+      IsReadOnly := False;
     end
     else if iAnswer = mrYes then
     begin
-      // Popup a open dialog according to parameters and the state of the file
-      frmMain.sdlgSaveAsPrj.FileName := sPrjName + '.lpr';
+      // Popup an open dialog according to parameters and the state of the file
+      frmLuaEditMain.sdlgSaveAsPrj.FileName := Self.Name + '.lpr';
 
-      if frmMain.sdlgSaveAsPrj.Execute then
+      if frmLuaEditMain.sdlgSaveAsPrj.Execute then
       begin
-        sPath := frmMain.sdlgSaveAsPrj.FileName;
+        Path := frmLuaEditMain.sdlgSaveAsPrj.FileName;
 
         if IsNew then
-          frmMain.MonitorFileToRecent(sPath);
+          frmLuaEditMain.MonitorFileToRecent(Path);
       end
       else
       begin
@@ -799,17 +1372,17 @@ begin
 
   // Erase existing file if any to ensure a new clean project
   // NOTE: IniFiles append stuff to it when they already exists
-  if FileExists(sPath) then
-    DeleteFile(PChar(sPath));
+  if FileExists(Path) then
+    DeleteFile(PChar(Path));
 
-  pFile := TIniFile.Create(sPath);  // Create project file writer engine (using *.ini files way)
+  pFile := TIniFile.Create(Path);  // Create project file writer engine (using *.ini files way)
 
   // Increasing Revision Number if feature is selected
   if AutoIncRevNumber then
     Inc(iVersionRevision);
 
   // Write data for [Description] section
-  pFile.WriteString('Description', 'Name', sPrjName);
+  pFile.WriteString('Description', 'Name', Self.Name);
   pFile.WriteInteger('Description', 'VersionMajor', iVersionMajor);
   pFile.WriteInteger('Description', 'VersionMinor', iVersionMinor);
   pFile.WriteInteger('Description', 'VersionRelease', iVersionRelease);
@@ -827,16 +1400,18 @@ begin
   pFile.WriteInteger('Debug', 'ConnectTimeOut', iConnectTimeOut);
   pFile.WriteString('Debug', 'RuntimeDirectory', sRuntimeDirectory);
   pFile.WriteString('Debug', 'TargetLuaUnit', sTargetLuaUnit);
+  pFile.WriteString('Debug', 'CompileDirectory', sCompileDirectory);
+  pFile.WriteString('Debug', 'CompileExtension', sCompileExtension);
 
   // Wrtie data for [Files] section
   for x := 0 to lstUnits.Count - 1 do
   begin
     // Write the file with a relative path
-    pFile.WriteString('Files', 'File'+IntToStr(x), ExtractRelativePath(ExtractFilePath(sPrjPath), TLuaUnit(lstUnits.Items[x]).sUnitPath));
+    pFile.WriteString('Files', 'File'+IntToStr(x), ExtractRelativePath(ExtractFilePath(Self.Path), TLuaEditUnit(lstUnits.Items[x]).Path));
   end;
 
-  if sPrjPath <> sPath then
-    sPrjPath := sPath;
+  if Self.Path <> Path then
+    Self.Path := Path;
 
   // Initialize stuff...   
   IsNew := False;
@@ -844,33 +1419,34 @@ begin
   frmProjectTree.BuildProjectTree;
   pFile.UpdateFile;
   pFile.Free;
-  frmMain.BuildReopenMenu;
+  frmLuaEditMain.jvUnitBarChange(frmLuaEditMain.jvUnitBar);
+  frmLuaEditMain.BuildReopenMenu;
 
   // Now we wrote on the disk we may retrieve the time it has been writen
-  LastTimeModified := GetFileLastTimeModified(PChar(sPath));
-  frmMain.jvchnNotifier.Active := True;
+  LastTimeModified := GetFileLastTimeModified(PChar(Path));
+  frmLuaEditMain.jvchnNotifier.Active := True;
 end;
 
-function TLuaProject.SaveProject(sPath: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
+function TLuaEditProject.SaveProject(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
 var
   pFile: TIniFile;
   x, iAnswer: integer;
   pMsgBox: TfrmReadOnlyMsgBox;
 begin
-  frmMain.jvchnNotifier.Active := False;
+  frmLuaEditMain.jvchnNotifier.Active := False;
   Result := True;
 
   // Popup an open dialog according to parameters and the state of the file
   if ((IsNew and not bNoDialog) or (bForceDialog)) then
   begin
-    frmMain.sdlgSaveAsPrj.FileName := sPrjName + '.lpr';
+    frmLuaEditMain.sdlgSaveAsPrj.FileName := Self.Name + '.lpr';
 
-    if frmMain.sdlgSaveAsPrj.Execute then
+    if frmLuaEditMain.sdlgSaveAsPrj.Execute then
     begin
-      sPath := frmMain.sdlgSaveAsPrj.FileName;
+      Path := frmLuaEditMain.sdlgSaveAsPrj.FileName;
 
       if IsNew then
-        frmMain.MonitorFileToRecent(sPath);
+        frmLuaEditMain.MonitorFileToRecent(Path);
     end
     else
     begin
@@ -881,25 +1457,26 @@ begin
   end;
 
   // Check if file is read only first
-  while (GetFileReadOnlyAttr(PChar(sPath)) and (FileExists(sPath))) do
+  while (GetFileReadOnlyAttr(PChar(Path)) and (FileExists(Path))) do
   begin
     pMsgBox := TfrmReadOnlyMsgBox.Create(nil);
-    iAnswer := pMsgBox.MessageBox('The project '+sPath+' is read-only. Save anyway?      ', 'LuaEdit');
+    iAnswer := pMsgBox.MessageBox('The project '+Path+' is read-only. Save anyway?      ', 'LuaEdit');
     pMsgBox.Free;
     if iAnswer = mrOk then
     begin
-      ToggleFileReadOnlyAttr(PChar(sPath));
-      // Now we wrote on the disk we may retrieve the time it has been writen
-      LastTimeModified := GetFileLastTimeModified(PChar(sPath));
+      ToggleFileReadOnlyAttr(PChar(Path));
+      // Now that we wrote on the disk we may retrieve the time it has been writen
+      LastTimeModified := GetFileLastTimeModified(PChar(Path));
+      IsReadOnly := False;
     end
     else if iAnswer = mrYes then
     begin
-      // Popup a open dialog according to parameters and the state of the file
-      frmMain.sdlgSaveAsPrj.FileName := sPrjName + '.lpr';
+      // Popup an open dialog according to parameters and the state of the file
+      frmLuaEditMain.sdlgSaveAsPrj.FileName := Self.Name + '.lpr';
 
-      if frmMain.sdlgSaveAsPrj.Execute then
+      if frmLuaEditMain.sdlgSaveAsPrj.Execute then
       begin
-        sPath := frmMain.sdlgSaveAsPrj.FileName;
+        Path := frmLuaEditMain.sdlgSaveAsPrj.FileName;
       end
       else
       begin
@@ -917,20 +1494,20 @@ begin
 
   // Erase existing file if any to ensure a new clean project
   // NOTE: IniFiles append datas when they already exists
-  if FileExists(sPath) then
-    DeleteFile(PChar(sPath));
+  if FileExists(Path) then
+    DeleteFile(PChar(Path));
 
-  if sPrjPath <> sPath then
-    sPrjPath := sPath;
+  if Self.Path <> Path then
+    Self.Path := Path;
 
-  pFile := TIniFile.Create(sPath);  // Create project file writer engine (using *.ini files way)
+  pFile := TIniFile.Create(Path);  // Create project file writer engine (using *.ini files way)
 
   // Increasing Revision Number if feature is selected
   if AutoIncRevNumber then
     Inc(iVersionRevision);
 
   // Write data for [Description] section
-  pFile.WriteString('Description', 'Name', sPrjName);
+  pFile.WriteString('Description', 'Name', Self.Name);
   pFile.WriteInteger('Description', 'VersionMajor', iVersionMajor);
   pFile.WriteInteger('Description', 'VersionMinor', iVersionMinor);
   pFile.WriteInteger('Description', 'VersionRelease', iVersionRelease);
@@ -948,390 +1525,100 @@ begin
   pFile.WriteInteger('Debug', 'ConnectTimeOut', iConnectTimeOut);
   pFile.WriteString('Debug', 'RuntimeDirectory', sRuntimeDirectory);
   pFile.WriteString('Debug', 'TargetLuaUnit', sTargetLuaUnit);
+  pFile.WriteString('Debug', 'CompileDirectory', sCompileDirectory);
+  pFile.WriteString('Debug', 'CompileExtension', sCompileExtension);
 
   // Wrtie data for [Files] section  
   for x := 0 to lstUnits.Count - 1 do
     // Write the file with a relative path
-    pFile.WriteString('Files', 'File'+IntToStr(x), ExtractRelativePath(ExtractFilePath(sPrjPath), TLuaUnit(lstUnits.Items[x]).sUnitPath));
+    pFile.WriteString('Files', 'File'+IntToStr(x), ExtractRelativePath(ExtractFilePath(Self.Path), TLuaEditUnit(lstUnits.Items[x]).Path));
 
   // Initialize stuff...   
   IsNew := False;
   HasChanged := False;
   frmProjectTree.BuildProjectTree;
-  frmMain.BuildReopenMenu;
+  frmLuaEditMain.jvUnitBarChange(frmLuaEditMain.jvUnitBar);
+  frmLuaEditMain.BuildReopenMenu;
   pFile.UpdateFile;
   pFile.Free;
 
   // Now we wrote on the disk we may retrieve the time it has been writen
-  LastTimeModified := GetFileLastTimeModified(PChar(sPath));
-  frmMain.jvchnNotifier.Active := True;
+  LastTimeModified := GetFileLastTimeModified(PChar(Path));
+  frmLuaEditMain.jvchnNotifier.Active := True;
 end;
 
-procedure TLuaProject.RealoadProject();
+procedure TLuaEditProject.RealoadProject();
 var
   x: Integer;
-  pLuaUnit: TLuaUnit;
+  pLuaUnit: TLuaEditUnit;
 begin
   // remove files from project
   for x := lstUnits.Count - 1 downto 0 do
   begin
-    pLuaUnit := TLuaUnit(lstUnits.Items[x]);
+    pLuaUnit := TLuaEditUnit(lstUnits.Items[x]);
 
     // Prompt user to save file if modified or new
     if pLuaUnit.HasChanged or pLuaUnit.IsNew then
     begin
-      if Application.MessageBox(PChar('Save changes to file '+pLuaUnit.sUnitPath+'?'), 'LuaEdit', MB_YESNO+MB_ICONQUESTION) = IDYES then
+      if Application.MessageBox(PChar('Save changes to file '+pLuaUnit.Path+'?'), 'LuaEdit', MB_YESNO+MB_ICONQUESTION) = IDYES then
       begin
         if SaveUnitsInc then
-          pLuaUnit.SaveUnitInc(pLuaUnit.sUnitPath)
+          pLuaUnit.SaveUnitInc(pLuaUnit.Path)
         else
-          pLuaUnit.SaveUnit(pLuaUnit.sUnitPath);
+          pLuaUnit.SaveUnit(pLuaUnit.Path);
       end;
     end;
 
     // Remove file from tabs
-    if Assigned(frmMain.GetAssociatedTab(pLuaUnit)) then
+    if Assigned(pLuaUnit.AssociatedTab) then
     begin
-      frmMain.jvUnitBar.Tabs.Delete(frmMain.GetAssociatedTab(pLuaUnit).Index);
-      LuaOpenedUnits.Remove(pLuaUnit);
+      frmLuaEditMain.jvUnitBar.Tabs.Delete(pLuaUnit.AssociatedTab.Index);
+      LuaOpenedFiles.Remove(pLuaUnit);
     end;
 
-    pLuaUnit.pPrjOwner.lstUnits.Remove(pLuaUnit);
+    pLuaUnit.PrjOwner.lstUnits.Remove(pLuaUnit);
   end;
 
   // Remove projects from current project list
   LuaProjects.Remove(Self);
   // Reload the project...
-  GetProjectFromDisk(sPrjPath);
+  GetProjectFromDisk(Self.Path);
 end;
 
 ///////////////////////////////////////////////////////////////////
-//TLuaUnit class
+// TLuaEditUnit class
 ///////////////////////////////////////////////////////////////////
-constructor TLuaUnit.Create(sPath: String);
+
+constructor TLuaEditUnit.Create(Path: String; otType: TLuaEditFileType);
 begin
-  pDebugInfos := TLineDebugInfos.Create;
+  inherited Create(Path, otType);
+
   lstFunctions := TStringList.Create;
-
-  // Get Last Time accessed and readonly state
-  if ((sPath <> '') and FileExists(sPath)) then
-  begin
-    LastTimeModified := GetFileLastTimeModified(PChar(sPath));
-    IsReadOnly := GetFileReadOnlyAttr(PChar(sPath));
-  end
-  else
-  begin
-    LastTimeModified := Now;
-    IsReadOnly := False;
-  end;
 end;
 
-destructor TLuaUnit.Destroy;
+destructor TLuaEditUnit.Destroy;
 begin
-  synCompletion.Free;
-  synParams.Free;
-  pDebugPlugin.Free;
-  pDebugInfos.Free;
+  inherited Destroy;
+
   lstFunctions.Free;
-  synUnit.Free;
 end;
 
-function TLuaUnit.SaveUnitInc(sPath: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
-var
-  xPos, IncValue, iAnswer, TempIncValue: Integer;
-  bResult: Boolean;
-  pMsgBox: TfrmReadOnlyMsgBox;
+///////////////////////////////////////////////////////////////////
+// TLuaEditMacro class
+///////////////////////////////////////////////////////////////////
+
+constructor TLuaEditMacro.Create(Path: String; otType: TLuaEditFileType);
 begin
-  frmMain.jvchnNotifier.Active := False;
-  Result := True;
+  inherited Create(Path, otType);
 
-  // save only if the file is opened in the tab...
-  // if not, there is no way that the file was modified so no needs to save
-  if Assigned(frmMain.GetAssociatedTab(Self)) then
-  begin
-    // Popup a open dialog according to parameters and the state of the file
-    if ((IsNew and not bNoDialog) or (bForceDialog)) then
-    begin
-      frmMain.sdlgSaveAsUnit.FileName := ExtractFileName(sName);
-
-      if frmMain.sdlgSaveAsUnit.Execute then
-      begin
-        sPath := frmMain.sdlgSaveAsUnit.FileName;
-
-        if IsNew then
-          frmMain.MonitorFileToRecent(sPath);
-      end
-      else
-      begin
-        // Return false because action was cancel and quit function
-        Result := False;
-        Exit;
-      end;
-    end;
-
-    // Getting currently assigned number
-    IncValue := -1;  // For future testing
-    xPos := Length(ExtractFileExt(sPath)) + 1;  // Assign initial try position
-    bResult := True;  // For a first try
-    while bResult do
-    begin
-      bResult := TryStrToInt(Copy(sPath, Length(sPath) - xPos + 1, xPos - Length(ExtractFileExt(sPath))), TempIncValue);
-      if bResult then
-      begin
-        IncValue := TempIncValue;
-        Inc(XPos);
-      end;
-    end;
-
-    if IncValue = -1 then
-      IncValue := 1 // Give an initial value
-    else
-      Inc(IncValue);  // Increment actual value
-
-    // Build the new name
-    sPath := Copy(sPath, 1, Length(sPath) - xPos + 1) + IntToStr(IncValue) + ExtractFileExt(sPath);
-
-    // Check if file is read only first
-    while (GetFileReadOnlyAttr(PChar(sPath)) and (FileExists(sPath))) do
-    begin
-      pMsgBox := TfrmReadOnlyMsgBox.Create(nil);
-      iAnswer := pMsgBox.MessageBox('The project '+sPath+' is read-only. Save anyway?      ', 'LuaEdit');
-      pMsgBox.Free;
-      if iAnswer = mrOk then
-      begin
-        ToggleFileReadOnlyAttr(PChar(sPath));
-        // Now we wrote on the disk we may retrieve the time it has been writen
-        LastTimeModified := GetFileLastTimeModified(PChar(sPath));
-      end
-      else if iAnswer = mrYes then
-      begin
-        // Popup a open dialog according to parameters and the state of the file
-        frmMain.sdlgSaveAsUnit.FileName := ExtractFileName(sName);
-
-        if frmMain.sdlgSaveAsUnit.Execute then
-        begin
-          sPath := frmMain.sdlgSaveAsUnit.FileName;
-        end
-        else
-        begin
-          // Return false because action was cancel and quit function
-          Result := False;
-          Exit;
-        end;
-      end
-      else
-      begin
-        Result := False;
-        Exit;
-      end;
-    end;
-
-    sUnitPath := sPath;
-    pPrjOwner.HasChanged := True;  // Since the name has changed, the project must be saved
-    synUnit.Lines.SaveToFile(sUnitPath);  // Save to file to hard drive
-    sName := ExtractFileName(sUnitPath);  // Get short name for fast display
-    IsNew := False;  // The file is no more new
-    HasChanged := False;  // The has no more changes
-    synUnit.Modified := False;  // The actual editor must not notice any changes now
-    pDebugInfos.iLineError := -1;  // Do not display anymore the current line error
-    LastTimeModified := GetFileLastTimeModified(PChar(sPath));  // Now we wrote on the disk we may retrieve the time it has been writen
-
-    // Save breakpoints if feature is enabled
-    if Main.SaveBreakpoints then
-      SaveBreakpoints();
-
-    // Reinitialize stuff...
-    frmMain.RefreshOpenedUnits;
-    frmProjectTree.BuildProjectTree;
-    frmMain.BuildReopenMenu;
-    frmMain.stbMain.Panels[5].Text := '';
-    frmMain.stbMain.Refresh;
-    synUnit.Refresh;
-  end;
-
-  frmMain.jvchnNotifier.Active := True;
+  lstFunctions := TStringList.Create;
 end;
 
-function TLuaUnit.SaveUnit(sPath: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
-var
-  iAnswer: Integer;
-  pMsgBox: TfrmReadOnlyMsgBox;
+destructor TLuaEditMacro.Destroy;
 begin
-  frmMain.jvchnNotifier.Active := False;
-  Result := True;
-
-  // save only if the file is opened in the tab...
-  // if not, there is no way that the file was modified so no needs to save
-  if Assigned(frmMain.GetAssociatedTab(Self)) then
-  begin
-    // Popup a open dialog according to parameters and the state of the file
-    if ((IsNew and not bNoDialog) or (bForceDialog)) then
-    begin
-      frmMain.sdlgSaveAsUnit.FileName := ExtractFileName(sName);
-
-      if frmMain.sdlgSaveAsUnit.Execute then
-      begin
-        sPath := frmMain.sdlgSaveAsUnit.FileName;
-        pPrjOwner.HasChanged := True;
-
-        if IsNew then
-          frmMain.MonitorFileToRecent(sPath);
-      end
-      else
-      begin
-        // Return false because action was cancel and quit function
-        Result := False;
-        Exit;
-      end;
-    end;
-
-    // Check if file is read only first
-    while (GetFileReadOnlyAttr(PChar(sPath)) and (FileExists(sPath))) do
-    begin
-      pMsgBox := TfrmReadOnlyMsgBox.Create(nil);
-      iAnswer := pMsgBox.MessageBox('The project '+sPath+' is read-only. Save anyway?      ', 'LuaEdit');
-      pMsgBox.Free;
-      if iAnswer = mrOk then
-      begin
-        ToggleFileReadOnlyAttr(PChar(sPath));
-        // Now we wrote on the disk we may retrieve the time it has been writen
-        LastTimeModified := GetFileLastTimeModified(PChar(sPath));
-      end
-      else if iAnswer = mrYes then
-      begin
-        // Popup a open dialog according to parameters and the state of the file
-        frmMain.sdlgSaveAsUnit.FileName := ExtractFileName(sName);
-
-        if frmMain.sdlgSaveAsUnit.Execute then
-        begin
-          sPath := frmMain.sdlgSaveAsUnit.FileName;
-          pPrjOwner.HasChanged := True;
-        end
-        else
-        begin
-          // Return false because action was cancel and quit function
-          Result := False;
-          Exit;
-        end;
-      end
-      else
-      begin
-        Result := False;
-        Exit;
-      end;
-    end;
-
-    synUnit.Lines.SaveToFile(sPath);  // Save the file to hard drive
-    sName := ExtractFileName(sPath);  // Get short name for fast display
-    sUnitPath := sPath;  // Assign filepath to class filepath
-    IsNew := False;  // The file is not new anymore
-    HasChanged := False;  // The file does't have anymore changes
-    synUnit.Modified := False;  // The actual editor must not notice any changes now
-    pDebugInfos.iLineError := -1;  // Do not display anymore the current line error
-    LastTimeModified := GetFileLastTimeModified(PChar(sPath));  // Now we wrote on the disk we may retrieve the time it has been writen
-
-    // Save breakpoints if feature is enabled
-    if Main.SaveBreakpoints then
-      SaveBreakpoints();
-
-    // Initialize stuff...
-    frmMain.RefreshOpenedUnits;
-    frmProjectTree.BuildProjectTree;
-    frmMain.BuildReopenMenu;
-    frmMain.stbMain.Panels[5].Text := '';
-    frmMain.stbMain.Refresh;
-    synUnit.Refresh;
-  end;
-
-  frmMain.jvchnNotifier.Active := True;
-end;
-
-procedure TLuaUnit.SaveBreakpoints();
-var
-  x, iBreakpointInc: Integer;
-  sSectionName: String;
-  pBreakpointFile: TIniFile;
-  pBreakpoint: TBreakpoint;
-begin
-  // Only if at least on breakpoint is present
-  if pDebugInfos.lstBreakpoint.Count > 0 then
-  begin
-    // Erase existing file if any to ensure a new clean breakpoint file
-    // NOTE: IniFiles append datas when they already exists
-    if FileExists(ChangeFileExt(sUnitPath, '.lbf')) then
-      DeleteFile(PChar(ChangeFileExt(sUnitPath, '.lbf')));
-
-    // Create the ini file engine and the file on the hard drive
-    pBreakpointFile := TIniFile.Create(ChangeFileExt(sUnitPath, '.lbf'));
-
-    // Initialize stuff...
-    iBreakpointInc := 0;
-
-    // Go through all breakpoints and save them in the file
-    for x := 0 to pDebugInfos.lstBreakpoint.Count - 1 do
-    begin
-      pBreakpoint := TBreakpoint(pDebugInfos.lstBreakpoint[x]);  // Assign list object pointer to local pointer for easier usage
-
-      Inc(iBreakpointInc);  // Increase local incrementer number for unique section name
-      sSectionName := 'Breakpoint' + IntToStr(iBreakpointInc);  // Build unique section name
-
-      // Write datas
-      pBreakpointFile.WriteInteger(sSectionName, 'Line', pBreakpoint.iLine);
-      pBreakpointFile.WriteInteger(sSectionName, 'Status', pBreakpoint.iStatus);
-      pBreakpointFile.WriteString(sSectionName, 'Condition', pBreakpoint.sCondition);
-    end;
-
-    // Commit data in the file and free local pointer
-    pBreakpointFile.UpdateFile;
-    pBreakpointFile.Free;
-  end;
-end;
-
-procedure TLuaUnit.GetBreakpoints();
-var
-  x: Integer;
-  lstSections: TStringList;
-  pBreakpointFile: TIniFile;
-  pBreakpoint: TBreakpoint;
-begin
-  // Only if a .lbf file with the same name as the .lua file is existing
-  if FileExists(ChangeFileExt(sUnitPath, '.lbf')) then
-  begin
-    lstSections := TStringList.Create;  // Create the section list
-    pBreakpointFile := TIniFile.Create(ChangeFileExt(sUnitPath, '.lbf'));  // Create the ini file engine and the file on the hard drive
-
-    // Read all sections name
-    pBreakpointFile.ReadSections(lstSections);
-
-    // Empty actual list of breakpoints if any
-    for x := pDebugInfos.lstBreakpoint.Count - 1 downto 0 do
-    begin
-      pBreakpoint := TBreakpoint(pDebugInfos.lstBreakpoint[x]);
-      pDebugInfos.lstBreakpoint.Delete(x);
-      pBreakpoint.Free;
-    end;
-
-    // Go through all section (one section = one breakpoint)
-    for x := 0 to lstSections.Count - 1 do
-    begin
-      // Create new object
-      pBreakpoint := TBreakpoint.Create;
-
-      // Read data from file and assign it to new object
-      pBreakpoint.iLine := pBreakpointFile.ReadInteger(lstSections.Strings[x], 'Line', 1);
-      pBreakpoint.iStatus := pBreakpointFile.ReadInteger(lstSections.Strings[x], 'Status', BKPT_ENABLED);
-      pBreakpoint.sCondition := pBreakpointFile.ReadString(lstSections.Strings[x], 'Condition', '');
-
-      // Add breakpoint object to unit breakpoint list
-      pDebugInfos.lstBreakpoint.Add(pBreakpoint);
-    end;
-
-    // Free local pointers and refresh associated synedit
-    lstSections.Free;
-    pBreakpointFile.Free;
-    if Assigned(synUnit) then
-      synUnit.Refresh;
-  end;
+  inherited Destroy;
+  
+  lstFunctions.Free;
 end;
 
 end.

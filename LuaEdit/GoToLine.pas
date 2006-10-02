@@ -15,6 +15,7 @@ type
     procedure btnOKClick(Sender: TObject);
     procedure txtLineNumberKeyPress(Sender: TObject; var Key: Char);
     procedure FormCreate(Sender: TObject);
+    procedure FormShow(Sender: TObject);
   private
     { Private declarations }
   public
@@ -51,6 +52,11 @@ end;
 procedure TfrmGotoLine.FormCreate(Sender: TObject);
 begin
   txtLineNumber.Text := '';
+end;
+
+procedure TfrmGotoLine.FormShow(Sender: TObject);
+begin
+  txtLineNumber.SetFocus;
 end;
 
 end.

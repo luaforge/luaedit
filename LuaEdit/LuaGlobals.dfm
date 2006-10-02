@@ -50,8 +50,8 @@ object frmLuaGlobals: TfrmLuaGlobals
   end
   object JvDockClient1: TJvDockClient
     DirectDrag = False
-    DockStyle = frmMain.jvDockVSNet
-    Left = 24
-    Top = 16
+    DockStyle = frmLuaEditMain.jvDockVSNet
+    Left = 16
+    Top = 24
   end
 end

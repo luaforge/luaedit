@@ -169,7 +169,6 @@ procedure TfrmProfiler.AddReturn(FctPointer: Pointer; FctName: String);
 var
   EndedTime: Int64;
   pCallData: PProfilerCall;
-  test1, test2: Int64;
 begin
   pTimer.GetCurrentTime(EndedTime);
   pCallData := vstLuaProfiler.GetNodeData(pCurrentCall);
@@ -248,7 +247,6 @@ var
   pFirstNode: PVirtualNode;
   pFirstNodeData: PProfilerCall;
   pData, pParentData: PProfilerCall;
-  pPt: TPoint;
   pRect: TRect;
 begin
   case Column of

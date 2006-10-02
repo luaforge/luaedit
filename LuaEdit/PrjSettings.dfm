@@ -18,12 +18,12 @@ object frmPrjOptions: TfrmPrjOptions
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
-  object Label8: TLabel
-    Left = 136
-    Top = 136
-    Width = 67
+  object Label17: TLabel
+    Left = 160
+    Top = 120
+    Width = 87
     Height = 13
-    Caption = 'Major Version:'
+    Caption = 'Runtime Directory:'
   end
   object Panel1: TPanel
     Left = 0
@@ -79,7 +79,7 @@ object frmPrjOptions: TfrmPrjOptions
       Top = 0
       Width = 398
       Height = 275
-      ActivePage = JvStandardPage2
+      ActivePage = JvStandardPage3
       PropagateEnable = False
       ShowDesignCaption = sdcNone
       Align = alClient
@@ -347,6 +347,7 @@ object frmPrjOptions: TfrmPrjOptions
           Width = 361
           Height = 21
           TabOrder = 5
+          OnExit = txtUploadDirExit
         end
         object jvspinConnectTimeOut: TJvSpinEdit
           Left = 24
@@ -367,14 +368,14 @@ object frmPrjOptions: TfrmPrjOptions
         Caption = '[Debug] Execution'
         object Label2: TLabel
           Left = 24
-          Top = 160
+          Top = 216
           Width = 67
           Height = 13
           Caption = 'DLL Full Path:'
         end
         object JvGroupHeader3: TJvGroupHeader
           Left = 0
-          Top = 136
+          Top = 192
           Width = 410
           Height = 17
           Align = alCustom
@@ -402,7 +403,7 @@ object frmPrjOptions: TfrmPrjOptions
         end
         object Label14: TLabel
           Left = 24
-          Top = 72
+          Top = 66
           Width = 87
           Height = 13
           Caption = 'Runtime Directory:'
@@ -427,36 +428,50 @@ object frmPrjOptions: TfrmPrjOptions
           Font.Style = []
           ParentFont = False
         end
+        object Label8: TLabel
+          Left = 24
+          Top = 107
+          Width = 85
+          Height = 13
+          Caption = 'Compile Directory:'
+        end
+        object Label18: TLabel
+          Left = 24
+          Top = 149
+          Width = 89
+          Height = 13
+          Caption = 'Compile Extension:'
+        end
         object txtDebugInitializer: TEdit
           Left = 24
-          Top = 175
+          Top = 231
           Width = 329
           Height = 21
-          TabOrder = 0
+          TabOrder = 6
         end
         object btnBrowseFile: TButton
           Left = 360
-          Top = 177
+          Top = 233
           Width = 19
           Height = 17
           Caption = '...'
-          TabOrder = 1
+          TabOrder = 7
           OnClick = btnBrowseFileClick
         end
         object txtRuntimeDir: TEdit
           Left = 24
-          Top = 87
+          Top = 81
           Width = 329
           Height = 21
-          TabOrder = 2
+          TabOrder = 1
         end
         object btnBrowseDir: TButton
           Left = 360
-          Top = 89
+          Top = 83
           Width = 19
           Height = 17
           Caption = '...'
-          TabOrder = 3
+          TabOrder = 2
           OnClick = btnBrowseDirClick
         end
         object cboUnits: TComboBox
@@ -465,8 +480,33 @@ object frmPrjOptions: TfrmPrjOptions
           Width = 356
           Height = 21
           Style = csDropDownList
-          ItemHeight = 0
+          ItemHeight = 13
+          TabOrder = 0
+        end
+        object txtCompileDir: TEdit
+          Left = 24
+          Top = 122
+          Width = 329
+          Height = 21
+          TabOrder = 3
+          OnExit = txtCompileDirExit
+        end
+        object btnBrowseDir2: TButton
+          Left = 361
+          Top = 124
+          Width = 19
+          Height = 17
+          Caption = '...'
           TabOrder = 4
+          OnClick = btnBrowseDir2Click
+        end
+        object txtCompileExt: TEdit
+          Left = 24
+          Top = 164
+          Width = 356
+          Height = 21
+          TabOrder = 5
+          OnExit = txtCompileExtExit
         end
       end
     end
@@ -482,11 +522,11 @@ object frmPrjOptions: TfrmPrjOptions
       Indent = 19
       TabOrder = 1
       Items.Data = {
-        0200000020000000010000000100000000000000FFFFFFFF0000000001000000
+        0200000020000000000000000000000000000000FFFFFFFF0000000001000000
         0747656E6572616C27000000FFFFFFFFFFFFFFFF01000000FFFFFFFF00000000
-        000000000E4964656E74696669636174696F6E1E0000000100000001000000FF
-        FFFFFFFFFFFFFF020000000200000005446562756722000000FFFFFFFFFFFFFF
-        FFFFFFFFFFFFFFFFFF020000000000000009457865637574696F6E25000000FF
+        000000000E4964656E74696669636174696F6E1E0000000000000000000000FF
+        FFFFFFFFFFFFFF02000000020000000544656275672200000002000000020000
+        00FFFFFFFFFFFFFFFF020000000000000009457865637574696F6E25000000FF
         FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF01000000000000000C52656D6F74652044
         65627567}
       Items.Links = {050000000000000000000000020000000200000001000000}

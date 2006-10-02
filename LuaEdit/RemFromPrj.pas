@@ -17,7 +17,7 @@ type
     { Private declarations }
   public
     { Public declarations }
-    procedure FillCombo(pPrj: TLuaProject);
+    procedure FillCombo(pPrj: TLuaEditProject);
   end;
 
 var
@@ -27,7 +27,7 @@ implementation
 
 {$R *.dfm}
 
-procedure TfrmRemoveFile.FillCombo(pPrj: TLuaProject);
+procedure TfrmRemoveFile.FillCombo(pPrj: TLuaEditProject);
 var
   x: Integer;
 begin
@@ -35,7 +35,7 @@ begin
   
   for x := 0 to pPrj.lstUnits.Count - 1 do
   begin
-    cboUnit.AddItem(TLuaUnit(pPrj.lstUnits.Items[x]).sName, pPrj.lstUnits.Items[x]);
+    cboUnit.AddItem(TLuaEditUnit(pPrj.lstUnits.Items[x]).Name, pPrj.lstUnits.Items[x]);
   end;
 end;
 

@@ -24,6 +24,11 @@ type
     Label10: TLabel;
     Label11: TLabel;
     Label12: TLabel;
+    GroupBox4: TGroupBox;
+    Label13: TLabel;
+    Label14: TLabel;
+    Label15: TLabel;
+    Label16: TLabel;
     procedure Label2Click(Sender: TObject);
   private
     { Private declarations }

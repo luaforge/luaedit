@@ -95,13 +95,6 @@ type
     Label13: TLabel;
     Label14: TLabel;
     chkShowStatusBar: TCheckBox;
-    JvGroupHeader8: TJvGroupHeader;
-    JvGroupHeader9: TJvGroupHeader;
-    JvGroupHeader10: TJvGroupHeader;
-    JvGroupHeader11: TJvGroupHeader;
-    JvGroupHeader12: TJvGroupHeader;
-    JvGroupHeader13: TJvGroupHeader;
-    JvGroupHeader14: TJvGroupHeader;
     txtHomePage: TEdit;
     txtSearchPage: TEdit;
     chkHomePage: TCheckBox;
@@ -111,6 +104,29 @@ type
     Label16: TLabel;
     Label17: TLabel;
     txtTempFolder: TJvDotNetDirectoryEdit;
+    JvStandardPage8: TJvStandardPage;
+    JvGroupHeader15: TJvGroupHeader;
+    jvspinMaxTablesSize: TJvSpinEdit;
+    Label18: TLabel;
+    chkAutoLoadLibBasic: TCheckBox;
+    JvGroupHeader16: TJvGroupHeader;
+    Panel3: TPanel;
+    Bevel1: TBevel;
+    Bevel2: TBevel;
+    Bevel3: TBevel;
+    Bevel4: TBevel;
+    Bevel5: TBevel;
+    Bevel6: TBevel;
+    Bevel7: TBevel;
+    Bevel8: TBevel;
+    JvGroupHeader8: TJvGroupHeader;
+    chkAutoLoadLibMath: TCheckBox;
+    chkAutoLoadLibString: TCheckBox;
+    chkAutoLoadLibTable: TCheckBox;
+    chkAutoLoadLibOSIO: TCheckBox;
+    chkAutoLoadLibDebug: TCheckBox;
+    jvspinMaxSubTablesLevel: TJvSpinEdit;
+    Label19: TLabel;
     procedure cboFontsMeasureItem(Control: TWinControl; Index: Integer;  var Height: Integer);
     procedure cboFontsDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
     procedure FormCreate(Sender: TObject);
@@ -147,7 +163,7 @@ type
     { Public declarations }
     procedure UMMeasureFonts(var msg: TMessage); message UM_MEASUREFONTS;
     procedure NotifyRestart(Notify: Boolean);
-    procedure LoadEditorSettings;
+    procedure LoadEditorSettings(HandleColorSet: Boolean = True);
     procedure WriteEditorSettings;
     procedure WriteColorSet;
     procedure BuildColorSetList;
@@ -157,10 +173,7 @@ var
   frmEditorSettings: TfrmEditorSettings;
   Options: TSynEditorOptions;
   lstEditorColorsTemp: TList;
-  pTempUnit: TLuaUnit;
-
-function SetPrivilege(sPrivilegeName : PChar; bEnabled : boolean): boolean; cdecl; external 'LuaEditSys.dll';
-function WinExit(iFlags: integer): Boolean; cdecl; external 'LuaEditSys.dll';
+  pTempUnit: TLuaEditUnit;
 
 implementation
 
@@ -207,11 +220,16 @@ procedure TfrmEditorSettings.FormCreate(Sender: TObject);
 var
   HR: TSynLuaSyn;
 begin
-  pTempUnit := TLuaUnit.Create('');
-  pTempUnit.synUnit := synSample;
-  pTempUnit.pDebugInfos.AddBreakpointAtLine(13);
-  pTempUnit.pDebugInfos.iLineError := 14;
-  pTempUnit.pDebugInfos.iCurrentLineDebug := 15;
+  pTempUnit := TLuaEditUnit.Create('');
+  pTempUnit.SynUnit.Free;
+  pTempUnit.SynParams.Editor := synSample;
+  pTempUnit.SynCompletion.Editor := synSample;
+  pTempUnit.DebugPlugin := TDebugSupportPlugin.Create(synSample);
+  pTempUnit.SynUnit := nil;
+  pTempUnit.SynUnit := synSample;
+  pTempUnit.DebugInfos.AddBreakpointAtLine(13);
+  pTempUnit.DebugInfos.iLineError := 14;
+  pTempUnit.DebugInfos.iCurrentLineDebug := 15;
   synSample.OnSpecialLineColors := synEditSpecialLineColors;
   synSample.Refresh;
   
@@ -220,29 +238,33 @@ begin
   lstEditorColorsTemp := TList.Create;
   cboFonts.Items := Screen.Fonts;
   cboFonts.itemindex := 0;
+
   // Measure items after form has been shown
   PostMessage(Self.Handle, UM_MEASUREFONTS, 0, 0);
+
+  // Fill color set list
+  BuildColorSetList;
 end;
 
 procedure TfrmEditorSettings.synEditSpecialLineColors(Sender: TObject; Line: Integer; var Special: Boolean; var FG, BG: TColor);
 begin
   Special := False;
 
-  if pTempUnit.pDebugInfos.IsBreakPointLine(Line) then
+  if pTempUnit.DebugInfos.IsBreakPointLine(Line) then
   begin
     Special := True;
     BG := StringToColor(TEditorColors(lstEditorColorsTemp.Items[9]).Background);
     FG := StringToColor(TEditorColors(lstEditorColorsTemp.Items[9]).Foreground);
   end;
 
-  if pTempUnit.pDebugInfos.iCurrentLineDebug = Line then
+  if pTempUnit.DebugInfos.iCurrentLineDebug = Line then
   begin
     Special := True;
     BG := StringToColor(TEditorColors(lstEditorColorsTemp.Items[3]).Background);
     FG := StringToColor(TEditorColors(lstEditorColorsTemp.Items[3]).Foreground);
   end;
 
-  if pTempUnit.pDebugInfos.iLineError = Line then
+  if pTempUnit.DebugInfos.iLineError = Line then
   begin
     Special := True;
     BG := StringToColor(TEditorColors(lstEditorColorsTemp.Items[2]).Background);
@@ -401,7 +423,7 @@ begin
 
   // Clean up old temporary folder if set to new one
   if TempFolder <> txtTempFolder.Text then
-    frmMain.CleanUpTempDir();
+    frmLuaEditMain.CleanUpTempDir();
 
   if AssociateFiles <> chkFileAssociate.Checked then
   begin
@@ -435,7 +457,23 @@ begin
 
   // Writing environement settings
   pReg.OpenKey('\Software\LuaEdit\EditorSettings\Environment', True);
-  pReg.WriteString('LibrariesSearchPaths', '"'+txtLibraries.Text+'"');
+  {if txtLibraries.Text[1] = '"' then
+    txtLibraries.Text := Copy(txtLibraries.Text, 2, Length(txtLibraries.Text));
+  if txtLibraries.Text[Length(txtLibraries.Text)] = '"' then
+    txtLibraries.Text := Copy(txtLibraries.Text, 1, Length(txtLibraries.Text) - 1);}
+  pReg.WriteString('LibrariesSearchPaths', txtLibraries.Text);
+
+  // Writing debugger settings
+  pReg.OpenKey('\Software\LuaEdit\EditorSettings\Debugger', True);
+  pReg.WriteInteger('MaxTablesSize', Trunc(jvspinMaxTablesSize.Value));
+  pReg.WriteInteger('MaxSubTablesLevel', Trunc(jvspinMaxSubTablesLevel.Value));
+  pReg.WriteBool('AutoLoadLibBasic', chkAutoLoadLibBasic.Checked);
+  pReg.WriteBool('AutoLoadLibTable', chkAutoLoadLibTable.Checked);
+  pReg.WriteBool('AutoLoadLibString', chkAutoLoadLibString.Checked);
+  pReg.WriteBool('AutoLoadLibMath', chkAutoLoadLibMath.Checked);
+  pReg.WriteBool('AutoLoadLibOSIO', chkAutoLoadLibOSIO.Checked);
+  pReg.WriteBool('AutoLoadLibDebug', chkAutoLoadLibDebug.Checked);
+
 
   //Writing display settings
   pReg.OpenKey('\Software\LuaEdit\EditorSettings\Display', True);
@@ -451,9 +489,9 @@ begin
   pReg.Free;
   WriteColorSet;    
 
-  frmMain.LoadEditorSettingsFromReg;
-  for x := 0 to LuaOpenedUnits.Count - 1 do
-    frmMain.ApplyValuesToEditor(TLuaUnit(LuaOpenedUnits.Items[x]).synUnit, EditorColors);
+  frmLuaEditMain.LoadEditorSettingsFromReg;
+  for x := 0 to LuaOpenedFiles.Count - 1 do
+    frmLuaEditMain.ApplyValuesToEditor(TLuaEditUnit(LuaOpenedFiles.Items[x]).synUnit, EditorColors);
   Screen.Cursor := crDefault;
 end;
 
@@ -483,7 +521,7 @@ begin
   pColorSet.Free;
 end;
 
-procedure TfrmEditorSettings.LoadEditorSettings;
+procedure TfrmEditorSettings.LoadEditorSettings(HandleColorSet: Boolean {= True});
 var
   x: Integer;
 begin
@@ -560,7 +598,6 @@ begin
   jvslAnimatedTabsSpeed.Value := 2001 - AnimatedTabsSpeed;
   txtUndoLimit.Text := IntToStr(Main.UndoLimit);
   txtTabWidth.Text := IntToStr(Main.TabWidth);
-  txtLibraries.Text := LibrariesSearchPaths.CommaText;
   chkShowGutter.Checked := Main.ShowGutter;
   chkShowLineNumbers.Checked := Main.ShowLineNumbers;
   chkLeadingZeros.Checked := Main.LeadingZeros;
@@ -576,8 +613,29 @@ begin
   txtSearchPage.Enabled := chkSearchPage.Checked;
   txtTempFolder.Text := TempFolder;
   jvspinHistoryMaxAge.Value := HistoryMaxAge;
+  jvspinMaxTablesSize.Value := MaxTablesSize;
+  jvspinMaxSubTablesLevel.Value := MaxSubTablesLevel;
+  chkAutoLoadLibBasic.Checked := AutoLoadLibBasic;
+  chkAutoLoadLibTable.Checked := AutoLoadLibTable;
+  chkAutoLoadLibString.Checked := AutoLoadLibString;
+  chkAutoLoadLibMath.Checked := AutoLoadLibMath;
+  chkAutoLoadLibOSIO.Checked := AutoLoadLibOSIO;
+  chkAutoLoadLibDebug.Checked := AutoLoadLibDebug;
 
-  if cboColorSet.ItemIndex = -1 then
+  // Manage serach paths
+  txtLibraries.Text := '';
+  for x := 0 to LibrariesSearchPaths.Count - 1 do
+  begin
+    txtLibraries.Text := txtLibraries.Text + '"' + LibrariesSearchPaths.Strings[x];
+
+    if x < LibrariesSearchPaths.Count - 1 then
+      txtLibraries.Text := txtLibraries.Text + '", '
+    else
+      txtLibraries.Text := txtLibraries.Text + '"';      
+  end;
+
+  // Manage colorset
+  if HandleColorSet then
   begin
     for x := 0 to cboColorSet.Items.Count - 1 do
     begin
@@ -598,7 +656,7 @@ begin
   lstElement.Items.AddObject('Strings', lstEditorColorsTemp.Items[8]);
   lstElement.Items.AddObject('Valid Breakpoint', lstEditorColorsTemp.Items[9]);
 
-  frmMain.ApplyValuesToEditor(synSample, lstEditorColorsTemp);
+  frmLuaEditMain.ApplyValuesToEditor(synSample, lstEditorColorsTemp);
   lstElement.ItemIndex := 0;
   lstElementClick(lstElement);
 end;
@@ -693,35 +751,35 @@ procedure TfrmEditorSettings.chkBoldClick(Sender: TObject);
 begin
   TEditorColors(lstElement.Items.Objects[lstElement.ItemIndex]).IsBold := chkBold.Checked;
   lstEditorColorsTemp.Items[lstElement.ItemIndex] := TEditorColors(lstElement.Items.Objects[lstElement.ItemIndex]);
-  frmMain.ApplyValuesToEditor(synSample, lstEditorColorsTemp);
+  frmLuaEditMain.ApplyValuesToEditor(synSample, lstEditorColorsTemp);
 end;
 
 procedure TfrmEditorSettings.chkItalicClick(Sender: TObject);
 begin
   TEditorColors(lstElement.Items.Objects[lstElement.ItemIndex]).IsItalic := chkItalic.Checked;
   lstEditorColorsTemp.Items[lstElement.ItemIndex] := TEditorColors(lstElement.Items.Objects[lstElement.ItemIndex]);
-  frmMain.ApplyValuesToEditor(synSample, lstEditorColorsTemp);
+  frmLuaEditMain.ApplyValuesToEditor(synSample, lstEditorColorsTemp);
 end;
 
 procedure TfrmEditorSettings.chkUnderlineClick(Sender: TObject);
 begin
   TEditorColors(lstElement.Items.Objects[lstElement.ItemIndex]).IsUnderline := chkUnderline.Checked;
   lstEditorColorsTemp.Items[lstElement.ItemIndex] := TEditorColors(lstElement.Items.Objects[lstElement.ItemIndex]);
-  frmMain.ApplyValuesToEditor(synSample, lstEditorColorsTemp);
+  frmLuaEditMain.ApplyValuesToEditor(synSample, lstEditorColorsTemp);
 end;
 
 procedure TfrmEditorSettings.cboForegroundChange(Sender: TObject);
 begin
   TEditorColors(lstElement.Items.Objects[lstElement.ItemIndex]).Foreground := ColorToString(cboForeground.Selected);
   lstEditorColorsTemp.Items[lstElement.ItemIndex] := TEditorColors(lstElement.Items.Objects[lstElement.ItemIndex]);
-  frmMain.ApplyValuesToEditor(synSample, lstEditorColorsTemp);
+  frmLuaEditMain.ApplyValuesToEditor(synSample, lstEditorColorsTemp);
 end;
 
 procedure TfrmEditorSettings.cboBackgroundChange(Sender: TObject);
 begin
   TEditorColors(lstElement.Items.Objects[lstElement.ItemIndex]).Background := ColorToString(cboBackground.Selected);
   lstEditorColorsTemp.Items[lstElement.ItemIndex] := TEditorColors(lstElement.Items.Objects[lstElement.ItemIndex]);
-  frmMain.ApplyValuesToEditor(synSample, lstEditorColorsTemp);
+  frmLuaEditMain.ApplyValuesToEditor(synSample, lstEditorColorsTemp);
 end;
 
 procedure TfrmEditorSettings.FormShow(Sender: TObject);
@@ -789,13 +847,13 @@ end;
 
 procedure TfrmEditorSettings.cboColorSetClick(Sender: TObject);
 begin
-  frmMain.GetColorSet(cboColorSet.Items[cboColorSet.ItemIndex]);
-  LoadEditorSettings;
+  frmLuaEditMain.GetColorSet(cboColorSet.Items[cboColorSet.ItemIndex]);
+  LoadEditorSettings(False);
 end;
 
 procedure TfrmEditorSettings.btnCancelClick(Sender: TObject);
 begin
-  frmMain.LoadEditorSettingsFromReg;
+  frmLuaEditMain.LoadEditorSettingsFromReg;
 end;
 
 procedure TfrmEditorSettings.bitbtnDeleteClick(Sender: TObject);
@@ -833,7 +891,7 @@ begin
             cboColorSet.ItemIndex := x;
         end;
 
-        frmMain.GetColorSet(cboColorSet.Items[cboColorSet.ItemIndex]);
+        frmLuaEditMain.GetColorSet(cboColorSet.Items[cboColorSet.ItemIndex]);
         LoadEditorSettings;
       end
       else
@@ -852,7 +910,7 @@ begin
   {if cboColorSet.Items.Count > 0 then
   begin
     cboColorSet.ItemIndex := 0;
-    frmMain.GetColorSet(cboColorSet.Items[cboColorSet.ItemIndex]);
+    TfrmLuaEditMain.GetColorSet(cboColorSet.Items[cboColorSet.ItemIndex]);
     LoadEditorSettings;
   end;}
 end;

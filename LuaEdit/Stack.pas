@@ -49,13 +49,13 @@ begin
       end;
 
       // update locals...
-      frmMain.PrintLocal(frmMain.LuaState, lstCallStack.Selected.Index);
-      frmMain.PrintWatch(frmMain.LuaState);
+      frmLuaEditMain.PrintLocal(frmLuaEditMain.LuaState, lstCallStack.Selected.Index);
+      frmLuaEditMain.PrintWatch(frmLuaEditMain.LuaState);
 
       frmStack.lstCallStack.Items.EndUpdate;
       lstCallStack.Selected.ImageIndex := 1;
-      frmMain.PopUpUnitToScreen(pBreakInfo.FileName, pBreakInfo.Line).pDebugInfos.iStackMarker := pBreakInfo.Line+1;
-      TLuaUnit(frmMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
+      TLuaEditDebugFile(frmLuaEditMain.PopUpUnitToScreen(pBreakInfo.FileName, pBreakInfo.Line)).DebugInfos.iStackMarker := pBreakInfo.Line+1;
+      TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
     end;
   end;
 end;

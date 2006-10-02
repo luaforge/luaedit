@@ -1077,7 +1077,7 @@ object frmAbout: TfrmAbout
       Top = 60
       Width = 210
       Height = 13
-      Caption = 'Copyright'#169' 2004-2005 Jean-Fran'#231'ois Goulet'
+      Caption = 'Copyright'#169' 2004-2006 Jean-Fran'#231'ois Goulet'
     end
     object Label10: TLabel
       Left = 32

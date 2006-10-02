@@ -55,6 +55,12 @@ type
     N1: TMenuItem;
     Refresh1: TMenuItem;
     AddWatch1: TMenuItem;
+    N2: TMenuItem;
+    ExpandAll1: TMenuItem;
+    CollapseAll1: TMenuItem;
+    Expand1: TMenuItem;
+    Collapse1: TMenuItem;
+    N3: TMenuItem;
     procedure vstWatchGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: WideString);
     procedure vstWatchEditing(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean);
     procedure vstWatchCreateEditor(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; out EditLink: IVTEditLink);
@@ -74,6 +80,12 @@ type
     procedure AddWatch1Click(Sender: TObject);
     procedure Refresh1Click(Sender: TObject);
     procedure DeleteSelectedItem1Click(Sender: TObject);
+    procedure Expand1Click(Sender: TObject);
+    procedure Collapse1Click(Sender: TObject);
+    procedure ExpandAll1Click(Sender: TObject);
+    procedure CollapseAll1Click(Sender: TObject);
+    procedure vstWatchMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
   private
     { Private declarations }
     procedure WMStartEditing(var Message: TMessage); message WM_STARTEDITING;
@@ -273,7 +285,7 @@ begin
     pNode := Sender.AddChild(Sender.RootNode);
     pData := Sender.GetNodeData(pNode);
     pData.Name := TSynEdit(Source).SelText;
-    frmMain.PrintWatch(frmMain.LuaState);
+    frmLuaEditMain.PrintWatch(frmLuaEditMain.LuaState);
   end;
 end;
 
@@ -284,17 +296,17 @@ end;
 
 procedure TfrmWatch.tbtnRefreshWatchClick(Sender: TObject);
 begin
-  frmMain.PrintWatch(frmMain.LuaState);
+  frmLuaEditMain.PrintWatch(frmLuaEditMain.LuaState);
 end;
 
 procedure TfrmWatch.tbtnAddWatchClick(Sender: TObject);
 begin
-  frmMain.DoAddWatchExecute;
+  frmLuaEditMain.DoAddWatchExecute;
 end;
 
 procedure TfrmWatch.vstWatchEdited(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex);
 begin
-  frmMain.PrintWatch(frmMain.LuaState);
+  frmLuaEditMain.PrintWatch(frmLuaEditMain.LuaState);
 end;
 
 procedure TfrmWatch.WMStartEditing(var Message: TMessage);
@@ -313,8 +325,24 @@ procedure TfrmWatch.vstWatchChange(Sender: TBaseVirtualTree; Node: PVirtualNode)
 begin
   with Sender do
   begin
-    tbtnDelete.Enabled := Assigned(GetFirstSelected());
-    DeleteSelectedItem1.Enabled := Assigned(GetFirstSelected());
+    if Assigned(Node) then
+    begin
+      tbtnDelete.Enabled := (Node.Parent = RootNode);
+      DeleteSelectedItem1.Enabled := (Node.Parent = RootNode);
+      Expand1.Enabled := (Node.ChildCount > 0);
+      ExpandAll1.Enabled := (Node.ChildCount > 0);
+      Collapse1.Enabled := (Node.ChildCount > 0);
+      CollapseAll1.Enabled := (Node.ChildCount > 0);
+    end
+    else
+    begin
+      tbtnDelete.Enabled := False;
+      DeleteSelectedItem1.Enabled := False;
+      Expand1.Enabled := False;
+      ExpandAll1.Enabled := False;
+      Collapse1.Enabled := False;
+      CollapseAll1.Enabled := False;
+    end;
 
     // Start immediate editing as soon as another node gets focused.
     if Assigned(Node) and (Node.Parent <> RootNode) then
@@ -390,6 +418,10 @@ procedure TfrmWatch.FormCreate(Sender: TObject);
 begin
   tbtnDelete.Enabled := False;
   DeleteSelectedItem1.Enabled := False;
+  Expand1.Enabled := False;
+  ExpandAll1.Enabled := False;
+  Collapse1.Enabled := False;
+  CollapseAll1.Enabled := False;
 end;
 
 procedure TfrmWatch.AddWatch1Click(Sender: TObject);
@@ -405,6 +437,41 @@ end;
 procedure TfrmWatch.DeleteSelectedItem1Click(Sender: TObject);
 begin
   tbtnDelete.Click;
+end;
+
+procedure TfrmWatch.Expand1Click(Sender: TObject);
+begin
+  if Assigned(vstWatch.GetFirstSelected()) then
+    vstWatch.Expanded[vstWatch.GetFirstSelected] := True;
+end;
+
+procedure TfrmWatch.Collapse1Click(Sender: TObject);
+begin
+  if Assigned(vstWatch.GetFirstSelected()) then
+    vstWatch.Expanded[vstWatch.GetFirstSelected] := False;
+end;
+
+procedure TfrmWatch.ExpandAll1Click(Sender: TObject);
+begin
+  if Assigned(vstWatch.GetFirstSelected()) then
+    vstWatch.FullExpand(vstWatch.GetFirstSelected());
+end;
+
+procedure TfrmWatch.CollapseAll1Click(Sender: TObject);
+begin
+  if Assigned(vstWatch.GetFirstSelected()) then
+    vstWatch.FullCollapse(vstWatch.GetFirstSelected());
+end;
+
+procedure TfrmWatch.vstWatchMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  if Assigned(vstWatch.GetFirstSelected()) then
+  begin
+    Expand1.Enabled := (vstWatch.GetFirstSelected().ChildCount > 0);
+    ExpandAll1.Enabled := (vstWatch.GetFirstSelected().ChildCount > 0);
+    Collapse1.Enabled := (vstWatch.GetFirstSelected().ChildCount > 0);
+    CollapseAll1.Enabled := (vstWatch.GetFirstSelected().ChildCount > 0);
+  end;
 end;
 
 end.

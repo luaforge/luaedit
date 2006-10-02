@@ -43,12 +43,9 @@ type
 var
   frmAbout: TfrmAbout;
 
-function GetFileVersion(const FileName: PChar): PChar; cdecl; external 'LuaEditSys.dll';
-function GetOSInfo: PChar; cdecl; external 'LuaEditSys.dll';
-
 implementation
 
-uses Math;
+uses Math, Misc;
 
 {$R *.dfm}
 
@@ -71,13 +68,13 @@ var
 begin
   pMemStatus.dwLength := SizeOf(TMemoryStatus);
   GlobalMemoryStatus(pMemStatus);
-  TotalMem := Ceil(pMemStatus.dwTotalPhys / 1024);
-  Result := IntToStr(TotalMem)+' KB';
+  TotalMem := pMemStatus.dwTotalPhys;
+  Result := GetFileSizeStr(TotalMem);
 end;
 
 procedure TfrmAbout.imgLuaLogoClick(Sender: TObject);
 begin
-  ShellExecute(Self.Handle, 'open', 'http://www.lua.org', nil, nil, SW_SHOWNORMAL);
+  BrowseURL(PChar('http://www.lua.org'));
 end;
 
 procedure TfrmAbout.Label7Click(Sender: TObject);
@@ -87,7 +84,7 @@ end;
 
 procedure TfrmAbout.Image1Click(Sender: TObject);
 begin
-  ShellExecute(Self.Handle, 'open', 'http://www.luaedit.net', nil, nil, SW_SHOWNORMAL);
+  BrowseURL(PChar('http://www.luaedit.net'));
 end;
 
 procedure TfrmAbout.Label1Click(Sender: TObject);
@@ -97,12 +94,12 @@ end;
 
 procedure TfrmAbout.Image3Click(Sender: TObject);
 begin
-  ShellExecute(Self.Handle, 'open', 'http://www.luaedit.net', nil, nil, SW_SHOWNORMAL);
+  BrowseURL(PChar('http://www.luaedit.net'));
 end;
 
 procedure TfrmAbout.Image2Click(Sender: TObject);
 begin
-  ShellExecute(Self.Handle, 'open', 'http://opensource.org/index.php', nil, nil, SW_SHOWNORMAL);
+  BrowseURL(PChar('http://opensource.org/index.php'));
 end;
 
 end.

@@ -62,6 +62,7 @@ object frmWatch: TfrmWatch
     OnGetText = vstWatchGetText
     OnGetNodeDataSize = vstWatchGetNodeDataSize
     OnKeyDown = vstWatchKeyDown
+    OnMouseDown = vstWatchMouseDown
     Columns = <
       item
         Position = 0
@@ -82,7 +83,7 @@ object frmWatch: TfrmWatch
     Height = 24
     AutoSize = True
     Flat = True
-    Images = frmMain.imlActions
+    Images = frmLuaEditMain.imlActions
     ParentShowHint = False
     ShowHint = True
     TabOrder = 2
@@ -127,11 +128,11 @@ object frmWatch: TfrmWatch
     OnKeyDown = FEditKeyDown
   end
   object ppmWatch: TPopupMenu
-    Images = frmMain.imlActions
+    Images = frmLuaEditMain.imlActions
     Left = 48
     Top = 48
     object AddWatch1: TMenuItem
-      Action = frmMain.actAddWatch
+      Action = frmLuaEditMain.actAddWatch
     end
     object DeleteSelectedItem1: TMenuItem
       Caption = 'Delete Selected Item'
@@ -146,10 +147,32 @@ object frmWatch: TfrmWatch
       ImageIndex = 63
       OnClick = Refresh1Click
     end
+    object N2: TMenuItem
+      Caption = '-'
+    end
+    object Expand1: TMenuItem
+      Caption = 'Expand'
+      OnClick = Expand1Click
+    end
+    object Collapse1: TMenuItem
+      Caption = 'Collapse'
+      OnClick = Collapse1Click
+    end
+    object N3: TMenuItem
+      Caption = '-'
+    end
+    object ExpandAll1: TMenuItem
+      Caption = 'Expand All'
+      OnClick = ExpandAll1Click
+    end
+    object CollapseAll1: TMenuItem
+      Caption = 'Collapse All'
+      OnClick = CollapseAll1Click
+    end
   end
   object JvDockClient1: TJvDockClient
     DirectDrag = False
-    DockStyle = frmMain.jvDockVSNet
+    DockStyle = frmLuaEditMain.jvDockVSNet
     Left = 80
     Top = 48
   end

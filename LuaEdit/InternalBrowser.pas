@@ -10,9 +10,9 @@ uses
 
 const
   // Mouse click basic events
-  WM_XBUTTONDOWN  = $020B;
-  WM_XBUTTONUP    = $020C;
-  WM_XBUTTONDBLCLK= $020D;
+  WM_XBUTTONDOWN   = $020B;
+  WM_XBUTTONUP     = $020C;
+  WM_XBUTTONDBLCLK = $020D;
 
   // Extended mouse buttons
   MOUSE_XBUTTONPREV  = $10000;
@@ -60,13 +60,10 @@ type
     procedure actSearchExecute(Sender: TObject);
     procedure actGoExecute(Sender: TObject);
     procedure InternalBrowserCommandStateChange(Sender: TObject; Command: Integer; Enable: WordBool);
-    procedure InternalBrowserBeforeNavigate2(Sender: TObject;
-      const pDisp: IDispatch; var URL, Flags, TargetFrameName, PostData,
-      Headers: OleVariant; var Cancel: WordBool);
+    procedure InternalBrowserBeforeNavigate2(Sender: TObject; const pDisp: IDispatch; var URL, Flags, TargetFrameName, PostData, Headers: OleVariant; var Cancel: WordBool);
     procedure cboURLKeyPress(Sender: TObject; var Key: Char);
     procedure FormShow(Sender: TObject);
-    procedure InternalBrowserDocumentComplete(Sender: TObject;
-      const pDisp: IDispatch; var URL: OleVariant);
+    procedure InternalBrowserDocumentComplete(Sender: TObject; const pDisp: IDispatch; var URL: OleVariant);
   private
     {Private variables}
     IsFirstTime: Boolean;
@@ -97,7 +94,7 @@ end;
 procedure TfrmInternalBrowser.btnXHistoryClick(Sender: TObject);
 begin
   if not Self.Visible then
-    frmMain.DoShowInternalBrowserExecute;
+    frmLuaEditMain.DoShowInternalBrowserExecute;
 
   cboURL.Text := TJvOutlookBarButton(Sender).Caption;
   actGo.Execute;

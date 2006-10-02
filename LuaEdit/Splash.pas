@@ -27,11 +27,9 @@ type
 var
   frmSplash: TfrmSplash;
 
-function GetFileVersion(const FileName: PChar): PChar; cdecl; external 'LuaEditSys.dll';
-
 implementation
 
-uses Main;
+uses Main, Misc;
 
 {$R *.dfm}
 

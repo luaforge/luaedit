@@ -15,13 +15,15 @@ type
     btnBrowse: TButton;
     txtExistingFile: TEdit;
     chkExisting: TRadioButton;
-    chkNew: TRadioButton;
+    chkNewUnit: TRadioButton;
     odlgOpenUnit: TOpenDialog;
     lblEG1: TLabel;
     lblEG2: TLabel;
+    chkNewMacro: TRadioButton;
+    chkNewTextFile: TRadioButton;
     procedure FormShow(Sender: TObject);
     procedure chkExistingClick(Sender: TObject);
-    procedure chkNewClick(Sender: TObject);
+    procedure chkNewUnitClick(Sender: TObject);
     procedure btnBrowseClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -47,7 +49,7 @@ begin
   btnBrowse.Enabled := False;
   lblEG1.Enabled := False;
   lblEG2.Enabled := False;
-  chkNew.Checked := True;
+  chkNewUnit.Checked := True;
   lstFiles.Clear;
 end;
 
@@ -59,7 +61,7 @@ begin
   lblEG2.Enabled := True;
 end;
 
-procedure TfrmAddToPrj.chkNewClick(Sender: TObject);
+procedure TfrmAddToPrj.chkNewUnitClick(Sender: TObject);
 begin
   txtExistingFile.Enabled := False;
   btnBrowse.Enabled := False;

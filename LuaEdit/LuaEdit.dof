@@ -18,7 +18,7 @@ N=1
 O=0
 P=1
 Q=1
-R=0
+R=1
 S=0
 T=0
 U=0
@@ -94,7 +94,7 @@ OutputDir=.\bin
 UnitOutputDir=
 PackageDLLOutputDir=
 PackageDCPOutputDir=
-SearchPath=$(DELPHI)\Lib\Debug;C:\Prog\Delphi\Component\JEDI\jcl\lib\D7\debug;C:\Prog\Delphi\COMPON~1\JEDI\jcl\lib\D7\debug;.\Syntax;.\LuaCore;C:\Prog\Delphi\Component\XPMenu;C:\Prog\Delphi\Component\SynEdit\Source
+SearchPath=$(DELPHI)\Lib\Debug;C:\Prog\Delphi\COMPON~1\JEDI\jcl\lib\D7\debug;C:\Prog\Delphi\Component\JEDI\jcl\lib\D7\debug;.\Syntax;.\LuaCore;C:\Prog\Delphi\Component\XPMenu;C:\Prog\Delphi\Component\SynEdit\Source;C:\Prog\Delphi\Component\ExtLib
 Packages=vcl;rtl;vclx;indy;inet;xmlrtl;vclie;inetdbbde;inetdbxpress;dbrtl;dsnap;dsnapcon;vcldb;soaprtl;VclSmp;dbexpress;dbxcds;inetdb;bdertl;vcldbx;webdsnap;websnap;adortl;ibxpress;teeui;teedb;tee;dss;visualclx;visualdbclx;vclactnband;vclshlctrls;IntrawebDB_50_70;Intraweb_50_70;Rave50CLX;Rave50VCL;dclOfficeXP;DJcl;JvStdCtrlsD7R;JvAppFrmD7R;JvCoreD7R;JvBandsD7R;JvDockingD7R;JvDotNetCtrlsD7R;JvEDID7R;qrpt;JvGlobusD7R;JvHMID7R;JvInspectorD7R;JvInterpreterD7R;JvJansD7R;JvManagedThreadsD7R;JvCmpD7R;JvMMD7R;JvNetD7R;JvPageCompsD7R;JvPluginD7R;JvPrintPreviewD7R;JvCtrlsD7R;JvSystemD7R;JvTimeFrameworkD7R;JvUIBD7R;JvValidatorsD7R;JvWizardD7R;JvXPCtrlsD7R;JvCryptD7R;JvCustomD7R;JvBDED7R;JvDBD7R;JvDlgsD7R
 Conditionals=
 DebugSourceDirs=
@@ -112,38 +112,25 @@ RootDir=
 [Version Info]
 IncludeVerInfo=1
 AutoIncBuild=1
-MajorVer=2
-MinorVer=5
-Release=1
-Build=990
+MajorVer=3
+MinorVer=0
+Release=2
+Build=148
 Debug=0
 PreRelease=0
 Special=0
 Private=0
 DLL=0
-Locale=3084
+Locale=4105
 CodePage=1252
 [Version Info Keys]
 CompanyName=Open Source
 FileDescription=IDE for Lua 5.0.2
-FileVersion=2.5.1.990
+FileVersion=3.0.2.148
 InternalName=LuaEdit
-LegalCopyright=LuaEdit Copyright 2004-2005 ©
+LegalCopyright=LuaEdit Copyright 2004-2006 ©
 LegalTrademarks=
 OriginalFilename=LuaEdit.exe
 ProductName=LuaEdit for Lua 5.0
-ProductVersion=2.0.1.0
-Comments=This project was originally created by Jean-Francois Goulet
-[HistoryLists\hlUnitAliases]
-Count=1
-Item0=WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;
-[HistoryLists\hlSearchPath]
-Count=5
-Item0=$(DELPHI)\Lib\Debug;C:\Prog\Delphi\Component\JEDI\jcl\lib\D7\debug;C:\Prog\Delphi\COMPON~1\JEDI\jcl\lib\D7\debug;.\Syntax;.\LuaCore;C:\Prog\Delphi\Component\XPMenu;C:\Prog\Delphi\Component\SynEdit\Source
-Item1=.\Syntax;.\LuaCore;C:\Prog\Delphi\Component\XPMenu;C:\Prog\Delphi\Component\SynEdit\Source
-Item2=$(DELPHI)\Lib\Debug;C:\Prog\Delphi\Component\JEDI\jcl\lib\D7\debug;.\Syntax;.\LuaCore;C:\Prog\Delphi\Component\XPMenu;C:\Prog\Delphi\Component\SynEdit\Source
-Item3=C:\Prog\Delphi\Component\SynEdit\Packages;C:\Prog\Delphi\Component\SynEdit\Source
-Item4=C:\Prog\Delphi\Component\SynEdit\Packages
-[HistoryLists\hlOutputDirectorry]
-Count=1
-Item0=.\bin
+ProductVersion=3.0.2.116
+Comments=This project was originally created by Jean-Francois Goulet. Please Visit www.luaedit.net for more informations.
