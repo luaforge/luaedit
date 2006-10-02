@@ -12,8 +12,8 @@
 		 <table width="100%" border="0" cellpadding="0" cellspacing="0" summary="">
 				<tr> 			   					
 					<td height="135" valign="top">
-						<img width="382" height="81" src="Medias/LuaEditLogo.jpg" align="left">
-						<img width="77" height="135" src="Medias/WebCorner.jpg" align="right">
+						<img width="300" height="150" src="Medias/LuaEditLogo.jpg" align="left">
+						<img width="112.5" height="187.5" src="Medias/WebCorner.jpg" align="right">
 					</td>
 				</tr>
 				<tr>
@@ -37,28 +37,64 @@
 				<tr valign="top">
 					<td>
 						  <font face="Arial" size="2">
-						  <table width="100%">
+						  <table width="100%">	
 						  		 <tr>
-								 	 <b><font face="Arial" size="3">&nbsp;Major Release: v2.6.1.???</font></b>
+								 	 <b><font face="Arial" size="3">&nbsp;Major Pre-Release: v3.0.2.117a</font></b>
 									 <br>
-									 <font face="Arial" size="1">&nbsp;Published on ??.??.2005</font>
+									 <font face="Arial" size="1">&nbsp;Published on 05.07.2006</font>
 									 <br>
 									 <br>
-									 <ul type="square"> 								
-									 	  <li>Changed GUI of editor's settings window.</li>	 												
-									 	  <li>Changed GUI of project's settings window.</li>
-										  <li>Moved editor settings from ini file to the registry. (Backward compatibility with ini files is still handle)</li>
-									 	  <li>Added color set management to make it easier for programmers to modify syntax highlighting colors.</li>  
-									 	  <li>Added target lua unit option in project's settings.</li>
+									 <ul type="square"> 					
+									 	  <li>Added support of madExcept component within LuaEdit to allow bug reports when LuaEdit is crashing. (Should improve trouble shooting)</li>			
+									 	  <li>Added new Lua profiler to get a better idea where to optimize your code.</li>	 												
+									 	  <li>Added new compile action to allow precompiling Lua scripts from LuaEdit.</li>
+										  <li>Added new Create GUID tool.</li>
+										  <li>Added new Component List in help menu.</li>
+										  <li>Added new Compile Directory setting in project's settings.</li>
+										  <li>Added new Compile Extension setting in project's settings.</li>
+										  <li>Added maximum sub-table setting in editor's settings.</li>
+										  <li>Bug fixed for infinite recursivity in tables such as: t={}; t.st={}; t.st=t;.</li>
+										  <li>Bug fixed in editor's settings with color set option.</li>							   
+										  <li>Bug fixed in editor's settings with search path option corruption.</li>
 									 	  <li>Added working directory option in project's settings.</li>
-										  <li>Added options for web browser in editor's settings.</li>
-										  <li>Added animated tabs speed option in editor's settings.</li>
 									 </ul>
 									 <hr size="1" color="#000000">
 									 <br>
 								 </tr>
 						  		 <tr>
-								 	 <b><font face="Arial" size="3">&nbsp;Major Release: v2.5.1.949</font></b>
+								 	 <b><font face="Arial" size="3">&nbsp;Major Pre-Release: v3.0.1.546a</font></b>
+									 <br>
+									 <font face="Arial" size="1">&nbsp;Published on 03.22.2006</font>
+									 <br>
+									 <br>
+									 <ul type="square"> 								
+									 	  <li>Changed GUI of editor's settings window.</li>	 												
+									 	  <li>Changed GUI of project's settings window.</li>
+										  <li>Added home page link in help menu.</li>
+										  <li>Changed LuaEdit's main logo.</li>
+										  <li>Changed LuaEdit's Splash and About dialogs to adapt to the new "theme".</li>							   
+										  <li>Added target lua unit option in project's settings.</li>
+									 	  <li>Added working directory option in project's settings.</li>
+										  <li>Added remote debugging information in project's settings.</li>
+										  <li>Moved editor settings from ini file to the registry. (Backward compatibility with ini files is still handle)</li>
+									 	  <li>Added color set management to make it easier for programmers to modify syntax highlighting colors.</li>  
+										  <li>Added options for web browser in editor's settings.</li>
+										  <li>Added animated tabs speed option in editor's settings.</li>
+										  <li>Added temporary directory in editor's settings for *.tag files. (Auto clean-up on quit)</li>
+										  <li>Added new Debug section in editor's settings.</li>
+										  <li>Bug fix with infinite table reference when setting a global or a local variable to _G. (pointer comparaison)</li>
+										  <li>Bug fix with Search Path setting and spaces in that string.</li>
+										  <li>Bug fix in Watches window and delete action.</li>
+										  <li>Bug fix in Project Tree window popup menu synchronization for enabled/disabled items.</li>
+										  <li>Bug fix with breakpoint conditions and local variable testing.</li>
+										  <li>Bug fix with Save Project As... menu enabling/disabling.</li>
+										  <li>Bug fix with all saving actions and slow execution. (Now saving is fast)</li>
+									 </ul>
+									 <hr size="1" color="#000000">
+									 <br>
+								 </tr>
+						  		 <tr>
+								 	 <b><font face="Arial" size="3">&nbsp;Minor Release: v2.5.1.949</font></b>
 									 <br>
 									 <font face="Arial" size="1">&nbsp;Published on 09.14.2005</font>
 									 <br>
@@ -75,7 +111,7 @@
 									 <br>
 								 </tr>
 						  		 <tr>
-								 	 <b><font face="Arial" size="3">&nbsp;Major Release: v2.4.1.944</font></b>
+								 	 <b><font face="Arial" size="3">&nbsp;Minor Release: v2.4.1.944</font></b>
 									 <br>
 									 <font face="Arial" size="1">&nbsp;Published on 09.05.2005</font>
 									 <br>
@@ -99,7 +135,7 @@
 									 <br>
 								 </tr>
 						  		 <tr>
-								 	 <b><font face="Arial" size="3">&nbsp;Major Release: v2.3.1.902</font></b>
+								 	 <b><font face="Arial" size="3">&nbsp;Minor Release: v2.3.1.902</font></b>
 									 <br>
 									 <font face="Arial" size="1">&nbsp;Published on 08.28.2005</font>
 									 <br>
@@ -121,7 +157,7 @@
 									 <br>
 								 </tr>
 						  		 <tr>
-								 	 <b><font face="Arial" size="3">&nbsp;Major Release: v2.2.1.881</font></b>
+								 	 <b><font face="Arial" size="3">&nbsp;Minor Release: v2.2.1.881</font></b>
 									 <br>
 									 <font face="Arial" size="1">&nbsp;Published on 08.16.2005</font>
 									 <br>
@@ -159,7 +195,7 @@
 									 <br>
 								 </tr>
 								 <tr>
-								 	 <b><font face="Arial" size="3">&nbsp;Quick Release: v2.0.1.626</font></b>
+								 	 <b><font face="Arial" size="3">&nbsp;Minor Release: v2.0.1.626</font></b>
 									 <br>
 									 <font face="Arial" size="1">&nbsp;Published on 04.25.2005</font>
 									 <br>
