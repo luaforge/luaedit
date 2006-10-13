@@ -1,0 +1,224 @@
+a:link {
+	color: #2F719C;
+	background-color: #FFFFFF;
+	text-decoration: underline;
+}
+
+a:visited {
+	color: #2F719C;
+	background-color: #FFFFFF;
+	text-decoration: underline;
+}
+
+a:hover {
+	color: #2F719C;
+	background-color: #FFFFFF;
+	text-decoration: none;
+}
+
+a:active {
+	color: #2F719C;
+	background-color: #FFFFFF;
+	text-decoration: none;
+}
+
+img {
+	border: 0px;
+}
+
+body {
+	color: #000000;
+	background-color: #536AA0;
+	margin-left:   0px;
+	margin-top:    20px;
+	margin-right:  0px;
+	margin-bottom: 0px;
+}
+
+.TopImg {
+	width: 752px;
+	border-left:  1px #000000 solid;
+	border-top:   1px #000000 solid;
+	border-right: 1px #000000 solid;
+	position: relative;
+	left: 50%;
+	margin-left: -376px; /* half the width of the div */
+}
+
+.Menu {
+	width: 752px;
+	border-left:  1px #000000 solid;
+	border-right: 1px #000000 solid;
+	position: relative;
+	left: 50%;
+	margin-left: -376px; /* half the width of the div */
+}
+
+.ContentTable {
+	width: 752px;
+	border-left:   1px #000000 solid;
+	border-right:  1px #000000 solid;
+	border-bottom: 1px #000000 solid;
+	position: relative;
+	left: 50%;
+	margin-left: -376px; /* half the width of the div */
+}
+
+.ContentCell {
+	background-image: url(images/ContentBG.gif);
+	background-repeat: repeat-x;
+	padding-top:  25px;
+	padding-left: 19px;
+	color: #000000;
+	background-color: #EBF1FE;
+}
+
+.ModuleTopLeft {
+	width: 280px;
+	height: 23px;
+	background-image:url(images/ModuleTopLeft.gif);
+	border-left:  1px #26375E solid;
+	border-top:   1px #26375E solid;
+	border-right: 1px #26375E solid;
+	padding-left: 13px;
+}
+
+.ModuleContentLeft {
+	width: 280px;
+	border-left:      1px #26375E solid;
+	border-right:     1px #26375E solid;
+	color:            #000000;
+	background-color: #FFFFFF;
+	padding-left:     13px;
+	padding-top:      16px;
+	padding-right:    13px;
+	padding-bottom:   16px;
+	font-family:      arial, sans-serif;
+	font-size:        11px;
+}
+
+.LuaEdit {
+	color: #2F719C;
+	background-color: #FFFFFF;
+	font-weight: bold;
+}
+
+.ModuleBottomLeft {
+	width:  280px;
+	height: 3px;
+	color: #000000;
+	background-color: #4D67A2;
+	font-size:     1px;
+	border-left:   1px #26375E solid;
+	border-right:  1px #26375E solid;
+	border-bottom: 1px #26375E solid;
+}
+
+.EmailTextbox {
+	border: 1px #000000 solid;
+	height: 19px;
+	width:  195px;
+	font-size:    9px;
+	padding-top:  2px;
+	padding-left: 1px;
+}
+
+.ModuleTopRight {
+	width:  417px;
+	height: 23px;
+	background-image:url(images/ModuleTopRight.gif);
+	border-left:  1px #26375E solid;
+	border-top:   1px #26375E solid;
+	border-right: 1px #26375E solid;
+	padding-left: 13px;
+}
+
+.ModuleContentRight {
+	width: 417px;
+	border-left:  1px #26375E solid;
+	border-right: 1px #26375E solid;
+	color: #000000;
+	background-color: #FFFFFF;
+	padding-left:   13px;
+	padding-top:    16px;
+	padding-right:  13px;
+	padding-bottom: 16px;
+	font-family: arial, sans-serif;
+	font-size:   11px;
+}
+
+.MoreNews {
+	font-family: "MS Sans Serif", sans-serif;
+	font-size:   9px;
+	font-weight: bold;
+	color: #2F719C;
+	background-color: #FFFFFF;
+	padding-right: 4px;
+}
+
+.ModuleBottomRight {
+	width:  417px;
+	height: 3px;
+	color: #000000;
+	background-color: #4D67A2;
+	font-size:     1px;
+	border-left:   1px #26375E solid;
+	border-right:  1px #26375E solid;
+	border-bottom: 1px #26375E solid;
+}
+
+.BottomLinksTable {
+	width: 752px;
+	position: relative;
+	left: 50%;
+	margin-left: -376px; /* half the width of the div */
+}
+
+.Links {
+	padding-top: 18px;
+	text-align:  center;
+	font-size:   10px;
+	color: #FFFFFF;
+	background-color: #536AA0;
+	font-family: Arial, sans-serif;
+}
+
+#Links a:link {
+	color: #FFFFFF;
+	background-color: #536AA0;
+	text-decoration: none;
+}
+
+#Links a:visited {
+	color: #FFFFFF;
+	background-color: #536AA0;
+	text-decoration: none;
+}
+
+#Links a:hover {
+	color: #FFFFFF;
+	background-color: #536AA0;
+	text-decoration: underline;
+}
+
+#Links a:active {
+	color: #FFFFFF;
+	background-color: #536AA0;
+	text-decoration: none;
+}
+
+.Copyrights {
+	color: #FFFFFF;
+	background-color: #536AA0;
+	padding-top: 15px;
+	text-align:  center;
+	font-size:   10px;
+	font-family: Arial, sans-serif;
+}
+
+.IconsTable {
+	width: 550px;
+	position: relative;
+	left: 50%;
+	margin-left: -275px; /* half the width of the div */
+}
