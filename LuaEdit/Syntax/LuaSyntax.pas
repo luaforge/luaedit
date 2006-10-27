@@ -27,7 +27,7 @@ replace them with the notice and other provisions required by the GPL.
 If you do not delete the provisions above, a recipient may use your version
 of this file under either the MPL or the GPL.
 
-$Id: LuaSyntax.pas,v 1.1 2005-04-02 16:41:14 jfgoulet Exp $
+$Id: LuaSyntax.pas,v 1.2 2006-10-27 03:32:56 jfgoulet Exp $
 
 You may retrieve the latest version of this file at the SynEdit home page,
 located at http://SynEdit.SourceForge.net
@@ -859,7 +859,7 @@ end;
 function TSynLuaSyn.GetKeyWords: string;
 begin
   Result := 
-    'and,break,do,dofile,else,elseif,end,exit,false,for,function,if,in,loa' +
+    'and,break,div,do,dofile,else,elseif,end,exit,false,for,function,if,in,loa' +
     'ddll,local,nil,not,or,print,repeat,return,Sleep,then,true,type,until,w' +
     'hile';
 end;

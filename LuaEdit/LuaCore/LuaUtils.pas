@@ -109,17 +109,16 @@ function LuaGetMetaFunction(L: Plua_State; Index: Integer; Key: string): lua_CFu
 procedure LuaSetMetaFunction(L: Plua_State; Index: Integer; Key: string; F: lua_CFunction);
 
 procedure LuaShowStack(L: Plua_State; Caption: string = '');
-function LuaStackToStr(L: Plua_State; Index: Integer; MaxTable: Integer = -1; SubTableMax: Integer = 99): string;
+function LuaStackToStr(L: Plua_State; Index: Integer; MaxTable: Integer = -1; SubTableMax: Integer = 99; CheckCyclicReferencing: Boolean = True; TablePtrs: TList = nil): String;
 procedure LuaRegisterCustom(L: PLua_State; TableIndex: Integer; const Name: PChar; F: lua_CFunction);
 procedure LuaRegister(L: Plua_State; const Name: PChar; F: lua_CFunction);
 procedure LuaRegisterMetatable(L: Plua_State; const Name: PChar; F: lua_CFunction);
 procedure LuaRegisterProperty(L: PLua_State; const Name: PChar; ReadFunc, WriteFunc: lua_CFunction);
-procedure LuaStackToStrings(L: Plua_State; Lines: TStrings; MaxTable: Integer = -1; SubTableMax: Integer = 99);
-procedure LuaLocalToStrings(L: Plua_State; Lines: TStrings; MaxTable: Integer = -1; Level: Integer = 0; SubTableMax: Integer = 99);
-procedure LuaGlobalToStrings(L: PLua_State; Lines: TStrings; MaxTable: Integer = -1; SubTableMax: Integer = 99);
-procedure LuaTableToStrings(L: Plua_State; Index: Integer; Lines: TStrings; MaxTable: Integer = -1; SubTableMax: Integer = 99);
-procedure LuaTableToVirtualTreeView(L: Plua_State; Index: Integer; VTV: TVirtualStringTree; MaxTable: Integer; SubTableMax: Integer);
-procedure LuaTableToTreeView(L: Plua_State; Index: Integer; TV: TTreeView; MaxTable: Integer = -1; SubTableMax: Integer = 99);
+procedure LuaStackToStrings(L: Plua_State; Lines: TStrings; MaxTable: Integer = -1; SubTableMax: Integer = 99; CheckCyclicReferencing: Boolean = True);
+procedure LuaLocalToStrings(L: Plua_State; Lines: TStrings; MaxTable: Integer = -1; Level: Integer = 0; SubTableMax: Integer = 99; CheckCyclicReferencing: Boolean = True);
+procedure LuaGlobalToStrings(L: PLua_State; Lines: TStrings; MaxTable: Integer = -1; SubTableMax: Integer = 99; CheckCyclicReferencing: Boolean = True);
+procedure LuaTableToStrings(L: Plua_State; Index: Integer; Lines: TStrings; MaxTable: Integer = -1; SubTableMax: Integer = 99; CheckCyclicReferencing: Boolean = True);
+procedure LuaTableToVirtualTreeView(L: Plua_State; Index: Integer; VTV: TVirtualStringTree; MaxTable: Integer; SubTableMax: Integer; CheckCyclicReferencing: Boolean);
 function LuaGetIdentValue(L: Plua_State; Ident: string; MaxTable: Integer = -1): string;
 procedure LuaSetIdentValue(L: Plua_State; Ident, Value: string; MaxTable: Integer = -1);
 procedure LuaLoadBuffer(L: Plua_State; const Code: string; const Name: string);
@@ -187,7 +186,7 @@ end;
 
 function fputsex(const F, S: String; L, Dummy: Integer): Integer;
 begin
-  Result := fwriteex(PChar(F), PChar(S), SizeOf(Char), L, Length(S), Dummy);
+  Result := fwriteex(PChar(F), PChar(S), SizeOf(Char), Length(S), L, Dummy);
 end;
 
 function fputs(const S: string; Dummy: Integer): Integer;
@@ -266,7 +265,7 @@ end;
 function lua_io_writeex(L: Plua_State): Integer; cdecl;
   function pushresult(L: Plua_State; I: Boolean; FileName: PChar): Integer;
   begin
-    lua_pushboolean(L, 1);
+    lua_pushboolean(L, True);
     Result := 1;
   end;
 const
@@ -310,7 +309,7 @@ end;
 function lua_io_write(L: Plua_State): Integer; cdecl;
   function pushresult(L: Plua_State; I: Boolean; FileName: PChar): Integer;
   begin
-    lua_pushboolean(L, 1);
+    lua_pushboolean(L, True);
     Result := 1;
   end;
 const
@@ -345,12 +344,12 @@ end;
 
 function LuaToBoolean(L: PLua_State; Index: Integer): Boolean;
 begin
-  Result := (lua_toboolean(L, Index) <> 0);
+  Result := (lua_toboolean(L, Index) <> False);
 end;
 
 procedure LuaPushBoolean(L: PLua_State; B: Boolean);
 begin
-  lua_pushboolean(L, Integer(B));
+  lua_pushboolean(L, B);
 end;
 
 function LuaToInteger(L: PLua_State; Index: Integer): Integer;
@@ -462,7 +461,7 @@ end;
 function LuaGetTableBoolean(L: Plua_State; TableIndex: Integer; const Key: string): Boolean;
 begin
   LuaGetTable(L, TableIndex, Key);
-  Result := (lua_toboolean(L, -1) <> 0);
+  Result := (lua_toboolean(L, -1) <> False);
   lua_pop(L, 1);
 end;
 
@@ -516,7 +515,7 @@ end;
 function LuaRawGetTableBoolean(L: Plua_State; TableIndex: Integer; const Key: string): Boolean;
 begin
   LuaRawGetTable(L, TableIndex, Key);
-  Result := (lua_toboolean(L, -1) <> 0);
+  Result := (lua_toboolean(L, -1) <> False);
   lua_pop(L, 1);
 end;
 
@@ -567,7 +566,7 @@ end;
 procedure LuaSetTableBoolean(L: Plua_State; TableIndex: Integer; const Key: string; B: Boolean);
 begin
   LuaPushKeyString(L, TableIndex, Key);
-  lua_pushboolean(L, Integer(B));
+  lua_pushboolean(L, B);
   lua_settable(L, TableIndex);
 end;
 
@@ -638,7 +637,7 @@ end;
 procedure LuaRawSetTableBoolean(L: Plua_State; TableIndex: Integer; const Key: string; B: Boolean); 
 begin
   LuaPushKeyString(L, TableIndex, Key);
-  lua_pushboolean(L, Integer(B));
+  lua_pushboolean(L, B);
   lua_rawset(L, TableIndex);
 end;
 
@@ -689,11 +688,11 @@ function LuaGetMetaFunction(L: Plua_State; Index: Integer; Key: string): lua_CFu
 begin
   Result := nil;
   Index := LuaAbsIndex(L, Index);
-  if (lua_getmetatable(L, Index) = 0) then
+  if not lua_getmetatable(L, Index) then
     Exit;
 
   LuaGetTable(L, -1, Key);
-  if (lua_iscfunction(L, -1) <> 0) then
+  if lua_iscfunction(L, -1) then
     Result := lua_tocfunction(L, -1);
   lua_pop(L, 2);
 end;
@@ -718,7 +717,7 @@ procedure LuaSetMetaFunction(L: Plua_State; Index: Integer; Key: string; F: lua_
 // î≠ê∂Ç≥ÇπÇƒÇ¢ÇÈÅB
 begin
   Index := LuaAbsIndex(L, Index);
-  if (lua_getmetatable(L, Index) = 0) then
+  if not lua_getmetatable(L, Index) then
     lua_newtable(L);
 
   LuaRawSetTableFunction(L, -1, Key, F);
@@ -731,13 +730,14 @@ end;
 // Boolean: True/False
 // stirng : "..."
 // Table  : { Key1=Value Key2=Value }
-function LuaStackToStr(L: Plua_State; Index: Integer; MaxTable: Integer; SubTableMax: Integer): string;
+function LuaStackToStr(L: Plua_State; Index: Integer; MaxTable: Integer; SubTableMax: Integer; CheckCyclicReferencing: Boolean; TablePtrs: TList): String;
 var
   pGLobalsIndexPtr: Pointer;
+  bToFree: Boolean;
 
-  function TableToStr(Index: Integer): string;
+  function TableToStr(Index: Integer): String;
   var
-    Key, Value: string;
+    Key, Value: String;
     Count: Integer;
 
   begin
@@ -759,15 +759,22 @@ var
 
       // Key to string
       if lua_type(L, -2) = LUA_TNUMBER then
-        Key := '[' + Dequote(LuaStackToStr(L, -2, MaxTable, SubTableMax)) + ']'
+        Key := '[' + Dequote(LuaStackToStr(L, -2, MaxTable, SubTableMax, CheckCyclicReferencing, TablePtrs)) + ']'
       else
-        Key := Dequote(LuaStackToStr(L, -2, MaxTable, SubTableMax));
+        Key := Dequote(LuaStackToStr(L, -2, MaxTable, SubTableMax, CheckCyclicReferencing, TablePtrs));
 
       // Value to string...
       if ((Key = '_G') or (lua_topointer(L, -1) = pGLobalsIndexPtr)) then
         Value := LuaGlobalVariableStr
+      else if lua_type(L, -1) = LUA_TTABLE then
+      begin
+        if Assigned(TablePtrs) and CheckCyclicReferencing and (TablePtrs.IndexOf(lua_topointer(L, -1)) <> -1) then
+          Value := '[CYCLIC_REFERENCING_DETECTED]'
+        else
+          Value := LuaStackToStr(L, -1, MaxTable, SubTableMax, CheckCyclicReferencing, TablePtrs);
+      end
       else
-        Value := LuaStackToStr(L, -1, MaxTable, SubTableMax);
+        Value := LuaStackToStr(L, -1, MaxTable, SubTableMax, CheckCyclicReferencing, TablePtrs);
 
       if (lua_type(L, -1) = LUA_TFUNCTION) then
         Result := Result + Format('%s()=%p ', [Key, lua_topointer(L, -1)])
@@ -778,10 +785,17 @@ var
       lua_pop(L, 1);
     end;
 
-
     Result := Result + '}';
   end;
 begin
+  bToFree := False;
+
+  if not Assigned(TablePtrs) then
+  begin
+    TablePtrs := TList.Create;
+    bToFree := True;
+  end;
+
   if (MaxTable < 0) then
     MaxTable := DefaultMaxTable;
 
@@ -795,22 +809,35 @@ begin
   LUA_TNUMBER:
     Result := Format('%g', [lua_tonumber(L, Index)]);
   LUA_TBOOLEAN:
-    Result := BoolToStr(lua_toboolean(L, Index) <> 0, True);
+    Result := BoolToStr(lua_toboolean(L, Index), True);
   LUA_TSTRING:
     Result := '"'+lua_tostring(L, Index)+'"';
   LUA_TTABLE:
   begin
     if SubTableCount < SubTableMax then
     begin
-      SubTableCount := SubTableCount + 1;
-      Result := TableToStr(Index);
-      SubTableCount := SubTableCount - 1;
+      if Assigned(TablePtrs) and CheckCyclicReferencing and (TablePtrs.IndexOf(lua_topointer(L, Index)) <> -1) then
+      begin
+        Result := '[CYCLIC_REFERENCING_DETECTED]'
+      end
+      else
+      begin
+        if Assigned(TablePtrs) then
+          TablePtrs.Add(lua_topointer(L, Index));
+
+        SubTableCount := SubTableCount + 1;
+        Result := TableToStr(Index);
+        SubTableCount := SubTableCount - 1;
+
+        //if Assigned(TablePtrs) then
+          //TablePtrs.Delete(TablePtrs.IndexOf(lua_topointer(L, Index)));
+      end;
     end
     else
       Result := '[SUB_TABLE_MAX_LEVEL_HAS_BEEN_REACHED]';
   end;
   LUA_TFUNCTION:
-    if (lua_iscfunction(L, Index) <> 0) then
+    if lua_iscfunction(L, Index) then
       Result := Format('CFUNC:%p', [Pointer(lua_tocfunction(L, Index))])
     else
       Result := Format('FUNC:%p', [lua_topointer(L, Index)]);
@@ -823,6 +850,9 @@ begin
   else
     Assert(False);
   end;
+
+  if bToFree then
+    TablePtrs.Free;
 end;
 
 procedure LuaShowStack(L: Plua_State; Caption: string);
@@ -832,11 +862,12 @@ var
 begin
   N := lua_gettop(L);
   S := '[' + Caption + ']';
+  
   for I := N downto 1 do
   begin
-    S := S + CRLF + Format('%3d,%3d:%s', [LuaAbsIndex(L, I), LuaIncIndex(L, I),
-      LuaStackToStr(L, I, -1)]);
+    S := S + CRLF + Format('%3d,%3d:%s', [LuaAbsIndex(L, I), LuaIncIndex(L, I), LuaStackToStr(L, I, -1)]);
   end;
+
   ShowMessage(S);
 end;
 
@@ -942,16 +973,19 @@ begin
   lua_pop(L, Count + 1);
 end;
 
-procedure LuaStackToStrings(L: Plua_State; Lines: TStrings; MaxTable: Integer; SubTableMax: Integer);
+procedure LuaStackToStrings(L: Plua_State; Lines: TStrings; MaxTable: Integer; SubTableMax: Integer; CheckCyclicReferencing: Boolean);
 var
   I: Integer;
 begin
   Lines.Clear;
+  
   for I := lua_gettop(L) downto 1 do
-    Lines.Add(LuaStackToStr(L, I, MaxTable, SubTableMax));
+  begin
+    Lines.Add(LuaStackToStr(L, I, MaxTable, SubTableMax, CheckCyclicReferencing));
+  end;
 end;
 
-procedure LuaLocalToStrings(L: Plua_State; Lines: TStrings; MaxTable: Integer; Level: Integer; SubTableMax: Integer);
+procedure LuaLocalToStrings(L: Plua_State; Lines: TStrings; MaxTable: Integer; Level: Integer; SubTableMax: Integer; CheckCyclicReferencing: Boolean);
 var
   Name: PChar;
   Index: Integer;
@@ -961,46 +995,50 @@ begin
   AR := @Debug;
   Lines.Clear;
   Index := 1;
+  
   if (lua_getstack(L, Level, AR) = 0) then
     Exit;
 
   Name := lua_getlocal(L, AR, Index);
+  
   while (Name <> nil) do
   begin
-    Lines.Values[Name] := LuaStackToStr(L, -1, MaxTable, SubTableMax);
+    Lines.Values[Name] := LuaStackToStr(L, -1, MaxTable, SubTableMax, CheckCyclicReferencing);
     lua_pop(L, 1);
     Inc(Index);
     Name := lua_getlocal(L, AR, Index);
   end;
 end;
 
-procedure LuaGlobalToStrings(L: PLua_State; Lines: TStrings; MaxTable: Integer; SubTableMax: Integer);
+procedure LuaGlobalToStrings(L: PLua_State; Lines: TStrings; MaxTable: Integer; SubTableMax: Integer; CheckCyclicReferencing: Boolean);
 begin
   lua_pushvalue(L, LUA_GLOBALSINDEX);
   LuaTableToStrings(L, -1, Lines, MaxTable, SubTableMax);
   lua_pop(L, 1);
 end;
 
-procedure LuaTableToStrings(L: Plua_State; Index: Integer; Lines: TStrings; MaxTable: Integer; SubTableMax: Integer);
+procedure LuaTableToStrings(L: Plua_State; Index: Integer; Lines: TStrings; MaxTable: Integer; SubTableMax: Integer; CheckCyclicReferencing: Boolean);
 var
   Key, Value: string;
 begin
   Index := LuaAbsIndex(L, Index);
   Lines.Clear;
-
   lua_pushnil(L);
+  
   while (lua_next(L, Index) <> 0) do
   begin
-    Key := Dequote(LuaStackToStr(L, -2, MaxTable, SubTableMax));
-    Value := LuaStackToStr(L, -1, MaxTable, SubTableMax);
+    Key := Dequote(LuaStackToStr(L, -2, MaxTable, SubTableMax, CheckCyclicReferencing));
+    Value := LuaStackToStr(L, -1, MaxTable, SubTableMax, CheckCyclicReferencing);
     Lines.Values[Key] := Value;
     lua_pop(L, 1);
   end;
 end;
 
-procedure LuaTableToVirtualTreeView(L: Plua_State; Index: Integer; VTV: TVirtualStringTree; MaxTable: Integer; SubTableMax: Integer);
+procedure LuaTableToVirtualTreeView(L: Plua_State; Index: Integer; VTV: TVirtualStringTree; MaxTable: Integer; SubTableMax: Integer; CheckCyclicReferencing: Boolean);
 var
   pGLobalsIndexPtr: Pointer;
+  PtrsList: TList;
+  pTreeNodeData: PBasicTreeData;
   
   // Go through all child of current table and create nodes
   procedure ParseTreeNode(TreeNode: PVirtualNode; Index: Integer);
@@ -1011,45 +1049,65 @@ var
   begin
     // Retreive absolute index 
     Index := LuaAbsIndex(L, Index);
-
-
     lua_pushnil(L);
+
     while (lua_next(L, Index) <> 0) do
     begin
-      Key := Dequote(LuaStackToStr(L, -2, MaxTable, SubTableMax));
-      if lua_type(L, -1) <> LUA_TTABLE then
-      begin
-        pData := VTV.GetNodeData(VTV.AddChild(TreeNode));
-        pData.sName := Key;
-        pData.sValue := LuaStackToStr(L, -1, MaxTable, SubTableMax);
-      end
+      if Assigned(TreeNode) then
+        pTreeNodeData := VTV.GetNodeData(TreeNode)
       else
+        pTreeNodeData := nil;
+
+      if (pTreeNodeData = nil) or (pTreeNodeData.sValue <> '[CYCLIC_REFERENCING_DETECTED]') then
       begin
-        if ((Key = '_G') or (lua_topointer(L, -1) = pGLobalsIndexPtr)) then
+        Key := Dequote(LuaStackToStr(L, -2, MaxTable, SubTableMax, CheckCyclicReferencing));
+
+        if lua_type(L, -1) <> LUA_TTABLE then
         begin
           pData := VTV.GetNodeData(VTV.AddChild(TreeNode));
           pData.sName := Key;
-          pData.sValue := '[LUA_GLOBALSINDEX]';
+          pData.sValue := LuaStackToStr(L, -1, MaxTable, SubTableMax, CheckCyclicReferencing);
         end
         else
         begin
-          pNode := VTV.AddChild(TreeNode);
-          pData := VTV.GetNodeData(pNode);
-          pData.sName := Key;
-          pData.sValue := LuaStackToStr(L, -1, MaxTable, SubTableMax);
-
-          if SubTableCount < SubTableMax then
+          if ((Key = '_G') or (lua_topointer(L, -1) = pGLobalsIndexPtr)) then
           begin
-            SubTableCount := SubTableCount + 1;
-            ParseTreeNode(pNode, -1);
-            SubTableCount := SubTableCount - 1;
+            pData := VTV.GetNodeData(VTV.AddChild(TreeNode));
+            pData.sName := Key;
+            pData.sValue := '[LUA_GLOBALSINDEX]';
+          end
+          else
+          begin
+            pNode := VTV.AddChild(TreeNode);
+            pData := VTV.GetNodeData(pNode);
+            pData.sName := Key;
+
+            if CheckCyclicReferencing and (PtrsList.IndexOf(lua_topointer(L, -1)) <> -1) then
+              pData.sValue := '[CYCLIC_REFERENCING_DETECTED]'
+            else
+              pData.sValue := LuaStackToStr(L, -1, MaxTable, SubTableMax, CheckCyclicReferencing);
+
+            if SubTableCount < SubTableMax then
+            begin
+              if CheckCyclicReferencing then
+                PtrsList.Add(lua_topointer(L, -1));
+
+              SubTableCount := SubTableCount + 1;
+              ParseTreeNode(pNode, -1);
+              SubTableCount := SubTableCount - 1;
+
+              if not Assigned(TreeNode) then
+                PtrsList.Clear;
+            end;
           end;
         end;
       end;
-        lua_pop(L, 1);
+
+      lua_pop(L, 1);
     end;
   end;
 begin
+  PtrsList := TList.Create;
   Assert(lua_type(L, Index) = LUA_TTABLE);
   lua_checkstack(L, SubTableMax * 3); // Ensure there is enough space on stack to work with according to user's setting
   pGLobalsIndexPtr := lua_topointer(L, LUA_GLOBALSINDEX); // Retrieve globals index pointer for later conditions
@@ -1059,53 +1117,7 @@ begin
     ParseTreeNode(nil, Index);
   finally
     VTV.EndUpdate;
-  end;
-end;
-
-procedure LuaTableToTreeView(L: Plua_State; Index: Integer; TV: TTreeView; MaxTable: Integer; SubTableMax: Integer);
-var
-  pGLobalsIndexPtr: Pointer;
-  
-  // Go through all child of current table and create nodes
-  procedure ParseTreeNode(TreeNode: TTreeNode; Index: Integer);
-  var
-    Key: string;
-  begin
-    Index := LuaAbsIndex(L, Index);
-
-    lua_pushnil(L);
-    while (lua_next(L, Index) <> 0) do
-    begin
-      Key := Dequote(LuaStackToStr(L, -2, MaxTable, SubTableMax));
-      if (lua_type(L, -1) <> LUA_TTABLE) then
-        TV.Items.AddChild(TreeNode, Key + '=' + LuaStackToStr(L, -1, MaxTable, SubTableMax))
-      else
-      begin
-        if ((Key = '_G') or (lua_topointer(L, -1) = pGLobalsIndexPtr)) then
-        begin
-          TV.Items.AddChild(TreeNode, Key + '=[LUA_GLOBALSINDEX]')
-        end
-        else
-        begin
-          if SubTableCount < SubTableMax then
-          begin
-            SubTableCount := SubTableCount + 1;
-            ParseTreeNode(TV.Items.AddChild(TreeNode, Key), -1);
-            SubTableCount := SubTableCount - 1;
-          end;
-        end;
-      end;
-      lua_pop(L, 1);
-    end;
-  end;
-begin
-  Assert(lua_type(L, Index) = LUA_TTABLE);
-  TV.Items.BeginUpdate;
-  TV.Items.Clear;
-  try
-    ParseTreeNode(nil, Index);
-  finally
-    TV.Items.EndUpdate;
+    PtrsList.Free;
   end;
 end;
 
@@ -1141,11 +1153,13 @@ begin
   Mask := lua_gethookmask(L);
   Count := lua_gethookcount(L);
   lua_sethook(L, Hook, 0, Count);
+
   if (lua_pcall(L, 0, 0, 0) = 0) then
     LuaRawGetTable(L, LUA_GLOBALSINDEX, DebugValue);
-  Result := LuaStackToStr(L, -1, MaxTable);
+
+  Result := LuaStackToStr(L, -1, MaxTable, MaxTable, True);
   lua_remove(L, -1);
-  lua_dostring(L, DebugValue + '=nil');
+  luaL_dostring(L, DebugValue + '=nil');
   lua_sethook(L, Hook, Mask, Count);
 end;
 
@@ -1244,7 +1258,7 @@ begin
   if (luaL_loadbuffer(L, PChar(Code), Length(Code), PChar(Name)) = 0) then
     Exit;
 
-  LuaProcessErrorMessage(LuaStackToStr(L, -1, -1), Title, Line, Msg);
+  LuaProcessErrorMessage(LuaStackToStr(L, -1, -1, 99, True), Title, Line, Msg);
   raise ELuaException.Create(Title, Line, Msg);
 end;
 
@@ -1269,8 +1283,7 @@ begin
   if (lua_pcall(L, NArgs, NResults, ErrFunc) = 0) then
     Exit;
 
-  LuaProcessErrorMessage(Dequote(LuaStackToStr(L, -1, -1)),
-    Title, Line, Msg);
+  LuaProcessErrorMessage(Dequote(LuaStackToStr(L, -1, -1, 99, True)), Title, Line, Msg);
   raise ELuaException.Create(Title, Line, Msg);
 end;
 

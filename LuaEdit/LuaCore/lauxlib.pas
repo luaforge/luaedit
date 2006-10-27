@@ -1,7 +1,13 @@
 (*
-** $Id: lauxlib.pas,v 1.1 2005-04-24 19:31:20 jfgoulet Exp $
+** $Id: lauxlib.pas,v 1.2 2006-10-27 03:32:17 jfgoulet Exp $
 ** Auxiliary functions for building Lua libraries
 ** See Copyright Notice in lua.h
+**
+**
+** 10/02/2006 Jean-Francois Goulet - Removed deprecated function lua_loadlib()
+**                                   for compatibility with Lua 5.1.
+** 10/02/2006 Jean-Francois Goulet - Removed deprecated function lua_dostring()
+**                                   for compatibility with Lua 5.1.
 *)
 unit lauxlib;
 
@@ -22,64 +28,59 @@ type
   end;
   PluaL_reg = ^luaL_reg;
 
-procedure luaL_openlib(L: Plua_State; libname: PChar;
-                               R: PluaL_reg; Nup: Integer);
-  cdecl external 'lua.dll';
 function luaL_getmetafield(L: Plua_State; Obj: Integer; const E: PChar): Integer;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 function luaL_callmeta(L: Plua_State; Obj: Integer; const E: PChar): Integer;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 function luaL_typerror(L: Plua_State; NArg: Integer; const TName: PChar): Integer;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 function luaL_argerror(L: Plua_State; NumArg: Integer; const ExtraMsg: PChar): Integer;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 function luaL_checklstring(L: Plua_State; NumArg: Integer; S: Psize_t): PChar;
-  cdecl external 'lua.dll';
-function luaL_optlstring(L: Plua_State; NumArg: Integer;
-                                           const Def: PChar; S: Psize_t): PChar;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
+function luaL_optlstring(L: Plua_State; NumArg: Integer; const Def: PChar; S: Psize_t): PChar;
+  cdecl external 'lua5.1.dll';
 function luaL_checknumber(L: Plua_State; NumArg: Integer): lua_Number;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 function luaL_optnumber(L: Plua_State; NArg: Integer; Def: Lua_Number): lua_Number;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 
 procedure luaL_checkstack(L: Plua_State; SZ: Integer; const Msg: PChar);
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 procedure luaL_checktype(L: Plua_State; NArg: Integer; T: Integer);
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 procedure luaL_checkany(L: Plua_State; NArg: Integer);
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 
 function   luaL_newmetatable(L: Plua_State; const TName: PChar): Integer;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 procedure  luaL_getmetatable(L: Plua_State; const TName: PChar);
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 function luaL_checkudata(L: Plua_State; UD: Integer; const TName: PChar): Pointer;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 
 procedure luaL_where(L: Plua_State; LVL: Integer);
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 function luaL_error(L: Plua_State; const Fmt: PChar): Integer; varargs;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 
 function luaL_findstring(const ST: PChar; lst: array of PChar): Integer;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 
 function luaL_ref(L: Plua_State; T: Integer): Integer;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 procedure luaL_unref(L: Plua_State; T: Integer; Ref: Integer);
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 
 function luaL_getn(L: Plua_State; T: Integer): Integer;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 procedure luaL_setn(L: Plua_State; T: Integer; N: Integer);
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 
 function luaL_loadfile(L: Plua_State; const FileName: PChar): Integer;
-  cdecl external 'lua.dll';
-function luaL_loadbuffer(L: Plua_State; const Buff: PChar; SZ: size_t;
-                                const Name: PChar): Integer;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
+function luaL_loadbuffer(L: Plua_State; const Buff: PChar; SZ: size_t; const Name: PChar): Integer;
+  cdecl external 'lua5.1.dll';
 
 
 
@@ -128,17 +129,17 @@ procedure luaL_putchar(B: PluaL_Buffer; C: Char);
 function luaL_addsize(B: PLuaL_Buffer; N: Integer): PChar;
 
 procedure luaL_buffinit(L: Plua_State; B: PluaL_Buffer);
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 function luaL_prepbuffer(B: PluaL_Buffer): PChar;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 procedure luaL_addlstring(B: PluaL_Buffer; const S: PChar; L: size_t);
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 procedure luaL_addstring(B: PluaL_Buffer; const S: PChar);
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 procedure luaL_addvalue(B: PluaL_Buffer);
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 procedure luaL_pushresult(B: PluaL_Buffer);
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 
 
 (* }====================================================== *)
@@ -150,12 +151,10 @@ procedure luaL_pushresult(B: PluaL_Buffer);
 *)
 
 function lua_dofile(L: Plua_State; const FileName: PChar): Integer;
-  cdecl external 'lua.dll';
-function lua_dostring(L: Plua_State; const Str: PChar): Integer;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 function lua_dobuffer(L: Plua_State; const Buff: PChar; SZ: size_t;
                                const N: PChar): Integer;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 
 function luaL_check_lstr(L: Plua_State; NumArg: Integer; S: Psize_t): PChar;
 function luaL_opt_lstr(L: Plua_State; NumArg: Integer;
