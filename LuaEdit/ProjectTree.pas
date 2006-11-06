@@ -11,15 +11,17 @@ uses
 type
   PProjectTreeData = ^TProjectTreeData;
   TProjectTreeData = record
+    ItemType: Integer;
     pLuaEditFile: TLuaEditFile;
     ActiveProject: Boolean;
     ToKeep: Boolean;
     Deleting: Boolean;
+    OpenIndex: Integer;
+    CloseIndex: Integer;
   end;
 
   TfrmProjectTree = class(TForm)
     Panel1: TPanel;
-    imlProjectTree: TImageList;
     ppmProjectTree: TPopupMenu;
     ActivateSelectedProject1: TMenuItem;
     N1: TMenuItem;
@@ -29,23 +31,22 @@ type
     AddUnittoProject1: TMenuItem;
     RemoveUnitFromProject1: TMenuItem;
     Options1: TMenuItem;
-    vstProjectTree: TVirtualStringTree;
     mnuFindTarget: TMenuItem;
+    vstProjectTree: TVirtualDrawTree;
+    SystemImages: TImageList;
+    StatesImages: TImageList;
     procedure UnloadFileProject1Click(Sender: TObject);
     procedure ppmProjectTreePopup(Sender: TObject);
-    procedure vstProjectTreeGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: WideString);
-    procedure vstProjectTreeGetImageIndex(Sender: TBaseVirtualTree; Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var ImageIndex: Integer);
     procedure vstProjectTreeGetNodeDataSize(Sender: TBaseVirtualTree; var NodeDataSize: Integer);
-    procedure vstProjectTreePaintText(Sender: TBaseVirtualTree; const TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType);
     procedure vstProjectTreeDblClick(Sender: TObject);
     procedure vstProjectTreeMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure vstProjectTreeAfterItemPaint(Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode; ItemRect: TRect);
-    function GetNodeInTree(sFileName, sProjectName: String): PVirtualNode;
+    function GetNodeInTree(pFile: TLuaEditFile; pPrj: TLuaEditProject): PVirtualNode;
     procedure mnuFindTargetClick(Sender: TObject);
-    procedure vstProjectTreeGetHint(Sender: TBaseVirtualTree;
-      Node: PVirtualNode; Column: TColumnIndex;
-      var LineBreakStyle: TVTTooltipLineBreakStyle;
-      var HintText: WideString);
+    procedure vstProjectTreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure vstProjectTreeDrawNode(Sender: TBaseVirtualTree; const PaintInfo: TVTPaintInfo);
+    procedure FormCreate(Sender: TObject);
+    procedure vstProjectTreeInitNode(Sender: TBaseVirtualTree; ParentNode, Node: PVirtualNode; var InitialStates: TVirtualNodeInitStates);
   private
     { Private declarations }
   public
@@ -59,6 +60,69 @@ var
 implementation
 
 {$R *.dfm}
+
+// Returns the index of the system icon for the given file object.
+function GetIconIndex(Name: String; Flags: Cardinal): Integer;
+var
+  SFI: TSHFileInfo;
+begin
+  if SHGetFileInfo(PChar(Name), 0, SFI, SizeOf(TSHFileInfo), Flags) = 0 then
+    Result := -1
+  else
+    Result := SFI.iIcon;
+end;
+
+procedure GetOpenAndClosedIcons(Name: String; var Open, Closed: Integer);
+begin
+  Closed := GetIconIndex(Name, SHGFI_SYSICONINDEX or SHGFI_SMALLICON);
+  Open := GetIconIndex(Name, SHGFI_SYSICONINDEX or SHGFI_SMALLICON or SHGFI_OPENICON);
+end;
+
+// Rescale source but keep aspect ratio
+procedure RescaleImage(ScaleX, ScaleY: Integer; Source, Target: TBitmap);
+var
+  NewWidth, NewHeight: Integer;
+begin
+  if (Source.Width > ScaleX) or (Source.Height > ScaleY) then
+  begin
+    if Source.Width > Source.Height then
+    begin
+      NewWidth := ScaleX;
+      NewHeight := Round(ScaleY * Source.Height / Source.Width);
+    end
+    else
+    begin
+      NewHeight := ScaleY;
+      NewWidth := Round(ScaleX * Source.Width / Source.Height);
+    end;
+
+    Target.Width := NewWidth;
+    Target.Height := NewHeight;
+    SetStretchBltMode(Target.Canvas.Handle, HALFTONE);
+    StretchBlt(Target.Canvas.Handle, 0, 0, NewWidth, NewHeight,
+    Source.Canvas.Handle, 0, 0, Source.Width, Source.Height, SRCCOPY);
+  end
+  else
+    Target.Assign(Source);
+end;
+
+// Little helper to convert a Delphi color to an image list color.
+function GetRGBColor(Value: TColor): DWORD;
+begin
+  Result := ColorToRGB(Value);
+  case Result of
+    clNone:
+      Result := CLR_NONE;
+    clDefault:
+      Result := CLR_DEFAULT;
+  end;
+end;
+
+
+////////////////////////////////////////////////////////////////////////////////
+// TfrmProjectTree functions
+////////////////////////////////////////////////////////////////////////////////
+
 
 procedure TfrmProjectTree.vstProjectTreeDblClick(Sender: TObject);
 var
@@ -88,7 +152,7 @@ begin
   frmLuaEditMain.CheckButtons;
 end;
 
-function TfrmProjectTree.GetNodeInTree(sFileName, sProjectName: String): PVirtualNode;
+function TfrmProjectTree.GetNodeInTree(pFile: TLuaEditFile; pPrj: TLuaEditProject): PVirtualNode;
 var
   pNode: PVirtualNode;
   pData: PProjectTreeData;
@@ -100,13 +164,13 @@ begin
   begin
     pData := vstProjectTree.GetNodeData(pNode);
 
-    if sProjectName <> '' then
+    if Assigned(pPrj) then
     begin
       if ((pData.pLuaEditFile.FileType in LuaEditTextFilesTypeSet) and (not pData.Deleting)) then
       begin
-        if ((pData.pLuaEditFile.PrjOwner.Name = sProjectName) or (sProjectName = '[@@SingleUnits@@]')) then
+        if pData.pLuaEditFile.PrjOwner = pPrj then
         begin
-          if pData.pLuaEditFile.Name = sFileName then
+          if pData.pLuaEditFile = pFile then
           begin
             Result := pNode;
             Break;
@@ -118,7 +182,7 @@ begin
     begin
       if pData.pLuaEditFile.FileType = otLuaEditProject then
       begin
-        if pData.pLuaEditFile.Name = sFileName then
+        if pData.pLuaEditFile = pFile then
         begin
           Result := pNode;
           Break;
@@ -138,7 +202,7 @@ var
   x, y: Integer;
 
   // Go through all nodes of the tree and set their ToKeep flag to false
-  procedure UnflagAllExpanded(pTree: TVirtualStringTree);
+  procedure UnflagAllExpanded(pTree: TVirtualDrawTree);
   var
     pNode: PVirtualNode;
     pData: PProjectTreeData;
@@ -154,7 +218,7 @@ var
   end;
 
   // Deletes all nodes for wich their ToKeep flag is still on false
-  procedure CleanTree(pTree: TVirtualStringTree);
+  procedure CleanTree(pTree: TVirtualDrawTree);
   var
     pNode, pPrevious: PVirtualNode;
     pData: PProjectTreeData;
@@ -175,7 +239,6 @@ var
       pNode := pTree.GetNext(pNode);
     end;
   end;
-
 begin
   // Initialize stuff
   pPrjNode := nil;
@@ -195,7 +258,7 @@ begin
   for x := 0 to LuaProjects.Count - 1 do
   begin
     pTempPrj := TLuaEditProject(LuaProjects.Items[x]);
-    pPrjNode := GetNodeInTree(pTempPrj.Name, '');
+    pPrjNode := GetNodeInTree(pTempPrj, nil);
 
     if not Assigned(pPrjNode) then
     begin
@@ -232,7 +295,7 @@ begin
 
     for y := 0 to pTempPrj.lstUnits.Count - 1 do
     begin
-      pUnitNode := GetNodeInTree(TLuaEditUnit(pTempPrj.lstUnits.Items[y]).Name, pTempPrj.Name);
+      pUnitNode := GetNodeInTree(TLuaEditUnit(pTempPrj.lstUnits.Items[y]), pTempPrj);
 
       if not Assigned(pUnitNode) then
       begin
@@ -328,9 +391,9 @@ begin
           if Answer = IDYES then
           begin
             if SaveUnitsInc then
-              pFile.SaveUnitInc(pFile.Path)
+              pFile.SaveInc(pFile.Path)
             else
-              pFile.SaveUnit(pFile.Path);
+              pFile.Save(pFile.Path);
           end
           else if Answer = IDCANCEL then
           begin
@@ -349,9 +412,9 @@ begin
         if Answer = IDYES then
         begin
           if SaveProjectsInc then
-            pLuaPrj.SaveProjectInc(pLuaPrj.Path)
+            pLuaPrj.SaveInc(pLuaPrj.Path)
           else
-            pLuaPrj.SaveProject(pLuaPrj.Path);
+            pLuaPrj.Save(pLuaPrj.Path);
         end
         else if Answer = IDCANCEL then
         begin
@@ -372,9 +435,9 @@ begin
           if Answer = IDYES then
           begin
             if SaveUnitsInc then
-              pFile.SaveUnitInc(pFile.Path)
+              pFile.SaveInc(pFile.Path)
             else
-              pFile.SaveUnit(pFile.Path);
+              pFile.Save(pFile.Path);
           end
           else if Answer = IDCANCEL then
           begin
@@ -416,10 +479,6 @@ begin
         ActiveProject := nil;
     end;
 
-    // Reset LuaEdit main form caption to its initial value
-    if not Assigned(ActiveProject) then
-        frmLuaEditMain.Caption := 'LuaEdit';
-
     // Initialize stuff...
     UnitsToDelete.Free;
     BuildProjectTree;
@@ -437,7 +496,7 @@ begin
   if Assigned(pNode) then
   begin
     pData := vstProjectTree.GetNodeData(pNode);
-    ShellExecute(Self.Handle, 'explore', PChar(ExtractFileDir(pData.pLuaEditFile.Path)), nil, nil, SW_SHOWNORMAL);
+    ShellExecute(Self.Handle, 'explore', PChar(ExtractFileDir(pData.pLuaEditFile.Path)), nil, nil, SW_SHOWMAXIMIZED);
   end;
 end;
 
@@ -452,141 +511,10 @@ begin
   if Assigned(pNode) then
   begin
     pData := vstProjectTree.GetNodeData(pNode);
-    mnuFindTarget.Enabled := ((not pData.pLuaEditFile.IsNew) and (FileExists(pData.pLuaEditFile.Path)));
+    mnuFindTarget.Enabled := ((not pData.pLuaEditFile.IsNew) and (FileExistsAbs(pData.pLuaEditFile.Path)));
   end;
 
   frmLuaEditMain.DoMainMenuProjectExecute;
-end;
-
-procedure TfrmProjectTree.vstProjectTreeGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: WideString);
-var
-  pData: PProjectTreeData;
-begin
-  // Set text to display for all nodes
-  if TextType = ttNormal then
-  begin
-    case Column of
-      0:
-      begin
-        pData := Sender.GetNodeData(Node);
-        pData.ToKeep := True;
-        CellText := pData.pLuaEditFile.Name;
-      end;
-      1: CellText := '';
-      2:
-      begin
-        pData := Sender.GetNodeData(Node);
-        pData.ToKeep := True;
-        CellText := pData.pLuaEditFile.Path;
-      end;
-    end;
-  end;
-end;
-
-procedure TfrmProjectTree.vstProjectTreePaintText(Sender: TBaseVirtualTree; const TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType);
-var
-  pData: PProjectTreeData;
-begin
-  pData := Sender.GetNodeData(Node);
-
-  if pData.pLuaEditFile.FileType = otLuaEditProject then
-  begin
-    // Set bold style on the active project node
-    if pData.ActiveProject then
-    begin
-      TargetCanvas.Font.Style := [fsBold];
-      frmLuaEditMain.Caption := 'LuaEdit - ' + pData.pLuaEditFile.Path;
-    end;
-  end
-  else
-  begin
-    // Set disabled color for non-loaded units
-    if not pData.pLuaEditFile.IsLoaded then
-    begin
-      TargetCanvas.Font.Color := clInactiveCaption;
-      TargetCanvas.Pen.Color := clInactiveCaption;
-    end;
-  end;
-end;
-
-procedure TfrmProjectTree.vstProjectTreeGetImageIndex(Sender: TBaseVirtualTree; Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var ImageIndex: Integer);
-var
-  pData: PProjectTreeData;
-begin
-  // Set image index for all nodes
-  if Column = 0 then
-  begin
-    pData := Sender.GetNodeData(Node);
-
-    if pData.pLuaEditFile.FileType = otLuaEditProject then
-      ImageIndex := 0
-    else if pData.pLuaEditFile.FileType = otLuaEditUnit then
-    begin
-      if pData.pLuaEditFile.IsLoaded then
-        ImageIndex := 1
-      else
-        ImageIndex := 2;
-    end
-    else if pData.pLuaEditFile.FileType = otLuaEditMacro then
-    begin
-      if pData.pLuaEditFile.IsLoaded then
-        ImageIndex := 3
-      else
-        ImageIndex := 4;
-    end
-    else if pData.pLuaEditFile.FileType = otTextFile then
-    begin
-      if pData.pLuaEditFile.IsLoaded then
-        ImageIndex := 5
-      else
-        ImageIndex := 6;
-    end
-    else if pData.pLuaEditFile.FileType = otLuaEditForm then
-    begin
-      if pData.pLuaEditFile.IsLoaded then
-        ImageIndex := 7
-      else
-        ImageIndex := 8;
-    end;
-  end
-  else if Column = 1 then
-  begin
-    pData := Sender.GetNodeData(Node);
-
-    if pData.pLuaEditFile.IsNew then
-      ImageIndex := 9
-    else if not pData.pLuaEditFile.IsLoaded then
-      ImageIndex := 10
-    else if pData.pLuaEditFile.IsReadOnly then
-      ImageIndex := 11
-    else if pData.pLuaEditFile.HasChanged then
-      ImageIndex := 12
-    else
-      ImageIndex := 13;
-  end;
-end;
-
-procedure TfrmProjectTree.vstProjectTreeGetHint(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle; var HintText: WideString);
-var
-  pData: PProjectTreeData;
-begin
-  case Column of
-    1:
-    begin
-      pData := Sender.GetNodeData(Node);
-
-      if pData.pLuaEditFile.IsNew then
-        HintText := 'File is New'
-      else if not pData.pLuaEditFile.IsLoaded then
-        HintText := 'File could not be loaded'
-      else if pData.pLuaEditFile.IsReadOnly then
-        HintText := 'File is Read-Only'
-      else if pData.pLuaEditFile.HasChanged then
-        HintText := 'File is Modified'
-      else
-        HintText := 'File is All Right and Saved';
-    end;
-  end;
 end;
 
 procedure TfrmProjectTree.vstProjectTreeGetNodeDataSize(Sender: TBaseVirtualTree; var NodeDataSize: Integer);
@@ -634,6 +562,159 @@ begin
       TargetCanvas.LineTo(12, 8);
     end;
   end;
+end;
+
+procedure TfrmProjectTree.vstProjectTreeKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if Key = VK_DELETE then
+    if Assigned(vstProjectTree.GetFirstSelected()) then
+      frmLuaEditMain.DoRemoveFromPrjExecute(TLuaEditFile(vstProjectTree.GetNodeData(vstProjectTree.GetFirstSelected())));
+end;
+
+procedure TfrmProjectTree.vstProjectTreeDrawNode(Sender: TBaseVirtualTree; const PaintInfo: TVTPaintInfo);
+const
+  Style: array[TImageType] of Cardinal = (0, ILD_MASK);
+  
+var
+  pData: PProjectTreeData;
+  pRect, pImageRect: TRect;
+  sCellText: String;
+  iImageIndex, iOverlayIndex: Integer;
+  ExtraStyle, ForegroundColor: Cardinal;
+  bShowImageEnabled: Boolean;
+begin
+  with Sender as TVirtualDrawTree do
+  begin
+    pData := Sender.GetNodeData(PaintInfo.Node);
+    PaintInfo.Canvas.Font.Color := clBlack;
+    PaintInfo.Canvas.Pen.Color := clBlack;
+
+    // Determine text color
+    if pData.pLuaEditFile.FileType = otLuaEditProject then
+    begin
+      // Set bold style on the active project node
+      if pData.ActiveProject then
+        PaintInfo.Canvas.Font.Style := [fsBold];
+    end;
+
+    if Sender.Selected[PaintInfo.Node] then
+    begin
+      PaintInfo.Canvas.Font.Color := clHighlightText
+    end
+    else
+    begin
+      // Set disabled color for non-loaded units
+      if not pData.pLuaEditFile.IsLoaded then
+      begin
+        PaintInfo.Canvas.Font.Color := clInactiveCaption;
+        PaintInfo.Canvas.Pen.Color := clInactiveCaption;
+      end;
+    end;
+
+    SetBKMode(PaintInfo.Canvas.Handle, TRANSPARENT);
+    pRect := PaintInfo.ContentRect;
+    InflateRect(pRect, -TextMargin, 0);
+    Dec(pRect.Right);
+    Dec(pRect.Bottom);
+
+    case PaintInfo.Column of
+      0:
+      begin
+        // Determine is loaded image style
+        if Assigned(pData.pLuaEditFile) then
+          bShowImageEnabled := pData.pLuaEditFile.IsLoaded
+        else
+          bShowImageEnabled := False;
+
+        // Get image area
+        pImageRect := pRect;
+
+        // Determine image index
+        if Sender.Expanded[PaintInfo.Node] then
+          iImageIndex := pData.OpenIndex
+        else
+          iImageIndex := pData.CloseIndex;
+
+        // Determine overlay index
+        if pData.pLuaEditFile.IsNew then
+          iOverlayIndex := 0
+        else if not pData.pLuaEditFile.IsLoaded then
+          iOverlayIndex := 1
+        else if pData.pLuaEditFile.IsReadOnly then
+          iOverlayIndex := 2
+        else if pData.pLuaEditFile.HasChanged then
+          iOverlayIndex := 3
+        else
+          iOverlayIndex := 4;
+
+        // Handle cell text
+        pRect.Left := pRect.Left + SystemImages.Width + 2;
+        sCellText := pData.pLuaEditFile.Name;
+        DrawText(PaintInfo.Canvas.Handle, PChar(sCellText), Length(sCellText), pRect, DT_TOP or DT_LEFT or DT_VCENTER or DT_SINGLELINE or DT_END_ELLIPSIS);
+        ExtraStyle := ILD_TRANSPARENT or ILD_OVERLAYMASK;// and IndexToOverlayMask(iOverlayIndex + 1);
+        ForegroundColor := ColorToRGB(PaintInfo.Canvas.Font.Color);
+
+        // Draw icon
+        ImageList_DrawEx(SystemImages.Handle, iImageIndex, PaintInfo.Canvas.Handle, pImageRect.Left, pImageRect.Top, 0, 0, GetRGBColor(SystemImages.BkColor), ForegroundColor, Style[SystemImages.ImageType] or ExtraStyle);
+        // Draw overlay icon
+        ImageList_DrawEx(StatesImages.Handle, iOverlayIndex, PaintInfo.Canvas.Handle, pImageRect.Left, pImageRect.Top, 0, 0, GetRGBColor(SystemImages.BkColor), ForegroundColor, Style[SystemImages.ImageType] or ExtraStyle);
+      end;
+      1:
+      begin
+        sCellText := pData.pLuaEditFile.DisplayPath;
+        DrawText(PaintInfo.Canvas.Handle, PChar(sCellText), Length(sCellText), pRect, DT_TOP or DT_LEFT or DT_VCENTER or DT_SINGLELINE or DT_PATH_ELLIPSIS);
+      end;
+    end;
+  end;
+end;
+
+procedure TfrmProjectTree.FormCreate(Sender: TObject);
+var
+  SFI: TSHFileInfo;
+  pBitmap: TBitmap;
+  pIcon: TIcon;
+begin
+  // Load system images...
+  SystemImages.Handle := SHGetFileInfo('', 0, SFI, SizeOf(SFI), SHGFI_SYSICONINDEX or SHGFI_SMALLICON);
+  SystemImages.ShareImages := True;
+
+  try
+    // Load overlay icons...
+    pBitmap := TBitmap.Create;
+    pIcon := TIcon.Create;
+
+    pIcon.LoadFromFile(GetLuaEditInstallPath() + '\Graphics\FileIsNew.ico');
+    StatesImages.AddIcon(pIcon);
+    pIcon.LoadFromFile(GetLuaEditInstallPath() + '\Graphics\FileNotLoaded.ico');
+    StatesImages.AddIcon(pIcon);
+    pIcon.LoadFromFile(GetLuaEditInstallPath() + '\Graphics\FileIsReadOnly.ico');
+    StatesImages.AddIcon(pIcon);
+    pIcon.LoadFromFile(GetLuaEditInstallPath() + '\Graphics\FileHasChanged.ico');
+    StatesImages.AddIcon(pIcon);
+    pIcon.LoadFromFile(GetLuaEditInstallPath() + '\Graphics\FileIsOK.ico');
+    StatesImages.AddIcon(pIcon);
+  finally
+    FreeAndNil(pBitmap);
+    FreeAndNil(pIcon);
+  end;
+end;
+
+procedure TfrmProjectTree.vstProjectTreeInitNode(Sender: TBaseVirtualTree; ParentNode, Node: PVirtualNode; var InitialStates: TVirtualNodeInitStates);
+var
+  pData: PProjectTreeData;
+  WinDir: String;
+begin
+  pData := Sender.GetNodeData(Node);
+
+  // If the pLuaEditFile member is not initialize at this point, we assume it's a project folder
+  if not Assigned(pData.pLuaEditFile) then
+  begin
+    SetLength(WinDir, GetWindowsDirectory(nil, 0)); 
+    GetWindowsDirectory(PChar(WinDir), Length(WinDir));
+    GetOpenAndClosedIcons(WinDir, pData.OpenIndex, pData.CloseIndex);
+  end
+  else
+    GetOpenAndClosedIcons(pData.pLuaEditFile.Path, pData.OpenIndex, pData.CloseIndex);
 end;
 
 end.

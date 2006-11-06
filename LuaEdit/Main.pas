@@ -25,7 +25,8 @@ uses
   {$ifdef RTASSERT}  ,RTDebug {$endif}
   {$ifdef madExcept} ,madExcept, madLinkDisAsm {$endif}
   ,JvDragDrop, JvAppEvent, JvExStdCtrls, JvButton, JvCtrls, JvComCtrls,
-  JvDockTree, JvAppInst, JvExExtCtrls, JvItemsPanel;
+  JvDockTree, JvAppInst, JvExExtCtrls, JvItemsPanel, JvGradientCaption,
+  JvgCaption;
                                
 type                  
   TfrmLuaEditMain = class(TForm)
@@ -356,6 +357,7 @@ type
     actBringGUIFormToFront: TAction;
     N27: TMenuItem;
     BringGUIFormtoFront1: TMenuItem;
+    PathConverter1: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure synEditKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure actOpenFileExecute(Sender: TObject);
@@ -467,6 +469,7 @@ type
     procedure actNewGUIFormExecute(Sender: TObject);
     procedure actShowGUIControlsExecute(Sender: TObject);
     procedure actBringGUIFormToFrontExecute(Sender: TObject);
+    procedure PathConverter1Click(Sender: TObject);
     //procedure actFunctionHeaderExecute(Sender: TObject);
   private
     { Private declarations }
@@ -513,6 +516,7 @@ type
     procedure AddFileInTab(pFile: TLuaEditBasicTextFile);
     procedure AddToNotifier(sPath: String);
     function AddFileInProject(sFilePath: String; IsNew: Boolean; pPrj: TLuaEditProject): TLuaEditFile;
+    function GetNewProjectName(sFileSuffix: String): String;
     function GetNewFileName(sFileSuffix: String): String;
     procedure CheckButtons;
     procedure BuildReopenMenu;
@@ -623,8 +627,8 @@ type
     function DoPauseExecute(): Boolean;
     function DoStopExecute(): Boolean;
     function DoRunToCursorExecute(): Boolean;
-    function DoAddToPrjExecute(): Boolean;
-    function DoRemoveFromPrjExecute(): Boolean;
+    function DoAddToPrjExecute(FilePathToAdd: String = ''): Boolean;
+    function DoRemoveFromPrjExecute(pFileToRemove: TLuaEditFile = nil): Boolean;
     function DoEditorSettingsExecute(): Boolean;
     function DoMacroManagerExecute(): Boolean;
     function DoBlockUnindentExecute(): Boolean;
@@ -689,12 +693,15 @@ var
   HistoryMaxAge: Integer;
   MaxTablesSize: Integer;
   MaxSubTablesLevel: Integer;
+  CheckCyclicReferencing: Boolean;
   AutoLoadLibBasic: Boolean;
+  AutoLoadLibPackage: Boolean;
   AutoLoadLibTable: Boolean;
   AutoLoadLibString: Boolean;
   AutoLoadLibMath: Boolean;
   AutoLoadLibOSIO: Boolean;
   AutoLoadLibDebug: Boolean;
+  ShowStackTraceOnError: Boolean;
 
   //Debugger variables
   LDebug: Plua_State;
@@ -724,7 +731,6 @@ var
 // Misc functions
 procedure CallRemoteHookFunc(pSock: TSocket);
 procedure DoLuaStdoutEx(F, S: PChar; L, N: Integer);
-function GetLuaEditInstallPath(): String;
 function LocalOutput(L: PLua_State): Integer; cdecl;
 procedure HookCaller(L: Plua_State; AR: Plua_Debug); cdecl;
 
@@ -743,7 +749,7 @@ uses
   Rings, JvOutlookBar, SynEditTextBuffer, FunctionList,
   JvDockSupportControl, InternalBrowser, FindInFiles, SIFReport,
   FindWindow1, FindWindow2, UploadFiles, Profiler, ComponentList, GUID,
-  MacroManager, GUIInspector, GUIControls, GUIFormType;
+  MacroManager, GUIInspector, GUIControls, GUIFormType, ConvertPath;
 
 {$R *.dfm}
 
@@ -818,7 +824,7 @@ begin
   LibrariesSearchPaths := TStringList.Create;
   LibrariesSearchPaths.QuoteChar := '"';
   LibrariesSearchPaths.Delimiter := ',';
-  LuaSingleFiles := TLuaEditProject.Create('');
+  LuaSingleFiles := TLuaEditProject.Create(GetLuaEditInstallPath() + '\Templates\Template.lpr');
   LuaSingleFiles.Name := '[@@SingleUnits@@]';
   LuaProjects.Add(LuaSingleFiles);
   Running := False;
@@ -951,7 +957,7 @@ begin
         begin
           FileName := ParamStrEx(x, PChar(CommandLine), PChar(Application.ExeName));
 
-          if FileExists(FileName) then
+          if FileExistsAbs(FileName) then
           begin
             pFiles.Add(FileName);
             frmLuaEditMain.DoOpenFileExecute(pFiles);
@@ -986,7 +992,7 @@ var
   begin
     for z := 0 to Files.Count - 1 do
     begin
-      if FileExists(Files.Strings[z]) then
+      if FileExistsAbs(Files.Strings[z]) then
       begin
         if ExtractFileExt(Files.Strings[z]) = '.lpr' then
         begin
@@ -1001,7 +1007,7 @@ var
           end
           else
           begin
-            Application.MessageBox(PChar('The project "'+Files.Strings[z]+')" is already opened by LuaEdit.'), 'LuaEdit', MB_OK+MB_ICONERROR);
+            Application.MessageBox(PChar('The file "'+Files.Strings[z]+'" is already opened in LuaEdit.'), 'LuaEdit', MB_OK+MB_ICONERROR);
             Exit;
           end;
         end
@@ -1021,7 +1027,7 @@ var
           end
           else
           begin
-            Application.MessageBox(PChar('The project "'+Files.Strings[z]+')" is already opened by LuaEdit.'), 'LuaEdit', MB_OK+MB_ICONERROR);
+            PopUpUnitToScreen(Files.Strings[z]);
             Exit;
           end;
         end;
@@ -1090,7 +1096,7 @@ begin
   Screen.Cursor := crDefault;
 end;
 
-function TfrmLuaEditMain.GetNewFileName(sFileSuffix: String): String;
+function TfrmLuaEditMain.GetNewProjectName(sFileSuffix: String): String;
 var
   x, IncFileNumber: Integer;
   FoundMatch: Boolean;
@@ -1122,6 +1128,44 @@ begin
   Result := sFileSuffix+IntToStr(IncFileNumber);
 end;
 
+function TfrmLuaEditMain.GetNewFileName(sFileSuffix: String): String;
+var
+  x, y, IncFileNumber: Integer;
+  FoundMatch: Boolean;
+begin
+  Result := '';
+  IncFileNumber := 1;
+
+  for x := 0 to LuaProjects.Count - 1 do
+  begin
+    for y := 0 to TLuaEditProject(LuaProjects.Items[x]).lstUnits.Count - 1 do
+    begin
+      if TLuaEditFile(TLuaEditProject(LuaProjects.Items[x]).lstUnits[y]).IsNew then
+        Inc(IncFileNumber);
+    end;
+  end;
+
+  FoundMatch := True;
+
+  while FoundMatch do
+  begin
+    FoundMatch := False;
+    for x := 0 to LuaProjects.Count - 1 do
+    begin
+      for y := 0 to TLuaEditProject(LuaProjects.Items[x]).lstUnits.Count - 1 do
+      begin
+        if sFileSuffix+IntToStr(IncFileNumber) = TLuaEditFile(TLuaEditProject(LuaProjects.Items[x]).lstUnits[y]).Name then
+        begin
+          Inc(IncFileNumber);
+          FoundMatch := True;
+        end;
+      end;
+    end;
+  end;
+
+  Result := sFileSuffix+IntToStr(IncFileNumber);
+end;
+
 function TfrmLuaEditMain.AddFileInProject(sFilePath: String; IsNew: Boolean; pPrj: TLuaEditProject): TLuaEditFile;
 var
   pFile: TLuaEditFile;
@@ -1132,11 +1176,9 @@ begin
     pFile := TLuaEditBasicTextFile(TLuaEditUnit.Create(sFilePath))
   else if ExtractFileExt(sFilePath) = '.lmc' then
     pFile := TLuaEditBasicTextFile(TLuaEditMacro.Create(sFilePath))
-  else if ExtractFileExt(sFilePath) = '.txt' then
+  else
     pFile := TLuaEditBasicTextFile.Create(sFilePath);
 
-  pFile.Path := sFilePath;
-  pFile.Name := ExtractFileName(sFilePath);
   pFile.PrjOwner := pPrj;
   pFile.IsNew := IsNew;
 
@@ -1188,7 +1230,7 @@ begin
       repeat
         sFileName := Dir+'\'+srSearchRec.Name;
 
-        if FileExists(sFileName) then
+        if FileExistsAbs(sFileName) then
         begin
           // Go through all opened unit
           for x := 0 to LuaOpenedFiles.Count - 1 do
@@ -1357,9 +1399,9 @@ begin
     if Assigned(pLuaUnit) then
     begin
       if SaveUnitsInc then
-        Result := pLuaUnit.SaveUnitInc(pLuaUnit.Path)
+        Result := pLuaUnit.SaveInc(pLuaUnit.Path)
       else
-        Result := pLuaUnit.SaveUnit(pLuaUnit.Path);
+        Result := pLuaUnit.Save(pLuaUnit.Path);
     end;
   end;
 end;
@@ -1382,9 +1424,9 @@ begin
     if Assigned(pLuaUnit) then
     begin
       if SaveUnitsInc then
-        Result := pLuaUnit.SaveUnitInc(pLuaUnit.Path, False, True)
+        Result := pLuaUnit.SaveInc(pLuaUnit.Path, False, True)
       else
-        Result := pLuaUnit.SaveUnit(pLuaUnit.Path, False, True);
+        Result := pLuaUnit.Save(pLuaUnit.Path, False, True);
     end;
   end;
 end;
@@ -1623,9 +1665,10 @@ var
 begin
   Result := False;
   pNewLuaPrj := TLuaEditProject.Create('');
-  pNewLuaPrj.Name := GetNewFileName('Project');
-  pNewLuaPrj.Path := 'C:\';
+  pNewLuaPrj.Name := GetNewProjectName('Project');
+  pNewLuaPrj.Path := GetLuaEditInstallPath() + '\Templates\Template.lpr';
   pNewLuaPrj.IsNew := True;
+  pNewLuaPrj.IsLoaded := True;
   LuaProjects.Add(pNewLuaPrj);
   ActiveProject := pNewLuaPrj;
 
@@ -1649,9 +1692,9 @@ begin
   if ActiveProject.Name <> '[@@SingleUnits@@]' then
   begin
     if SaveProjectsInc then
-      Result := ActiveProject.SaveProjectInc(sdlgSaveAsPrj.FileName, False, True)
+      Result := ActiveProject.SaveInc(sdlgSaveAsPrj.FileName, False, True)
     else
-      Result := ActiveProject.SaveProject(sdlgSaveAsPrj.FileName, False, True);
+      Result := ActiveProject.Save(sdlgSaveAsPrj.FileName, False, True);
 
     RefreshOpenedUnits;
     frmProjectTree.BuildProjectTree;
@@ -1680,9 +1723,9 @@ begin
       pLuaUnit := TLuaEditUnit(pLuaPrj.lstUnits.Items[y]);
 
       if SaveUnitsInc then
-        Result := pLuaUnit.SaveUnitInc(pLuaUnit.Path)
+        Result := pLuaUnit.SaveInc(pLuaUnit.Path)
       else
-        Result := pLuaUnit.SaveUnit(pLuaUnit.Path);
+        Result := pLuaUnit.Save(pLuaUnit.Path);
 
       if not Result then
         Exit;
@@ -1691,9 +1734,9 @@ begin
     if pLuaPrj.Name <> '[@@SingleUnits@@]' then
     begin
       if SaveProjectsInc then
-        Result := pLuaPrj.SaveProjectInc(pLuaPrj.Path)
+        Result := pLuaPrj.SaveInc(pLuaPrj.Path)
       else
-        Result := pLuaPrj.SaveProject(pLuaPrj.Path);
+        Result := pLuaPrj.Save(pLuaPrj.Path);
 
       if not Result then
         Exit;
@@ -1832,32 +1875,68 @@ var
   procedure AddMenu(pOnClick: TNotifyEvent; AOwner: TComponent; sCaption: String; bEnabled: Boolean = True);
   var
     pNewMenu: TMenuItem;
+    bFound: Boolean;
+    x: Integer;
   begin
-    pNewMenu := TMenuItem.Create(AOwner);
-    pNewMenu.Caption := sCaption;
-    pNewMenu.Enabled := bEnabled;
-    pNewMenu.OnClick := pOnClick;
-    if AOwner.ClassType = TMenuItem then
-      TMenuItem(AOwner).Add(pNewMenu)
-    else if AOwner.ClassType = TPopupMenu then
-      TPopupMenu(AOwner).Items.Add(pNewMenu);
+    bFound := False;
 
+    if AOwner.ClassType = TMenuItem then
+    begin
+      for x := 0 to TMenuItem(AOwner).Count - 1 do
+      begin
+        if TMenuItem(AOwner).Items[x].Caption = sCaption then
+          bFound := True;
+      end;
+    end
+    else if AOwner.ClassType = TPopupMenu then
+    begin
+      for x := 0 to TPopupMenu(AOwner).Items.Count - 1 do
+      begin
+        if TPopupMenu(AOwner).Items[x].Caption = sCaption then
+          bFound := True;
+      end;
+    end;
+
+    if not bFound then
+    begin
+      pNewMenu := TMenuItem.Create(AOwner);
+      pNewMenu.Caption := sCaption;
+      pNewMenu.Enabled := bEnabled;
+      pNewMenu.OnClick := pOnClick;
+      if AOwner.ClassType = TMenuItem then
+        TMenuItem(AOwner).Add(pNewMenu)
+      else if AOwner.ClassType = TPopupMenu then
+        TPopupMenu(AOwner).Items.Add(pNewMenu);
+    end;
   end;
 
   // This method add a button to the ring engine
   procedure AddOBButton(pOnClick: TNotifyEvent; iPageIndex: Integer; sCaption: String; bEnabled: Boolean = True);
   var
     jvOBBtn: TJvOutlookBarButton;
+    bFound: Boolean;
+    x: Integer;
   begin
-    jvOBBtn := frmRings.jvRings.Pages[iPageIndex].Buttons.Add();
-    jvOBBtn.Caption := sCaption;
-    jvOBBtn.Enabled := bEnabled;
-    jvOBBtn.OnClick := pOnClick;
+    bFound := False;
+
+    for x := 0 to frmRings.jvRings.Pages[iPageIndex].Buttons.Count - 1 do
+    begin
+      if frmRings.jvRings.Pages[iPageIndex].Buttons[x].Caption = sCaption then
+        bFound := True;
+    end;
+
+    if not bFound then
+    begin
+      jvOBBtn := frmRings.jvRings.Pages[iPageIndex].Buttons.Add();
+      jvOBBtn.Caption := sCaption;
+      jvOBBtn.Enabled := bEnabled;
+      jvOBBtn.OnClick := pOnClick;
+    end;
   end;
 begin
-  Reopen1.Clear;
-  mnuReopen.Items.Clear;
-  frmRings.jvRings.Pages[JVPAGE_RING_FILES].Buttons.Clear;
+  //Reopen1.Clear;
+  //mnuReopen.Items.Clear;
+  //frmRings.jvRings.Pages[JVPAGE_RING_FILES].Buttons.Clear;
   pReg := TRegistry.Create;
   
   if pReg.OpenKey('\Software\LuaEdit\RecentFiles', False) then
@@ -2511,7 +2590,7 @@ begin
   BuildTreeNeeded := False;
   mnuSender := TMenuItem(Sender);
   
-  if FileExists(mnuSender.Caption) then
+  if FileExistsAbs(mnuSender.Caption) then
   begin
     pFiles.Add(mnuSender.Caption);
     DoOpenFileExecute(pFiles);
@@ -2589,7 +2668,7 @@ begin
   BuildTreeNeeded := False;
   btnSender := TJvOutlookBarButton(Sender);
 
-  if FileExists(btnSender.Caption) then
+  if FileExistsAbs(btnSender.Caption) then
   begin
     pFiles.Add(btnSender.Caption);
     DoOpenFileExecute(pFiles);
@@ -2605,6 +2684,7 @@ begin
       if pReg.ValueExists(btnSender.Caption) then
         pReg.DeleteValue(btnSender.Caption);
     end;
+    pReg.Free;
 
     // Remove menu from the two reopen menus
     for x := 0 to mnuReopen.Items.Count - 1 do
@@ -3315,24 +3395,27 @@ var
   x, NArgs: Integer;
   pLuaEditDebugFile: TLuaEditDebugFile;
   iDoLuaOpen: Boolean;
+  pStackMarker: TBreakInfo;
+  pMessageParentNode: PVirtualNode;
 
   procedure OpenLibs(L: PLua_State; LuaEditDebugFile: TLuaEditDebugFile);
   begin
     // Register regular lua libraries according to settings
     if AutoLoadLibBasic then
-      luaopen_base(L);
+      lua_baselibopen(L);
+    if AutoLoadLibPackage then
+      lua_packlibopen(L);
     if AutoLoadLibTable then
-      luaopen_table(L);
+      lua_tablibopen(L);
     if AutoLoadLibOSIO then
-      luaopen_io(L);
+      lua_iolibopen(L);
     if AutoLoadLibString then
-      luaopen_string(L);
+      lua_strlibopen(L);
     if AutoLoadLibMath then
-      luaopen_math(L);
+      lua_mathlibopen(L);
     if AutoLoadLibDebug then
-      luaopen_debug(L);
+      lua_dblibopen(L);
 
-    luaopen_loadlib(L);
     lua_settop(L, 0);
 
     // Register LuaEdit environement if required
@@ -3422,6 +3505,40 @@ var
       end;
     end;
   end;
+
+  procedure AppendToLuaCPATH(L: PLua_State; AppendStr: String);
+  var
+    CurrentCPATH: String;
+  begin
+    lua_getglobal(L, 'package');
+    lua_pushstring(L, 'cpath');
+    lua_gettable(L, -2);
+    
+    CurrentCPATH := lua_tostring(L, -1);
+    CurrentCPATH := CurrentCPATH + ';' + AppendStr;
+    lua_pop(L, 1);
+
+    lua_pushstring(L, 'cpath');
+    lua_pushstring(L, PChar(CurrentCPATH));
+    lua_settable(L, -3);
+  end;
+
+  procedure AppendToLuaPATH(L: PLua_State; AppendStr: String);
+  var
+    CurrentCPATH: String;
+  begin
+    lua_getglobal(L, 'package');
+    lua_pushstring(L, 'path');
+    lua_gettable(L, -2);
+    
+    CurrentCPATH := lua_tostring(L, -1);
+    CurrentCPATH := CurrentCPATH + ';' + AppendStr;
+    lua_pop(L, 1);
+
+    lua_pushstring(L, 'path');
+    lua_pushstring(L, PChar(CurrentCPATH));
+    lua_settable(L, -3);
+  end;
 begin
   if Assigned(frmLuaEditMain.jvUnitBar.SelectedTab) then
   begin
@@ -3493,6 +3610,9 @@ begin
     frmLuaEditMain.CheckButtons;
     frmProfiler.InitProfiler;
 
+    // Initialize LUA_CPATH global for require system
+    AppendToLuaCPATH(L, PChar(GetLuaEditInstallPath()+'\lua5.1.dll'));
+
     // Initializing project's settings if required
     if ActiveProject = pLuaEditDebugFile.PrjOwner then
     begin
@@ -3500,8 +3620,7 @@ begin
       if DirectoryExists(ActiveProject.sRuntimeDirectory) then
       begin
         SetCurrentDirectory(PChar(ActiveProject.sRuntimeDirectory));
-        lua_pushstring(L, PChar(ActiveProject.sRuntimeDirectory));
-        lua_setglobal(L, 'LUA_PATH');
+        AppendToLuaPATH(L, ActiveProject.sRuntimeDirectory);
       end;
     end;
 
@@ -3568,6 +3687,7 @@ begin
         PrintGlobal(L, True);
         PrintWatch(L);
       finally
+        // Handle end of script de-initialization
         UninitializeUnits;
         
         if iDoLuaOpen then
@@ -3576,6 +3696,11 @@ begin
           LuaState := nil;
         end;
 
+        frmLuaStack.lstLuaStack.Clear;
+        frmStack.lstCallStack.Clear;
+        frmLuaLocals.lstLocals.Clear;
+        frmLuaGlobals.vstGlobals.Clear;
+        //CallStack.Clear;
         Running := False;
         Self.Pause := False;
         Self.PauseICI := 0;
@@ -3585,6 +3710,8 @@ begin
         Application.HintHidePause := 2500;
         frmLuaEditMain.CheckButtons;
         FreeLibrary(hModule);
+
+        // Compute the profiler's data
         frmProfiler.ComputeProfiler;
       end;
     except
@@ -3598,10 +3725,10 @@ begin
 
           FileName := pLuaEditDebugFile.Path;
 
-          if (not FileExists(FileName)) then
+          if (not FileExistsAbs(FileName)) then
             FileName := PrevFile;
 
-          if (FileExists(FileName) and (E.Line > 0)) then
+          if (FileExistsAbs(FileName) and (E.Line > 0)) then
           begin
             pLuaEditDebugFile.DebugInfos.iLineError := E.Line;
             frmLuaEditMain.jvUnitBar.SelectedTab := pLuaEditDebugFile.AssociatedTab;
@@ -3612,7 +3739,18 @@ begin
         if (E.Msg <> 'STOP') then
         begin
           stbMain.Panels[5].Text := '[ERROR]: '+E.Msg+' ('+IntToStr(E.Line)+') - '+DateTimeToStr(Now);
-          frmLuaEditMessages.Put(E.Msg + ' (' + IntToStr(E.Line) + ') - ' + DateTimeToStr(Now), LUAEDIT_ERROR_MSG, Self.PrevFile, E.Line);
+          pMessageParentNode := frmLuaEditMessages.Put(E.Msg + ' (' + IntToStr(E.Line) + ') - ' + DateTimeToStr(Now), LUAEDIT_ERROR_MSG, Self.PrevFile, E.Line);
+
+          // Add call stack if stack trace setting is set to true...
+          if ShowStackTraceOnError then
+          begin
+            for x := CallStack.Count - 1 downto 0 do
+            begin
+              pStackMarker := TBreakInfo(CallStack.Items[x]);
+              frmLuaEditMessages.PutChild(pMessageParentNode, pStackMarker.Call, LUAEDIT_UNKNOW_MSG, pStackMarker.FileName, pStackMarker.Line);
+            end;
+          end;
+
           frmLuaEditMessages.Put('End of Script - '+DateTimeToStr(Now), LUAEDIT_HINT_MSG);
           raise;
         end;
@@ -3652,6 +3790,7 @@ procedure TfrmLuaEditMain.CallHookFunc(L: Plua_State; AR: Plua_Debug);
 var
   pBreakInfo: TBreakInfo;
   pLuaEditDebugFile: TLuaEditDebugFile;
+  MemUsage: Double;
 
   procedure Update;
   var
@@ -3659,7 +3798,7 @@ var
     NextLine: Integer;
     LuaEditDebugFile: TLuaEditDebugFile;
   begin
-    if FileExists(StringReplace(AR.source, '@', '',[])) then
+    if FileExistsAbs(StringReplace(AR.source, '@', '',[])) then
       NextFile := ExpandUNCFileName(StringReplace(AR.source, '@', '',[]))
     else
       NextFile := StringReplace(AR.source, '@', '',[]);
@@ -3682,6 +3821,9 @@ var
     LuaEditDebugFile.SynUnit.EnsureCursorPosVisibleEx(True);
     LuaEditDebugFile.SynUnit.Refresh;
 
+    ////////////////////////////////////////////////////////////////////////////
+    // NOTE: The globals are now updated when clicking on the global's window
+    ////////////////////////////////////////////////////////////////////////////
     PrintLuaStack(L);
     PrintStack;
     PrintLocal(L);
@@ -3699,7 +3841,7 @@ var
     // NOTE: this condition has been added because when the unit is new,
     //       ExpandUNCFileName must not be used to avoid bugging
     //       Bug fixed the 02/06/2005 by Jean-Francois Goulet
-    if FileExists(StringReplace(AR.source, '@', '',[])) then
+    if FileExistsAbs(StringReplace(AR.source, '@', '',[])) then
       sUnitName := ExpandUNCFileName(StringReplace(AR.source, '@', '',[]))
     else
       sUnitName := StringReplace(AR.source, '@', '',[]);
@@ -3763,7 +3905,15 @@ begin
       begin
         // Adding to CallStack...
         pBreakInfo := TBreakInfo.Create;
-        pBreakInfo.LineOut := IntToStr(PrevLine + 1);
+
+        // Special handling for main call
+        if CAllStack.Count = 0 then
+        begin
+          pBreakInfo.LineOut := IntToStr(AR.currentline);
+          PrevLine := AR.currentline - 1;
+        end
+        else
+          pBreakInfo.LineOut := IntToStr(PrevLine + 1);
         
         if AR.what <> 'C' then
         begin
@@ -3782,8 +3932,11 @@ begin
         CallStack.Insert(0, pBreakInfo);
       end;
 
+      // Retrieve current memory usage by lua
+      MemUsage := RoundTo((lua_gc(L, LUA_GCCOUNTB, 0) / 1024) + lua_gc(L, LUA_GCCOUNT, 0), -2);
+
       // Adding profiler infos
-      frmProfiler.AddCall(nil, AR.name, PrevLine + 1, AR.what); // Leave as last line to execute for optimal performances
+      frmProfiler.AddCall(nil, AR.name, PrevLine + 1, AR.what, MemUsage); // Leave as last line to execute for optimal performances
     end;
     LUA_HOOKRET:
     begin
@@ -3859,7 +4012,7 @@ begin
     // Open the file in LuaEdit if not already opened and if it does exists on the hdd
     if not Assigned(FileIsInTree(sFileName)) then
     begin
-      if FileExists(sFileName) then
+      if FileExistsAbs(sFileName) then
       begin
         pLuaEditBasicTextFile := TLuaEditBasicTextFile.Create(sFileName);
         pLuaEditBasicTextFile := TLuaEditBasicTextFile(frmLuaEditMain.AddFileInProject(sFileName, False, LuaSingleFiles));
@@ -3873,7 +4026,7 @@ begin
     else
     begin
       pLuaEditBasicTextFile := frmLuaEditMain.FindUnitInTabsStr(sFileName);
-      frmLuaEditMain.jvUnitBar.SelectedTab := pLuaEditBasicTextFile.AssociatedTab; //frmLuaEditMain.GetAssociatedTab(pLuaUnit);
+      frmLuaEditMain.jvUnitBar.SelectedTab := pLuaEditBasicTextFile.AssociatedTab;
       Result := pLuaEditBasicTextFile;
     end;
   finally
@@ -3919,15 +4072,12 @@ begin
     pItem.SubItems.Add(TBreakInfo(CallStack.Items[x]).Call);
     pItem.SubItems.Add(TBreakInfo(CallStack.Items[x]).LineOut);
     pItem.Data := CallStack.Items[x];
+    pItem.ImageIndex := -1;
   end;
 
+  // Managing Stack breaking icons...
   if frmStack.lstCallStack.Items.Count > 0 then
-  begin
-    // Managing Stack breaking icons...
     frmStack.lstCallStack.Items[0].ImageIndex := 0;
-    if frmStack.lstCallStack.Items.Count > 1 then
-      frmStack.lstCallStack.Items[1].ImageIndex := -1;
-  end;
 
   frmStack.lstCallStack.Items.EndUpdate;
 end;
@@ -3935,14 +4085,14 @@ end;
 // print the lua stack
 procedure TfrmLuaEditMain.PrintLuaStack(L: Plua_State);
 begin
-  LuaStackToStrings(L, frmLuaStack.lstLuaStack.Items, MaxTablesSize, MaxSubTablesLevel);
+  LuaStackToStrings(L, frmLuaStack.lstLuaStack.Items, MaxTablesSize, MaxSubTablesLevel, CheckCyclicReferencing);
 end;
 
 // print local list and fill the list of locals
 procedure TfrmLuaEditMain.PrintLocal(L: Plua_State; Level: Integer = 0);
 begin
-  LuaLocalToStrings(L, frmLuaLocals.lstLocals.Items, MaxTablesSize, Level, MaxSubTablesLevel);
-  LuaLocalToStrings(L, lstLocals, MaxTablesSize, Level, MaxSubTablesLevel);
+  LuaLocalToStrings(L, frmLuaLocals.lstLocals.Items, MaxTablesSize, Level, MaxSubTablesLevel, CheckCyclicReferencing);
+  LuaLocalToStrings(L, lstLocals, MaxTablesSize, Level, MaxSubTablesLevel, CheckCyclicReferencing);
 end;
 
 // print global list
@@ -3953,9 +4103,8 @@ begin
   if not Foce then
     Exit;
 
-  //frmLuaGlobals.tvwLuaGlobals.
-  LuaTableToVirtualTreeView(L, LUA_GLOBALSINDEX, frmLuaGlobals.vstGlobals, MaxTablesSize, MaxSubTablesLevel);
-  LuaGlobalToStrings(L, lstGlobals, MaxTablesSize, MaxSubTablesLevel);
+  LuaTableToVirtualTreeView(L, LUA_GLOBALSINDEX, frmLuaGlobals.vstGlobals, MaxTablesSize, MaxSubTablesLevel, CheckCyclicReferencing);
+  LuaGlobalToStrings(L, lstGlobals, MaxTablesSize, MaxSubTablesLevel, CheckCyclicReferencing);
 end;
 
 // print watches list
@@ -4333,8 +4482,8 @@ var
     end;
 
     // Evaluate condition in temporary state now containing globals as locals of main debug state
-    if lua_dostring(LuaStateTemp, PChar('return '+sCond)) = 0 then
-      Result := (lua_toboolean(LuaStateTemp, -1) = 1);
+    if luaL_dostring(LuaStateTemp, PChar('return '+sCond)) = 0 then
+      Result := lua_toboolean(LuaStateTemp, -1);
       
     lua_close(LuaStateTemp);
   end;
@@ -4344,8 +4493,8 @@ var
   begin
     Result := False;
 
-    if lua_dostring(L, PChar('return '+sCond)) = 0 then
-      Result := (lua_toboolean(L, -1) = 1);
+    if luaL_dostring(L, PChar('return '+sCond)) = 0 then
+      Result := lua_toboolean(L, -1);
       
     lua_pop(L, 1);
   end;
@@ -4428,10 +4577,7 @@ end;
 
 procedure TfrmLuaEditMain.LuaHelp1Click(Sender: TObject);
 begin
-  if FileExists(ExtractFilePath(Application.ExeName)+'Help\refman-5.0.pdf') then
-    ShellExecute(Self.Handle, 'open', PChar(ExtractFilePath(Application.ExeName)+'Help\refman-5.0.pdf'), nil, nil, SW_SHOWNORMAL)
-  else
-    Application.MessageBox(PChar('The file "'+ExtractFilePath(Application.ExeName)+'Help\refman-5.0.pdf" does not exists!'), 'LuaEdit', MB_OK+MB_ICONERROR);
+  BrowseURL(PChar(GetLuaEditInstallPath() + '\Help\LuaManual\ManualIndex.html'));
 end;
 
 function TfrmLuaEditMain.DoAddWatchExecute(): Boolean;
@@ -4545,6 +4691,7 @@ end;
 procedure TfrmLuaEditMain.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 var
   x, y, Answer: Integer;
+  DisplayPath: String;
   pFile: TLuaEditBasicTextFile;
   pLuaUnit: TLuaEditUnit;
   pLuaProject: TLuaEditProject;
@@ -4604,16 +4751,16 @@ begin
 
         if ((not bProjectAdded) and (pLuaProject.Name <> '[@@SingleUnits@@]') and ((pLuaProject.HasChanged) or (pLuaProject.IsNew))) then
         begin
-          frmExSaveExit.lstFiles.AddItem(pLuaProject.Name, pLuaProject);
+          frmExSaveExit.lstFiles.AddItem(pLuaProject.Name + ' {' + DisplayPath + ')', pLuaProject);
           bProjectAdded := True;
         end;
 
         if ((pFile.HasChanged) or (pFile.IsNew)) then
         begin
           if pLuaProject.Name = '[@@SingleUnits@@]' then
-            frmExSaveExit.lstFiles.AddItem(ExtractFileName(pFile.Path), pFile)
+            frmExSaveExit.lstFiles.AddItem(ExtractFileExt(pFile.DisplayPath), pFile)
           else
-            frmExSaveExit.lstFiles.AddItem('     '+ExtractFileName(pFile.Path), pFile);
+            frmExSaveExit.lstFiles.AddItem('     ' + ExtractFileExt(pFile.DisplayPath), pFile);
         end;
       end;
     end;
@@ -4642,20 +4789,20 @@ begin
                 if SaveUnitsInc then
                 begin
                   if pFile.FileType = otLuaEditUnit then
-                    CanClose := TLuaEditUnit(pFile).SaveUnitInc(pFile.Path)
+                    CanClose := TLuaEditUnit(pFile).SaveInc(pFile.Path)
                   else if pFile.FileType = otLuaEditMacro then
-                    CanClose := TLuaEditMacro(pFile).SaveUnitInc(pFile.Path)
+                    CanClose := TLuaEditMacro(pFile).SaveInc(pFile.Path)
                   else
-                    CanClose := pFile.SaveUnitInc(pFile.Path);
+                    CanClose := pFile.SaveInc(pFile.Path);
                 end
                 else
                 begin
                   if pFile.FileType = otLuaEditUnit then
-                    CanClose := TLuaEditUnit(pFile).SaveUnit(pFile.Path)
+                    CanClose := TLuaEditUnit(pFile).Save(pFile.Path)
                   else if pFile.FileType = otLuaEditMacro then
-                    CanClose := TLuaEditMacro(pFile).SaveUnit(pFile.Path)
+                    CanClose := TLuaEditMacro(pFile).Save(pFile.Path)
                   else
-                    CanClose := pFile.SaveUnit(pFile.Path);
+                    CanClose := pFile.Save(pFile.Path);
                 end;
               end
               else
@@ -4664,9 +4811,9 @@ begin
                 pLuaProject := TLuaEditProject(frmExSaveExit.lstFiles.Items.Objects[x]);
 
                 if SaveProjectsInc then
-                  CanClose := pLuaProject.SaveProjectInc(pLuaProject.Path)
+                  CanClose := pLuaProject.SaveInc(pLuaProject.Path)
                 else
-                  CanClose := pLuaProject.SaveProject(pLuaProject.Path);
+                  CanClose := pLuaProject.Save(pLuaProject.Path);
               end;
 
               // if CanClose variable has been assign to false, we should quit
@@ -4703,9 +4850,9 @@ begin
           if Answer = IDYES then
           begin
             if SaveUnitsInc then
-              pLuaUnit.SaveUnitInc(pLuaUnit.Path)
+              pLuaUnit.SaveInc(pLuaUnit.Path)
             else
-              pLuaUnit.SaveUnit(pLuaUnit.Path);
+              pLuaUnit.Save(pLuaUnit.Path);
           end
           else if Answer = IDCANCEL then
             CanClose := False;
@@ -4720,9 +4867,9 @@ begin
         if Answer = IDYES then
         begin
           if SaveProjectsInc then
-            pLuaProject.SaveProjectInc(pLuaProject.Path)
+            pLuaProject.SaveInc(pLuaProject.Path)
           else
-            pLuaProject.SaveProject(pLuaProject.Path);
+            pLuaProject.Save(pLuaProject.Path);
         end
         else if Answer = IDCANCEL then
           CanClose := False;
@@ -4744,7 +4891,7 @@ begin
 
     // Backward compatibility with the ini file (versions < 3.0)
     // Delete useless *.ini and *.dat files
-    if FileExists(GetLuaEditInstallPath()+'\LuaEdit.ini') then
+    if FileExistsAbs(GetLuaEditInstallPath()+'\LuaEdit.ini') then
     begin
       DeleteFile(PChar(GetLuaEditInstallPath()+'\LuaEdit.ini'));
       DeleteFile(PChar(GetLuaEditInstallPath()+'\LuaEdit.dat'));
@@ -4869,22 +5016,50 @@ begin
     begin
       pFile := TLuaEditBasicTextFile(jvUnitBar.SelectedTab.Data);
 
+      // The autodisplay value feature is only available for debuggable files
       if pFile.FileType in LuaEditDebugFilesTypeSet then
       begin
-        if (not Running and (TLuaEditDebugFile(pFile).DebugInfos.iCurrentLineDebug <> -1)) then
+        // Make sure we're currently debugging
+        if (Running and (TLuaEditDebugFile(pFile).DebugInfos.iCurrentLineDebug <> -1)) then
         begin
-          sWord := pFile.SynUnit.GetWordAtRowCol(aLineCharPos);
-          if sWord <> '' then
+          // Make sure the cursor is in a "ok" location
+          if aLineCharPos.Line <= pFile.SynUnit.Lines.Count - 1 then
           begin
-            if lstLocals.Values[sWord] <> '' then
+            if aLineCharPos.Char <= Length(pFile.SynUnit.Lines[aLineCharPos.Line - 1]) - 1 then
             begin
-              if pFile.SynUnit.Hint <> sWord + ' = ' + lstLocals.Values[sWord] then
-              begin
-                Application.CancelHint;
-              end;
+              // Find the word under the cursor if any
+              sWord := pFile.SynUnit.GetWordAtRowCol(aLineCharPos);
 
-              pFile.SynUnit.Hint := sWord + ' = ' + lstLocals.Values[sWord];
-            end;
+              if sWord <> '' then
+              begin
+                // Find the "local" value associated to that word if any
+                if lstLocals.Values[sWord] <> '' then
+                begin
+                  if pFile.SynUnit.Hint <> sWord + ' = ' + lstLocals.Values[sWord] then
+                  begin
+                    Application.CancelHint;
+                  end;
+
+                  pFile.SynUnit.Hint := sWord + ' = ' + lstLocals.Values[sWord];
+                end
+                // Otherwise, we find the "global" value associated to that word if any
+                else if lstGlobals.Values[sWord] <> '' then
+                begin
+                  if pFile.SynUnit.Hint <> sWord + ' = ' + lstGlobals.Values[sWord] then
+                  begin
+                    Application.CancelHint;
+                  end;
+
+                  pFile.SynUnit.Hint := sWord + ' = ' + lstGlobals.Values[sWord];
+                end
+                else
+                  pFile.SynUnit.Hint := '';
+              end
+              else
+                pFile.SynUnit.Hint := '';
+            end
+            else
+              pFile.SynUnit.Hint := '';
           end
           else
             pFile.SynUnit.Hint := '';
@@ -5005,6 +5180,7 @@ begin
     stbMain.Panels[5].Text := '';
     pFile.LastEditedLine := pFile.SynUnit.CaretY;
     pFile.synUnit.Refresh;
+    frmProjectTree.vstProjectTree.Refresh;
     CheckButtons();
   end;
 end;
@@ -5121,70 +5297,81 @@ begin
   end;
 end;
 
-function TfrmLuaEditMain.DoAddToPrjExecute(): Boolean;
+function TfrmLuaEditMain.DoAddToPrjExecute(FilePathToAdd: String): Boolean;
 var
   x, NewUnit: integer;
-  pLuaUnit: TLuaEditUnit;
+  pFile: TLuaEditBasicTextFile;
   FoundMatch: Boolean;
   Name, Ext: String;
 begin
-  Result := (frmAddToPrj.ShowModal = mrOk);
+  if FilePathToAdd = '' then
+    Result := (frmAddToPrj.ShowModal = mrOk)
+  else
+    Result := True;
 
   if Result then
   begin
-    if frmAddToPrj.chkExisting.Checked then
+    if FilePathToAdd <> '' then
     begin
-      for x := 0 to frmAddToPrj.lstFiles.Count - 1 do
-      begin
-        (AddFileInProject(frmAddToPrj.lstFiles.Strings[x], False, ActiveProject)).IsLoaded := True;
-        ActiveProject.HasChanged := True;
-      end;
+      TLuaEditBasicTextFile(AddFileInProject(FilePathToAdd, False, ActiveProject)).IsLoaded := True;
+      ActiveProject.HasChanged := True;
     end
     else
     begin
-      NewUnit := 1;
-
-      if frmAddToPrj.chkNewUnit.Checked = True then
+      if frmAddToPrj.chkExisting.Checked then
       begin
-        Name := 'Unit';
-        Ext := '.lua';
+        for x := 0 to frmAddToPrj.lstFiles.Count - 1 do
+        begin
+          TLuaEditBasicTextFile(AddFileInProject(frmAddToPrj.lstFiles.Strings[x], False, ActiveProject)).IsLoaded := True;
+          ActiveProject.HasChanged := True;
+        end;
       end
-      else if frmAddToPrj.chkNewMacro.Checked = True then
+      else
       begin
-        Name := 'Macro';
-        Ext := '.lmc';
-      end
-      else if frmAddToPrj.chkNewTextFile.Checked = True then
-      begin
-        Name := 'Text';
-        Ext := '.txt';
-      end;
+        NewUnit := 1;
 
-      for x := 0 to LuaOpenedFiles.Count - 1 do
-      begin
-        if TLuaEditUnit(LuaOpenedFiles.Items[x]).IsNew then
-          Inc(NewUnit);
-      end;
+        if frmAddToPrj.chkNewUnit.Checked = True then
+        begin
+          Name := 'Unit';
+          Ext := '.lua';
+        end
+        else if frmAddToPrj.chkNewMacro.Checked = True then
+        begin
+          Name := 'Macro';
+          Ext := '.lmc';
+        end
+        else if frmAddToPrj.chkNewTextFile.Checked = True then
+        begin
+          Name := 'Text';
+          Ext := '.txt';
+        end;
 
-      FoundMatch := True;
-  
-      while FoundMatch do
-      begin
-        FoundMatch := False;
         for x := 0 to LuaOpenedFiles.Count - 1 do
         begin
-          if 'Unit'+IntToStr(NewUnit)+'.lua' = TLuaEditUnit(LuaOpenedFiles.Items[x]).Name then
-          begin
+          if TLuaEditUnit(LuaOpenedFiles.Items[x]).IsNew then
             Inc(NewUnit);
-            FoundMatch := True;
+        end;
+
+        FoundMatch := True;
+  
+        while FoundMatch do
+        begin
+          FoundMatch := False;
+          for x := 0 to LuaOpenedFiles.Count - 1 do
+          begin
+            if 'Unit'+IntToStr(NewUnit)+'.lua' = TLuaEditUnit(LuaOpenedFiles.Items[x]).Name then
+            begin
+              Inc(NewUnit);
+              FoundMatch := True;
+            end;
           end;
         end;
-      end;
 
-      pLuaUnit := TLuaEditUnit(AddFileInProject('Unit'+IntToStr(NewUnit)+'.lua', True, ActiveProject));
-      pLuaUnit.IsLoaded := True;
-      AddFileInTab(pLuaUnit);
-      ActiveProject.HasChanged := True;
+        pFile := TLuaEditBasicTextFile(AddFileInProject('Unit'+IntToStr(NewUnit)+'.lua', True, ActiveProject));
+        pFile.IsLoaded := True;
+        AddFileInTab(pFile);
+        ActiveProject.HasChanged := True;
+      end;
     end;
   end;
 
@@ -5194,40 +5381,48 @@ end;
 
 procedure TfrmLuaEditMain.actAddToPrjExecute(Sender: TObject);
 begin
-  DoAddToPrjExecute;
+  DoAddToPrjExecute();
 end;
 
-function TfrmLuaEditMain.DoRemoveFromPrjExecute(): Boolean;
+function TfrmLuaEditMain.DoRemoveFromPrjExecute(pFileToRemove: TLuaEditFile): Boolean;
 var
-  pLuaUnit: TLuaEditUnit;
+  pFile: TLuaEditFile;
 begin
   Result := False;
   frmRemoveFile.FillCombo(ActiveProject);
-  
-  if frmRemoveFile.ShowModal = mrOk then
-  begin
-    pLuaUnit := TLuaEditUnit(frmRemoveFile.cboUnit.Items.Objects[frmRemoveFile.cboUnit.ItemIndex]);
 
-    if ((pLuaUnit.HasChanged) or (pLuaUnit.IsNew)) then
+  if Assigned(pFileToRemove) then
+  begin
+    if frmRemoveFile.ShowModal = mrOk then
+      pFile := TLuaEditFile(frmRemoveFile.cboUnit.Items.Objects[frmRemoveFile.cboUnit.ItemIndex]);
+  end
+  else
+    pFile := pFileToRemove;
+
+  if Assigned(pFile) then
+  begin
+    if ((pFile.HasChanged) or (pFile.IsNew)) then
     begin
-      if Application.MessageBox(PChar('Save changes to file "'+pLuaUnit.Path+'"?'), 'LuaEdit', MB_ICONQUESTION+MB_YESNO) = IDYES then
+      if Application.MessageBox(PChar('Save changes to file "'+pFile.Path+'"?'), 'LuaEdit', MB_ICONQUESTION+MB_YESNO) = IDYES then
       begin
         if SaveUnitsInc then
-          pLuaUnit.SaveUnitInc(pLuaUnit.Path)
+          TLuaEditBasicTextFile(pFile).SaveInc(pFile.Path)
         else
-          pLuaUnit.SaveUnit(pLuaUnit.Path);
+          TLuaEditBasicTextFile(pFile).Save(pFile.Path);
       end;
     end;
 
-    if LuaOpenedFiles.IndexOf(pLuaUnit) <> -1 then
+    if LuaOpenedFiles.IndexOf(pFile) <> -1 then
     begin
-      pLuaUnit.AssociatedTab.Free;
-      LuaOpenedFiles.Remove(pLuaUnit);
+      if Assigned(TLuaEditBasicTextFile(pFile).AssociatedTab) then
+        TLuaEditBasicTextFile(pFile).AssociatedTab.Free;
+
+      LuaOpenedFiles.Remove(pFile);
       Result := True;
     end;
 
-    ActiveProject.lstUnits.Remove(pLuaUnit);
-    pLuaUnit.Free;
+    ActiveProject.lstUnits.Remove(pFile);
+    pFile.Free;
     ActiveProject.HasChanged := True;
     frmProjectTree.BuildProjectTree;
   end;
@@ -5257,6 +5452,7 @@ begin
   pNewCompletionProposal.ItemList.Add('\color{clBlue}function\color{clBlack}   \column{}\style{+B}assert\style{-B}(v [, message])');
   pNewCompletionProposal.Options := pNewCompletionProposal.Options + [scoUsePrettyText, scoUseBuiltInTimer, scoUseInsertList, scoCaseSensitive, scoLimitToMatchedText];
   pNewCompletionProposal.OnExecute := synCompletionExecute;
+  pNewCompletionProposal.ActivateCompletion;
   Result := pNewCompletionProposal;
 end;
 
@@ -5274,6 +5470,7 @@ begin
   pNewCompletionProposal.NbLinesInWindow := 10;
   pNewCompletionProposal.DefaultType := ctParams;
   pNewCompletionProposal.ClBackground := clInfoBk;
+  pNewCompletionProposal.ActivateCompletion;
   Result := pNewCompletionProposal;
 end;
 
@@ -5656,6 +5853,7 @@ end;
 procedure TfrmLuaEditMain.FillLookUpList;
 var
   pFctInfo: TFctInfo;
+  sSearchPath: String;
   hFileSearch: TSearchRec;
   sFileContent: TStringList;
   x, y: Integer;
@@ -5666,13 +5864,17 @@ begin
   // Go through all libraries search paths
   for x := 0 to LibrariesSearchPaths.Count - 1 do
   begin
+    sSearchPath := LibrariesSearchPaths.Strings[x];
+    if sSearchPath[Length(sSearchPath)] <> '\' then
+      sSearchPath := sSearchPath + '\';
+
     // Begin file search
-    if FindFirst(LibrariesSearchPaths.Strings[x]+'*.lib', faAnyFile, hFileSearch) = 0 then
+    if FindFirst(sSearchPath+'*.lib', faAnyFile, hFileSearch) = 0 then
     begin
       repeat
         // Create and initialize temporary content container
         sFileContent := TStringList.Create;
-        sFileContent.LoadFromFile(LibrariesSearchPaths.Strings[x]+hFileSearch.Name);
+        sFileContent.LoadFromFile(sSearchPath+hFileSearch.Name);
 
         // Parse content and add it to the lookup list
         for y := 0 to sFileContent.Count - 1 do
@@ -5762,12 +5964,15 @@ begin
   pReg.OpenKey('\Software\LuaEdit\EditorSettings\Debugger', True);
   MaxTablesSize := pReg.ReadInteger('MaxTablesSize', PRINT_SIZE);
   MaxSubTablesLevel := pReg.ReadInteger('MaxSubTablesLevel', SUB_TABLE_MAX);
+  CheckCyclicReferencing := pReg.ReadBool('CheckCyclicReferencing', True);
   AutoLoadLibBasic := pReg.ReadBool('AutoLoadLibBasic', True);
+  AutoLoadLibPackage := pReg.ReadBool('AutoLoadLibPackage', True);
   AutoLoadLibTable := pReg.ReadBool('AutoLoadLibTable', True);
   AutoLoadLibString := pReg.ReadBool('AutoLoadLibString', True);
   AutoLoadLibMath := pReg.ReadBool('AutoLoadLibMath', True);
   AutoLoadLibOSIO := pReg.ReadBool('AutoLoadLibOSIO', True);
   AutoLoadLibDebug := pReg.ReadBool('AutoLoadLibDebug', True);
+  ShowStackTraceOnError := pReg.ReadBool('ShowStackTraceOnError', True);
 
   // Reading Environment settings
   pReg.OpenKey('\Software\LuaEdit\EditorSettings\Environment', True);
@@ -6469,7 +6674,7 @@ begin
   begin
     if not TLuaEditUnit(LuaOpenedFiles.Items[x]).HasChanged then
     begin
-      jvUnitBar.Tabs[x].Caption := TLuaEditUnit(LuaOpenedFiles.Items[x]).Name;
+      jvUnitBar.Tabs[x].Caption := TLuaEditUnit(jvUnitBar.Tabs[x].Data).Name;
       jvUnitBar.Tabs[x].Modified := False;
     end
     else
@@ -6635,6 +6840,11 @@ end;
 procedure TfrmLuaEditMain.CreateGUID1Click(Sender: TObject);
 begin
   frmGUID.ShowModal();
+end;
+
+procedure TfrmLuaEditMain.PathConverter1Click(Sender: TObject);
+begin
+  frmConvertPath.ShowModal();
 end;
 
 procedure TfrmLuaEditMain.Help1Click(Sender: TObject);
@@ -7093,21 +7303,6 @@ begin
   end;
 end;
 
-// This function finds LuaEdit's install path and returns it
-function GetLuaEditInstallPath(): String;
-var
-  pReg: TRegistry;
-begin
-  Result := '';
-  pReg := TRegistry.Create;
-  pReg.RootKey := HKEY_LOCAL_MACHINE;
-
-  if pReg.OpenKey('\Software\LuaEdit', False) then
-    Result := pReg.ReadString('ApplicationPath');
-
-  pReg.Free;
-end;
-
 procedure TfrmLuaEditMain.ContributorsList1Click(Sender: TObject);
 begin
   frmContributors.ShowModal();
@@ -7128,7 +7323,7 @@ begin
   if TLuaEditUnit(jvUnitBar.SelectedTab.Data).synUnit.SelAvail then
     WordAtCursor := ExpandUNCFileName(TLuaEditUnit(jvUnitBar.SelectedTab.Data).synUnit.SelText);
 
-  if FileExists(WordAtCursor) then
+  if FileExistsAbs(WordAtCursor) then
   begin
     pFiles := TStringList.Create;
     pFiles.Add(WordAtCursor);
@@ -7161,7 +7356,7 @@ begin
     OpenFileatCursor1.Enabled := True;
     sOriginalName := StringReplace(TLuaEditUnit(jvUnitBar.SelectedTab.Data).synUnit.SelText, '\\', '\', [rfIgnoreCase, rfReplaceAll]);
 
-    if FileExists(sOriginalName) then
+    if FileExistsAbs(sOriginalName) then
       sTextToShow := MinimizeName(sOriginalName, stbMain.Canvas, 150);
   end;
 
@@ -7179,26 +7374,26 @@ end;
 
 procedure TfrmLuaEditMain.jvUnitBarChange(Sender: TObject);
 var
-  pLuaUnit: TLuaEditUnit;
+  pFile: TLuaEditBasicTextFile;
 begin
   if Assigned(jvUnitBar.SelectedTab) then
   begin
     if Assigned(jvUnitBar.SelectedTab.Data) then
     begin
-      pLuaUnit := TLuaEditUnit(jvUnitBar.SelectedTab.Data);
+      pFile := TLuaEditBasicTextFile(jvUnitBar.SelectedTab.Data);
 
-      if pLuaUnit.HasChanged then
+      if pFile.HasChanged then
         stbMain.Panels[3].Text := 'Modified'
       else
         stbMain.Panels[3].Text := '';
 
-      if pLuaUnit.IsReadOnly then
+      if pFile.IsReadOnly then
         stbMain.Panels[4].Text := 'Read Only'
       else
         stbMain.Panels[4].Text := '';
 
-      synEditClick(pLuaUnit.synUnit);
-      frmFunctionList.RefreshList(pLuaUnit.Path);
+      synEditClick(pFile.SynUnit);
+      frmFunctionList.RefreshList(pFile.Path);
       CheckButtons;
     end;
   end;
@@ -7306,10 +7501,10 @@ begin
 
             FileName := pLuaUnit.Path;
 
-            if (not FileExists(FileName)) then
+            if (not FileExistsAbs(FileName)) then
               FileName := PrevFile;
 
-            if (FileExists(FileName) and (E.Line > 0)) then
+            if E.Line > 0 then
             begin
               pLuaUnit.DebugInfos.iLineError := E.Line;
               jvUnitBar.SelectedTab := pLuaUnit.AssociatedTab;
@@ -7424,7 +7619,7 @@ begin
     FileName := Value.Strings[x];
 
     // Make the file exists
-    if FileExists(FileName) then
+    if FileExistsAbs(FileName) then
     begin
       pFiles.Add(FileName);
       DoOpenFileExecute(pFiles);
@@ -7456,14 +7651,19 @@ begin
   begin
     if Assigned(Item.Data) then
     begin
+      Self.Caption := 'LuaEdit - ' + TLuaEditUnit(Item.Data).Path;
       frmFunctionList.RefreshList(TLuaEditUnit(Item.Data).Path);
       TLuaEditUnit(Item.Data).synUnit.Visible := True;
       synEditClick(TLuaEditUnit(Item.Data).synUnit);
       
       if Assigned(jvUnitBar.SelectedTab) then
         TLuaEditUnit(jvUnitBar.SelectedTab.Data).synUnit.Visible := False;
-    end;
-  end;
+    end
+    else
+      Self.Caption := 'LuaEdit';
+  end
+  else
+    Self.Caption := 'LuaEdit';
 end;
 
 procedure TfrmLuaEditMain.ppmToolBarPopup(Sender: TObject);
@@ -7482,7 +7682,7 @@ begin
 
   while iSearchResult = 0 do
   begin
-    if FileExists(TempFolder + '\' + hSearchRec.Name) then
+    if FileExistsAbs(TempFolder + '\' + hSearchRec.Name) then
       DeleteFile(TempFolder + '\' + hSearchRec.Name);
 
     iSearchResult := FindNext(hSearchRec);
@@ -7693,7 +7893,6 @@ var
     luaopen_string(L);
     luaopen_math(L);
     luaopen_debug(L);
-    luaopen_loadlib(L);
     lua_settop(L, 0);
   end;
 
@@ -7777,6 +7976,46 @@ var
         FreeLibrary(hModule);
         Result := False;
       end;
+    end;
+  end;
+
+  procedure AppendToLuaCPath(L: PLua_State; AppendStr: String);
+  var
+    CurrentStr, NewStr: String;
+  begin
+    lua_getglobal(L, 'package');
+
+    if lua_istable(L, -1) then
+    begin
+      lua_pushstring(L, 'cpath');
+      lua_gettable(L, -2);
+
+      CurrentStr := lua_tostring(L, -1);
+      NewStr := CurrentStr + ';' + AppendStr;
+
+      lua_pushstring(L, PChar(NewStr));
+      lua_pushstring(L, 'cpath');
+      lua_settable(L, -3);
+    end;
+  end;
+
+  procedure AppendToLuaPath(L: PLua_State; AppendStr: String);
+  var
+    CurrentStr, NewStr: String;
+  begin
+    lua_getglobal(L, 'package');
+
+    if lua_istable(L, -1) then
+    begin
+      lua_pushstring(L, 'path');
+      lua_gettable(L, -2);
+
+      CurrentStr := lua_tostring(L, -1);
+      NewStr := CurrentStr + ';' + AppendStr;
+
+      lua_pushstring(L, PChar(NewStr));
+      lua_pushstring(L, 'path');
+      lua_settable(L, -3);
     end;
   end;
 begin
@@ -7951,10 +8190,10 @@ begin
 
           FileName := pLuaUnit.Path;
 
-          if (not FileExists(FileName)) then
+          if (not FileExistsAbs(FileName)) then
             FileName := PrevFile;
 
-          if (FileExists(FileName) and (E.Line > 0)) then
+          if (FileExistsAbs(FileName) and (E.Line > 0)) then
           begin
             pLuaUnit.DebugInfos.iLineError := E.Line;
             frmLuaEditMain.jvUnitBar.SelectedTab := pLuaUnit.AssociatedTab;

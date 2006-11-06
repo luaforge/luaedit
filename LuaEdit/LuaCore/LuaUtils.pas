@@ -154,14 +154,17 @@ const
   LF = #$0A;
   CRLF = CR + LF;
 
-function Quote(const Str: string): string;
+function Quote(const Str: String): String;
 begin
   Result := AnsiQuotedStr(Str, QuoteStr);
 end;
 
-function Dequote(const QuotedStr: string): string;
+function Dequote(const QuotedStr: String): String;
 begin
-  Result := AnsiDequotedStr(QuotedStr, QuoteStr);
+  Result := QuotedStr;
+  
+  if ((AnsiStrScan(PChar(QuotedStr), QuoteStr) = QuotedStr) and (AnsiStrRScan(PChar(QuotedStr), QuoteStr) = QuoteStr)) then
+    Result := Copy(QuotedStr, 2, Length(QuotedStr) - 2);
 end;
 
 function fwriteex(F, S: PChar; Un, Len: Integer; L, Dummy: Integer): Integer;
@@ -1287,14 +1290,9 @@ begin
   raise ELuaException.Create(Title, Line, Msg);
 end;
 
-function LuaPCallFunction(L: Plua_State; FunctionName :String;
-                          const Args: array of Variant;
-                          Results : PVariantArray;
-                          ErrFunc: Integer=0;
-                          NResults :Integer=LUA_MULTRET):Integer;
+function LuaPCallFunction(L: Plua_State; FunctionName :String; const Args: array of Variant; Results : PVariantArray; ErrFunc: Integer=0; NResults :Integer=LUA_MULTRET):Integer;
 var
    NArgs, i: Integer;
-
 begin
      //Put Function To Call on the Stack
      luaPushString(L, FunctionName);

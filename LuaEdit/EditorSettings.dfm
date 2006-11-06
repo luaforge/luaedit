@@ -134,19 +134,19 @@ object frmEditorSettings: TfrmEditorSettings
       Indent = 19
       TabOrder = 0
       Items.Data = {
-        0400000025000000000000000000000000000000FFFFFFFF0000000003000000
+        0400000025000000010000000100000000000000FFFFFFFF0000000003000000
         0C456E7669726F6E656D656E7420000000FFFFFFFFFFFFFFFF01000000FFFFFF
         FF00000000000000000747656E6572616C25000000FFFFFFFFFFFFFFFF010000
         00FFFFFFFF02000000000000000C53656172636820506174687324000000FFFF
         FFFFFFFFFFFF02000000FFFFFFFF03000000000000000B5765622042726F7773
-        6572210000000000000000000000FFFFFFFFFFFFFFFF07000000010000000844
+        6572210000000100000001000000FFFFFFFFFFFFFFFF07000000010000000844
         6562756767657220000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0700000000
-        0000000747656E6572616C240000000000000000000000FFFFFFFFFFFFFFFF01
+        0000000747656E6572616C240000000100000001000000FFFFFFFFFFFFFFFF01
         000000020000000B5465787420456469746F7220000000FFFFFFFFFFFFFFFFFF
         FFFFFFFFFFFFFF01000000000000000747656E6572616C1D000000FFFFFFFFFF
-        FFFFFFFFFFFFFFFFFFFFFF050000000000000004466F6E742000000000000000
-        00000000FFFFFFFFFFFFFFFF040000000200000007446973706C61791F000000
-        0200000002000000FFFFFFFFFFFFFFFF0400000000000000064775747465722C
+        FFFFFFFFFFFFFFFFFFFFFF050000000000000004466F6E742000000001000000
+        01000000FFFFFFFFFFFFFFFF040000000200000007446973706C61791F000000
+        FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0400000000000000064775747465722C
         000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF06000000000000001353796E74
         617820486967686C69676874696E67}
       Items.Links = {
@@ -158,7 +158,7 @@ object frmEditorSettings: TfrmEditorSettings
       Top = 0
       Width = 463
       Height = 367
-      ActivePage = JvStandardPage8
+      ActivePage = JvStandardPage1
       PropagateEnable = False
       ShowDesignCaption = sdcNone
       Align = alClient
@@ -1121,7 +1121,7 @@ object frmEditorSettings: TfrmEditorSettings
         end
         object Label18: TLabel
           Left = 16
-          Top = 144
+          Top = 160
           Width = 161
           Height = 13
           Caption = 'Maximum Printable Size of Tables:'
@@ -1135,7 +1135,7 @@ object frmEditorSettings: TfrmEditorSettings
         end
         object JvGroupHeader8: TJvGroupHeader
           Left = 0
-          Top = 120
+          Top = 136
           Width = 463
           Height = 17
           Align = alCustom
@@ -1149,14 +1149,28 @@ object frmEditorSettings: TfrmEditorSettings
         end
         object Label19: TLabel
           Left = 16
-          Top = 192
+          Top = 208
           Width = 133
           Height = 13
           Caption = 'Maximum Sub Tables Level:'
         end
+        object JvGroupHeader9: TJvGroupHeader
+          Left = 0
+          Top = 296
+          Width = 463
+          Height = 17
+          Align = alCustom
+          Caption = 'Miscellaneous'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
+        end
         object jvspinMaxTablesSize: TJvSpinEdit
           Left = 16
-          Top = 158
+          Top = 174
           Width = 201
           Height = 21
           MaxValue = 65536.000000000000000000
@@ -1190,7 +1204,7 @@ object frmEditorSettings: TfrmEditorSettings
         end
         object chkAutoLoadLibTable: TCheckBox
           Left = 16
-          Top = 48
+          Top = 96
           Width = 201
           Height = 17
           Caption = 'Table Library'
@@ -1214,13 +1228,37 @@ object frmEditorSettings: TfrmEditorSettings
         end
         object jvspinMaxSubTablesLevel: TJvSpinEdit
           Left = 16
-          Top = 206
+          Top = 222
           Width = 201
           Height = 21
           MaxValue = 999.000000000000000000
           MinValue = 1.000000000000000000
           Value = 999.000000000000000000
           TabOrder = 7
+        end
+        object chkAutoLoadLibPackage: TCheckBox
+          Left = 16
+          Top = 48
+          Width = 185
+          Height = 17
+          Caption = 'Package Library (Recommended)'
+          TabOrder = 8
+        end
+        object chkCheckCyclicReferencing: TCheckBox
+          Left = 16
+          Top = 256
+          Width = 233
+          Height = 17
+          Caption = 'Check Cyclic Referencing (Recommended)'
+          TabOrder = 9
+        end
+        object chkShowStackTraceOnError: TCheckBox
+          Left = 16
+          Top = 320
+          Width = 289
+          Height = 17
+          Caption = 'Show Stack Trace On Lua Errors'
+          TabOrder = 10
         end
       end
     end

@@ -114,8 +114,8 @@ IncludeVerInfo=1
 AutoIncBuild=1
 MajorVer=3
 MinorVer=0
-Release=2
-Build=148
+Release=3
+Build=205
 Debug=0
 PreRelease=0
 Special=0
@@ -126,7 +126,7 @@ CodePage=1252
 [Version Info Keys]
 CompanyName=Open Source
 FileDescription=IDE for Lua 5.0.2
-FileVersion=3.0.2.148
+FileVersion=3.0.3.205
 InternalName=LuaEdit
 LegalCopyright=LuaEdit Copyright 2004-2006 ©
 LegalTrademarks=
@@ -134,3 +134,16 @@ OriginalFilename=LuaEdit.exe
 ProductName=LuaEdit for Lua 5.0
 ProductVersion=3.0.2.116
 Comments=This project was originally created by Jean-Francois Goulet. Please Visit www.luaedit.net for more informations.
+[HistoryLists\hlConditionals]
+Count=1
+Item0=madExcept
+[HistoryLists\hlUnitAliases]
+Count=1
+Item0=WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;
+[HistoryLists\hlSearchPath]
+Count=2
+Item0=$(DELPHI)\Lib\Debug;C:\Prog\Delphi\COMPON~1\JEDI\jcl\lib\D7\debug;C:\Prog\Delphi\Component\JEDI\jcl\lib\D7\debug;.\Syntax;.\LuaCore;C:\Prog\Delphi\Component\XPMenu;C:\Prog\Delphi\Component\SynEdit\Source;C:\Prog\Delphi\Component\ExtLib
+Item1=C:\Prog\Delphi\Component\JEDI\jcl\lib\D7\debug;.\Syntax;.\LuaCore;C:\Prog\Delphi\Component\XPMenu;C:\Prog\Delphi\Component\SynEdit\Source;C:\Prog\Delphi\Component\ExtLib
+[HistoryLists\hlOutputDirectorry]
+Count=1
+Item0=.\bin

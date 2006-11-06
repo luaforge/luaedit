@@ -25,13 +25,14 @@ object frmLuaGlobals: TfrmLuaGlobals
     Width = 426
     Height = 161
     Align = alClient
-    Header.AutoSizeIndex = 1
+    Header.AutoSizeIndex = -1
     Header.Font.Charset = DEFAULT_CHARSET
     Header.Font.Color = clWindowText
     Header.Font.Height = -11
     Header.Font.Name = 'MS Sans Serif'
     Header.Font.Style = []
     Header.Options = [hoAutoResize, hoColumnResize, hoDrag, hoVisible]
+    ScrollBarOptions.AlwaysVisible = True
     TabOrder = 0
     TreeOptions.MiscOptions = [toAcceptOLEDrop, toFullRepaintOnResize, toInitOnSave, toReportMode, toToggleOnDblClick, toWheelPanning]
     OnGetText = vstGlobalsGetText
@@ -44,7 +45,7 @@ object frmLuaGlobals: TfrmLuaGlobals
       end
       item
         Position = 1
-        Width = 322
+        Width = 1000
         WideText = 'Value'
       end>
   end

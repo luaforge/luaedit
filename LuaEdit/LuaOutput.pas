@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, ComCtrls, ExtCtrls, JvComponent, JvDockControlForm,
-  VirtualTrees, Menus, Clipbrd;
+  VirtualTrees, Menus, Clipbrd, Lua;
 
 type
   PLuaOutputLine = ^TPLuaOutputLine;
@@ -34,6 +34,7 @@ type
     procedure FindSource1Click(Sender: TObject);
     procedure Clear1Click(Sender: TObject);
     procedure ClearAll1Click(Sender: TObject);
+    procedure vstLuaOutputDblClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -60,7 +61,7 @@ begin
     pNode := vstLuaOutput.AddChild(vstLuaOutput.RootNode);
     pData := vstLuaOutput.GetNodeData(pNode);
     pData.FileName := FileName;
-    pData.LineText := '> ' + LineText;
+    pData.LineText := LUA_PROMPT + LineText;
     pData.LineNumber := LineNumber;
   end;
 end;
@@ -142,6 +143,11 @@ end;
 procedure TfrmLuaOutput.ClearAll1Click(Sender: TObject);
 begin
   vstLuaOutput.Clear;
+end;
+
+procedure TfrmLuaOutput.vstLuaOutputDblClick(Sender: TObject);
+begin
+  FindSource1Click(Sender);
 end;
 
 end.

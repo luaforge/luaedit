@@ -38,6 +38,7 @@ object frmLuaOutput: TfrmLuaOutput
     TabOrder = 0
     TreeOptions.PaintOptions = [toShowDropmark, toThemeAware, toUseBlendedImages]
     TreeOptions.SelectionOptions = [toFullRowSelect, toMultiSelect, toRightClickSelect]
+    OnDblClick = vstLuaOutputDblClick
     OnGetText = vstLuaOutputGetText
     OnGetNodeDataSize = vstLuaOutputGetNodeDataSize
     Columns = <>

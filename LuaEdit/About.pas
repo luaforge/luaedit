@@ -4,16 +4,17 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, jpeg, ExtCtrls, ShellAPI, JvGIF;
+  Dialogs, StdCtrls, jpeg, ExtCtrls, ShellAPI, JvGIF, JvExControls,
+  JvComponent, JvXPCore, JvXPButtons;
 
 type
   TfrmAbout = class(TForm)
     btnClose: TButton;
-    GroupBox1: TGroupBox;
+    Image1: TImage;
+    Label4: TLabel;
     lblVersion: TLabel;
     Label2: TLabel;
     Label3: TLabel;
-    imgLuaLogo: TImage;
     Label5: TLabel;
     Label6: TLabel;
     lblMemory: TLabel;
@@ -21,18 +22,18 @@ type
     Label7: TLabel;
     Label8: TLabel;
     Label9: TLabel;
-    Image1: TImage;
     Label10: TLabel;
     Label1: TLabel;
+    imgLuaLogo: TImage;
     Image2: TImage;
     procedure imgLuaLogoClick(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure Label7Click(Sender: TObject);
-    procedure Image1Click(Sender: TObject);
     procedure Label1Click(Sender: TObject);
     procedure Image3Click(Sender: TObject);
     procedure Image2Click(Sender: TObject);
+    procedure Label4Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -82,11 +83,6 @@ begin
   ShellExecute(Self.Handle, 'open', PChar('mailto:' + Label7.Caption + '?subject=About LuaEdit...'), nil, nil, SW_SHOWNORMAL);
 end;
 
-procedure TfrmAbout.Image1Click(Sender: TObject);
-begin
-  BrowseURL(PChar('http://www.luaedit.net'));
-end;
-
 procedure TfrmAbout.Label1Click(Sender: TObject);
 begin
   ShellExecute(Self.Handle, 'open', PChar('mailto:' + Label1.Caption + '?subject=LuaEdit Support...'), nil, nil, SW_SHOWNORMAL);
@@ -100,6 +96,11 @@ end;
 procedure TfrmAbout.Image2Click(Sender: TObject);
 begin
   BrowseURL(PChar('http://opensource.org/index.php'));
+end;
+
+procedure TfrmAbout.Label4Click(Sender: TObject);
+begin
+  BrowseURL(PChar('http://www.luaedit.net'));
 end;
 
 end.

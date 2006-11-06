@@ -64,7 +64,7 @@ var
 
 implementation
 
-uses Main;
+uses Main, Misc;
 
 {$R *.dfm}
 
@@ -166,7 +166,7 @@ begin
     Application.MessageBox(PChar('A macro with name "'+txtName.Text+'" already exists!'), 'LuaEdit', MB_OK+MB_ICONERROR);
     txtName.SetFocus;
   end
-  else if not FileExists(txtFileName.Text) then
+  else if not FileExistsAbs(txtFileName.Text) then
   begin
     Application.MessageBox(PChar('The file "'+txtFileName.Text+'" does not exists!'), 'LuaEdit', MB_OK+MB_ICONERROR);
     txtFileName.SetFocus;

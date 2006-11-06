@@ -37,18 +37,18 @@ begin
   try
     Reg.RootKey := HKEY_CLASSES_ROOT;
 
-    if not Reg.OpenKey('\'+inExtension, true) then
+    if not Reg.OpenKey('\'+inExtension, True) then
       raise Exception.Create(cExceptMsg);
 
     Reg.WriteString('', inFileType);
     Reg.WriteString('Content Type', inContentType);
 
-    if not Reg.OpenKey('\'+inFileType, true) then
+    if not Reg.OpenKey('\'+inFileType, True) then
       raise Exception.Create(cExceptMsg);
 
     Reg.WriteString('', inTypeDesc);
 
-    if not Reg.OpenKey('DefaultIcon', true) then
+    if not Reg.OpenKey('DefaultIcon', True) then
       raise Exception.Create(cExceptMsg);
 
     Reg.WriteString('', inIconPath);

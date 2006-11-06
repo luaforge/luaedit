@@ -55,6 +55,7 @@ object frmWatch: TfrmWatch
     OnAfterItemPaint = vstWatchAfterItemPaint
     OnChange = vstWatchChange
     OnCreateEditor = vstWatchCreateEditor
+    OnDblClick = vstWatchDblClick
     OnDragOver = vstWatchDragOver
     OnDragDrop = vstWatchDragDrop
     OnEdited = vstWatchEdited

@@ -47,7 +47,7 @@ begin
       FilesName.Add(StrPas(lua_tostring(L, x)));
 
   // Return the luaedit version as a string
-  lua_pushboolean(L, Integer(frmLuaEditMain.DoOpenFileExecute(FilesName)));
+  lua_pushboolean(L, frmLuaEditMain.DoOpenFileExecute(FilesName));
 
   // Free variables
   FilesName.Free;
@@ -67,7 +67,7 @@ end;
 function LuaLEOpenProject(L: Plua_State): Integer; cdecl;
 begin
   // Return the luaedit version as a string
-  lua_pushboolean(L, Integer(frmLuaEditMain.DoOpenProjectExecute()));
+  lua_pushboolean(L, frmLuaEditMain.DoOpenProjectExecute());
 
   // Return in Delphi the number of argument pushed on the stack
   Result := 1;
@@ -84,7 +84,7 @@ end;
 function LuaLESaveAll(L: Plua_State): Integer; cdecl;
 begin
   // Return the luaedit version as a string
-  lua_pushboolean(L, Integer(frmLuaEditMain.DoSaveAllExecute()));
+  lua_pushboolean(L, frmLuaEditMain.DoSaveAllExecute());
 
   // Return in Delphi the number of argument pushed on the stack
   Result := 1;
@@ -101,7 +101,7 @@ end;
 function LuaLESavePrjAs(L: Plua_State): Integer; cdecl;
 begin
   // Return the luaedit version as a string
-  lua_pushboolean(L, Integer(frmLuaEditMain.DoSaveProjectAsExecute()));
+  lua_pushboolean(L, frmLuaEditMain.DoSaveProjectAsExecute());
 
   // Return in Delphi the number of argument pushed on the stack
   Result := 1;
@@ -118,7 +118,7 @@ end;
 function LuaLESaveUnitAs(L: Plua_State): Integer; cdecl;
 begin
   // Return the luaedit version as a string
-  lua_pushboolean(L, Integer(frmLuaEditMain.DoSaveAsExecute()));
+  lua_pushboolean(L, frmLuaEditMain.DoSaveAsExecute());
 
   // Return in Delphi the number of argument pushed on the stack
   Result := 1;
@@ -135,7 +135,7 @@ end;
 function LuaLESaveUnit(L: Plua_State): Integer; cdecl;
 begin
   // Return the luaedit version as a string
-  lua_pushboolean(L, Integer(frmLuaEditMain.DoSaveExecute()));
+  lua_pushboolean(L, frmLuaEditMain.DoSaveExecute());
 
   // Return in Delphi the number of argument pushed on the stack
   Result := 1;
@@ -201,22 +201,22 @@ begin
 
         // Push "IsLoaded" data
         lua_pushstring(L, 'IsLoaded');
-        lua_pushboolean(L, Integer(pLuaUnit.IsLoaded));
+        lua_pushboolean(L, pLuaUnit.IsLoaded);
         lua_settable(L, -3);
 
         // Push "IsReadOnly" data
         lua_pushstring(L, 'IsReadOnly');
-        lua_pushboolean(L, Integer(pLuaUnit.IsReadOnly));
+        lua_pushboolean(L, pLuaUnit.IsReadOnly);
         lua_settable(L, -3);
 
         // Push "IsNew" data
         lua_pushstring(L, 'IsNew');
-        lua_pushboolean(L, Integer(pLuaUnit.IsNew));
+        lua_pushboolean(L, pLuaUnit.IsNew);
         lua_settable(L, -3);
 
         // Push "HasChanged" data
         lua_pushstring(L, 'HasChanged');
-        lua_pushboolean(L, Integer(pLuaUnit.HasChanged));
+        lua_pushboolean(L, pLuaUnit.HasChanged);
         lua_settable(L, -3);
 
         // Push "Text" data
@@ -344,22 +344,22 @@ begin
 
     // Push "AutoIncRevNumber" data
     lua_pushstring(L, 'AutoIncRevNumber');
-    lua_pushboolean(L, Integer(ActiveProject.AutoIncRevNumber));
+    lua_pushboolean(L, ActiveProject.AutoIncRevNumber);
     lua_settable(L, -3);
 
     // Push "IsReadOnly" data
     lua_pushstring(L, 'IsReadOnly');
-    lua_pushboolean(L, Integer(ActiveProject.IsReadOnly));
+    lua_pushboolean(L, ActiveProject.IsReadOnly);
     lua_settable(L, -3);
 
     // Push "IsNew" data
     lua_pushstring(L, 'IsNew');
-    lua_pushboolean(L, Integer(ActiveProject.IsNew));
+    lua_pushboolean(L, ActiveProject.IsNew);
     lua_settable(L, -3);
 
     // Push "HasChanged" data
     lua_pushstring(L, 'HasChanged');
-    lua_pushboolean(L, Integer(ActiveProject.HasChanged));
+    lua_pushboolean(L, ActiveProject.HasChanged);
     lua_settable(L, -3);
     
     // Push "VersionMajor" data
@@ -671,6 +671,7 @@ const
 begin
   // Open basic lua libraries
   lua_baselibopen(L);
+  lua_packlibopen(L);
   lua_tablibopen(L);
   lua_strlibopen(L);
   lua_iolibopen(L);

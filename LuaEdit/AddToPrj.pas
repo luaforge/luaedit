@@ -40,6 +40,8 @@ var
 
 implementation
 
+uses Misc;
+
 {$R *.dfm}
 
 procedure TfrmAddToPrj.FormShow(Sender: TObject);
@@ -107,7 +109,7 @@ begin
 
     for x := 0 to lstFiles.Count - 1 do
     begin
-      if not FileExists(lstFiles.Strings[x]) then
+      if not FileExistsAbs(lstFiles.Strings[x]) then
       begin
         Application.MessageBox(PChar('The file "'+lstFiles.Strings[x]+'" is innexistant.'), 'LuaEdit', MB_OK+MB_ICONERROR);
         ModalResult := mrNone;

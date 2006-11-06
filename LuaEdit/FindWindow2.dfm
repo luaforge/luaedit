@@ -51,7 +51,7 @@ object frmFindWindow2: TfrmFindWindow2
   end
   object JvDockClient1: TJvDockClient
     DirectDrag = False
-    DockStyle = frmMain.jvDockVSNet
+    DockStyle = frmLuaEditMain.jvDockVSNet
     Left = 8
     Top = 24
   end

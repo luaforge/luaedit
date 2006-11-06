@@ -16,6 +16,7 @@ uses
   StdCtrls, JvTabBar;
 
 const
+  LUAEDIT_UNKNOW_MSG  = 0;
   LUAEDIT_HINT_MSG    = 1;
   LUAEDIT_WARNING_MSG = 2;
   LUAEDIT_ERROR_MSG   = 3;
@@ -52,7 +53,7 @@ const
 type
 
   //////////////////////////////////////////////////////////////////////////////
-  // Copy data type
+  // Copy data message data types
   //////////////////////////////////////////////////////////////////////////////
   TCopyDataType = (cdtAnsiString = 0, cdtWideString = 1, cdtBinary = 2);
 
@@ -157,8 +158,8 @@ type
   end;
 
   TBreakInfo = class(TObject)
-    FileName: String;
-    Call:     String;
+    FileName: String;   // Path of file where the break happened
+    Call:     String;   // Actual text at line break
     LineOut:  String;   // Line number to display
     Line:     Integer;  // Actual line definition in script
   public
@@ -232,6 +233,7 @@ type
     FLastTimeModified:  TDateTime;
     FName:              String;
     FPath:              String;
+    FDisplayPath:       String;
     FIsReadOnly:        Boolean;
     FIsNew:             Boolean;
     FHasChanged:        Boolean;
@@ -239,11 +241,15 @@ type
     FPrjOwner:          TLuaEditProject;
   public
     constructor Create(Path: String; otType: TLuaEditFileType = otTextFile);
+
+    function  Save(Path: String): Boolean; virtual;
+    function  SaveInc(Path: String): Boolean; virtual;
   published
     property FileType: TLuaEditFileType read FOTFileType write FOTFileType;
     property LastTimeModified: TDateTime read FLastTimeModified write FLastTimeModified;
     property Name: String read FName write FName;
     property Path: String read FPath write FPath;
+    property DisplayPath: String read FDisplayPath write FDisplayPath;
     property IsReadOnly: Boolean read FIsReadOnly write FIsReadOnly;
     property IsNew: Boolean read FIsNew write FIsNew;
     property HasChanged: Boolean read FHasChanged write FHasChanged;
@@ -273,8 +279,8 @@ type
     constructor Create(Path: String; otType: TLuaEditFileType = otTextFile);
     destructor Destroy; override;
 
-    function  SaveUnit(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; virtual;
-    function  SaveUnitInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; virtual;
+    function  Save(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; overload;
+    function  SaveInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; overload;
   published
     property LastEditedLine:   Integer read FLastEditedLine write FLastEditedLine;
     property SynUnit:          TSynEdit read FSynUnit write FSynUnit;
@@ -292,8 +298,8 @@ type
     constructor Create(Path: String; otType: TLuaEditFileType = otTextFile);
     destructor Destroy; override;
 
-    function  SaveUnit(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; override;
-    function  SaveUnitInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; override;
+    function  Save(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; overload;
+    function  SaveInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; overload;
     procedure SaveBreakpoints();
     procedure GetBreakpoints();
   published
@@ -344,8 +350,8 @@ type
     destructor  Destroy; override;
 
     procedure GetProjectFromDisk(Path: String);
-    function  SaveProject(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
-    function  SaveProjectInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
+    function  Save(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; overload;
+    function  SaveInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; overload;
     procedure RealoadProject();
   end;
 
@@ -359,11 +365,39 @@ function  SetPrivilege(sPrivilegeName : PChar; bEnabled : boolean): boolean; cde
 procedure ToggleFileReadOnlyAttr(const sFileName: PChar); cdecl; external 'LuaEditSys.dll';
 function  WinExit(iFlags: integer): Boolean; cdecl; external 'LuaEditSys.dll';
 function  BrowseURL(URL: PChar): Boolean; cdecl; external 'LuaEditSys.dll';
+
+// Other Misc functions
+function GetLuaEditInstallPath(): String;
+function FileExistsAbs(FileName: String): Boolean;
   
 implementation
 
 uses
   Main, Breakpoints, ReadOnlyMsgBox, ProjectTree, GUIDesigner;
+
+///////////////////////////////////////////////////////////////////
+// Misc functions
+///////////////////////////////////////////////////////////////////
+
+// This function finds LuaEdit's install path and returns it
+function GetLuaEditInstallPath(): String;
+var
+  pReg: TRegistry;
+begin
+  Result := '';
+  pReg := TRegistry.Create;
+  pReg.RootKey := HKEY_LOCAL_MACHINE;
+
+  if pReg.OpenKey('\Software\LuaEdit', False) then
+    Result := pReg.ReadString('ApplicationPath');
+
+  pReg.Free;
+end;
+
+function FileExistsAbs(FileName: String): Boolean;
+begin
+  Result := (DirectoryExists(ExtractFileDir(FileName)) and (FileExists(FileName)));
+end;
 
 ///////////////////////////////////////////////////////////////////
 // TAdvanceRegistry class
@@ -634,40 +668,43 @@ var
   ImgIndex: integer;
   pLuaUnit: TLuaEditUnit;
 begin
-  pLuaUnit := TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data);
-
-  FirstLine := pLuaUnit.synUnit.RowToLine(FirstLine);
-  LastLine := pLuaUnit.synUnit.RowToLine(LastLine);
-  X := 1;
-  LH := pLuaUnit.synUnit.LineHeight;
-  while FirstLine <= LastLine do
+  if Assigned(frmLuaEditMain.jvUnitBar.SelectedTab) then
   begin
-    ImgIndex := -1;
-    Y := (LH - frmLuaEditMain.imlActions.Height) div 2 + LH * (pLuaUnit.synUnit.LineToRow(FirstLine) - pLuaUnit.synUnit.TopLine);
+    pLuaUnit := TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data);
 
-    if pLuaUnit.DebugInfos.IsBreakPointLine(FirstLine) then
+    FirstLine := pLuaUnit.synUnit.RowToLine(FirstLine);
+    LastLine := pLuaUnit.synUnit.RowToLine(LastLine);
+    X := 1;
+    LH := pLuaUnit.synUnit.LineHeight;
+    while FirstLine <= LastLine do
     begin
-      if pLuaUnit.DebugInfos.GetBreakpointStatus(FirstLine) = BKPT_ENABLED then
-        ImgIndex := 27
-      else
-        ImgIndex := 28;
+      ImgIndex := -1;
+      Y := (LH - frmLuaEditMain.imlActions.Height) div 2 + LH * (pLuaUnit.synUnit.LineToRow(FirstLine) - pLuaUnit.synUnit.TopLine);
+
+      if pLuaUnit.DebugInfos.IsBreakPointLine(FirstLine) then
+      begin
+        if pLuaUnit.DebugInfos.GetBreakpointStatus(FirstLine) = BKPT_ENABLED then
+          ImgIndex := 27
+        else
+          ImgIndex := 28;
+      end;
+
+      if TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).DebugInfos.iCurrentLineDebug = FirstLine then
+        ImgIndex := 29;
+
+      if ((pLuaUnit.DebugInfos.IsBreakPointLine(FirstLine)) and (TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).DebugInfos.iCurrentLineDebug = FirstLine)) then
+      begin
+        if pLuaUnit.DebugInfos.GetBreakpointStatus(FirstLine) = BKPT_ENABLED then
+          ImgIndex := 30
+        else
+          ImgIndex := 43;
+      end;
+
+      if ImgIndex > 0 then
+        frmLuaEditMain.imlActions.Draw(ACanvas, X, Y, ImgIndex);
+
+      Inc(FirstLine);
     end;
-
-    if TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).DebugInfos.iCurrentLineDebug = FirstLine then
-      ImgIndex := 29;
-
-    if ((pLuaUnit.DebugInfos.IsBreakPointLine(FirstLine)) and (TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).DebugInfos.iCurrentLineDebug = FirstLine)) then
-    begin
-      if pLuaUnit.DebugInfos.GetBreakpointStatus(FirstLine) = BKPT_ENABLED then
-        ImgIndex := 30
-      else
-        ImgIndex := 43;
-    end;
-
-    if ImgIndex > 0 then
-      frmLuaEditMain.imlActions.Draw(ACanvas, X, Y, ImgIndex);
-
-    Inc(FirstLine);
   end;
 end;
 
@@ -719,16 +756,31 @@ begin
   FPath := Path;
 
   // Get Last Time accessed and readonly state
-  if ((Path <> '') and FileExists(Path)) then
+  if ((Path <> '') and FileExistsAbs(Path)) then
   begin
     FLastTimeModified := GetFileLastTimeModified(PChar(Path));
     FIsReadOnly := GetFileReadOnlyAttr(PChar(Path));
+    FDisplayPath := FPath;
   end
   else
   begin
+    FPath := GetLuaEditInstallPath() + '\Templates\Template' + ExtractFileExt(Path);
+    FDisplayPath := '?\' + ExtractFileName(Path);
     FLastTimeModified := Now;
     FIsReadOnly := False;
   end;
+
+  FName := ChangeFileExt(ExtractFileName(Path), '');
+end;
+
+function TLuaEditFile.Save(Path: String): Boolean;
+begin
+  FDisplayPath := Path;
+end;
+
+function TLuaEditFile.SaveInc(Path: String): Boolean;
+begin
+  FDisplayPath := Path;
 end;
 
 ///////////////////////////////////////////////////////////////////
@@ -762,7 +814,6 @@ begin
 
   FLastEditedLine := -1;
   FAssociatedTab := nil;
-  FName := ExtractFileName(Path);
 
   // Set some properties
   FSynUnit := TSynEdit.Create(frmLuaEditMain.pnlMain);
@@ -792,7 +843,7 @@ begin
     FSynUnit.Highlighter := TSynLuaSyn.Create(nil);
 
   // Load content in the synedit control if required
-  if ((not IsNew) and FileExists(Path)) then
+  if ((not IsNew) and FileExistsAbs(Path)) then
     SynUnit.Lines.LoadFromFile(Path);
 end;
 
@@ -803,12 +854,12 @@ begin
   FSynUnit.Free;
 end;
 
-function TLuaEditBasicTextFile.SaveUnitInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
+function TLuaEditBasicTextFile.SaveInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
 var
   xPos, IncValue, iAnswer, TempIncValue: Integer;
   bResult: Boolean;
   pMsgBox: TfrmReadOnlyMsgBox;
-begin
+begin  
   frmLuaEditMain.jvchnNotifier.Active := False;
   Result := True;
 
@@ -868,7 +919,7 @@ begin
     Path := Copy(Self.Path, 1, Length(Self.Path) - xPos + 1) + IntToStr(IncValue) + ExtractFileExt(Self.Path);
 
     // Check if file is read only first
-    while (GetFileReadOnlyAttr(PChar(Path)) and (FileExists(Path))) do
+    while (GetFileReadOnlyAttr(PChar(Path)) and (FileExistsAbs(Path))) do
     begin
       pMsgBox := TfrmReadOnlyMsgBox.Create(nil);
       iAnswer := pMsgBox.MessageBox('The project '+Path+' is read-only. Save anyway?      ', 'LuaEdit');
@@ -923,13 +974,14 @@ begin
   end;
 
   frmLuaEditMain.jvchnNotifier.Active := True;
+  inherited SaveInc(Path);
 end;
 
-function TLuaEditBasicTextFile.SaveUnit(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
+function TLuaEditBasicTextFile.Save(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
 var
   iAnswer: Integer;
   pMsgBox: TfrmReadOnlyMsgBox;
-begin
+begin  
   frmLuaEditMain.jvchnNotifier.Active := False;
   Result := True;
 
@@ -968,7 +1020,7 @@ begin
     end;
 
     // Check if file is read only first
-    while (GetFileReadOnlyAttr(PChar(Path)) and (FileExists(Path))) do
+    while (GetFileReadOnlyAttr(PChar(Path)) and (FileExistsAbs(Path))) do
     begin
       pMsgBox := TfrmReadOnlyMsgBox.Create(nil);
       iAnswer := pMsgBox.MessageBox('The project '+Path+' is read-only. Save anyway?      ', 'LuaEdit');
@@ -1023,6 +1075,7 @@ begin
   end;
 
   frmLuaEditMain.jvchnNotifier.Active := True;
+  inherited Save(Path);
 end;
 
 ///////////////////////////////////////////////////////////////////
@@ -1053,9 +1106,9 @@ begin
   FSynParams.Free;
 end;
 
-function TLuaEditDebugFile.SaveUnit(Path: String; bNoDialog: Boolean; bForceDialog: Boolean): Boolean;
+function TLuaEditDebugFile.Save(Path: String; bNoDialog: Boolean; bForceDialog: Boolean): Boolean;
 begin
-  inherited SaveUnit(Path, bNoDialog, bForceDialog);
+  inherited Save(Path, bNoDialog, bForceDialog);
 
   // Reinitialize variables
   DebugInfos.iLineError := -1;  // Do not display anymore the current line error
@@ -1069,9 +1122,9 @@ begin
   SynUnit.Refresh;
 end;
 
-function TLuaEditDebugFile.SaveUnitInc(Path: String; bNoDialog: Boolean; bForceDialog: Boolean): Boolean;
+function TLuaEditDebugFile.SaveInc(Path: String; bNoDialog: Boolean; bForceDialog: Boolean): Boolean;
 begin
-  inherited SaveUnitInc(Path, bNoDialog, bForceDialog);
+  inherited SaveInc(Path, bNoDialog, bForceDialog);
 
   // Reinitialize variables
   DebugInfos.iLineError := -1;  // Do not display anymore the current line error
@@ -1097,7 +1150,7 @@ begin
   begin
     // Erase existing file if any to ensure a new clean breakpoint file
     // NOTE: IniFiles append datas when they already exists
-    if FileExists(ChangeFileExt(Path, '.lbf')) then
+    if FileExistsAbs(ChangeFileExt(Path, '.lbf')) then
       DeleteFile(PChar(ChangeFileExt(Path, '.lbf')));
 
     // Create the ini file engine and the file on the hard drive
@@ -1134,7 +1187,7 @@ var
   pBreakpoint: TBreakpoint;
 begin
   // Only if a .lbf file with the same name as the .lua file is existing
-  if FileExists(ChangeFileExt(Path, '.lbf')) then
+  if FileExistsAbs(ChangeFileExt(Path, '.lbf')) then
   begin
     lstSections := TStringList.Create;  // Create the section list
     pBreakpointFile := TIniFile.Create(ChangeFileExt(Path, '.lbf'));  // Create the ini file engine and the file on the hard drive
@@ -1253,7 +1306,7 @@ begin
     begin
       sUnitName :=  ExpandUNCFileName(ExtractFilePath(FPath) + fFile.ReadString('Files', lstTmpFiles.Strings[x], ''));
 
-      if FileExists(sUnitName) then
+      if FileExistsAbs(sUnitName) then
       begin
         // Initialize unit and global variables considering the fact that open was a success
         pLuaUnit := TLuaEditUnit(frmLuaEditMain.AddFileInProject(sUnitName, False, Self));
@@ -1282,13 +1335,15 @@ begin
   lstTmpFiles.Free;
 end;
 
-function TLuaEditProject.SaveProjectInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
+function TLuaEditProject.SaveInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
 var
   pFile: TIniFile;
   x, xPos, IncValue, iAnswer, TempIncValue: integer;
   bResult: Boolean;
   pMsgBox: TfrmReadOnlyMsgBox;
 begin
+  inherited SaveInc(Path);
+
   frmLuaEditMain.jvchnNotifier.Active := False;
   Result := True;
 
@@ -1331,7 +1386,7 @@ begin
   Path := Copy(Path, 1, Length(Path) - xPos + 1) + IntToStr(IncValue) + ExtractFileExt(Path);  // Build the new name
 
   // Check if file is read only first
-  while (GetFileReadOnlyAttr(PChar(Path)) and (FileExists(Path))) do
+  while (GetFileReadOnlyAttr(PChar(Path)) and (FileExistsAbs(Path))) do
   begin
     pMsgBox := TfrmReadOnlyMsgBox.Create(nil);
     iAnswer := pMsgBox.MessageBox('The project '+Path+' is read-only. Save anyway?      ', 'LuaEdit');
@@ -1372,7 +1427,7 @@ begin
 
   // Erase existing file if any to ensure a new clean project
   // NOTE: IniFiles append stuff to it when they already exists
-  if FileExists(Path) then
+  if FileExistsAbs(Path) then
     DeleteFile(PChar(Path));
 
   pFile := TIniFile.Create(Path);  // Create project file writer engine (using *.ini files way)
@@ -1427,12 +1482,14 @@ begin
   frmLuaEditMain.jvchnNotifier.Active := True;
 end;
 
-function TLuaEditProject.SaveProject(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
+function TLuaEditProject.Save(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
 var
   pFile: TIniFile;
   x, iAnswer: integer;
   pMsgBox: TfrmReadOnlyMsgBox;
 begin
+  inherited Save(Path);
+
   frmLuaEditMain.jvchnNotifier.Active := False;
   Result := True;
 
@@ -1457,7 +1514,7 @@ begin
   end;
 
   // Check if file is read only first
-  while (GetFileReadOnlyAttr(PChar(Path)) and (FileExists(Path))) do
+  while (GetFileReadOnlyAttr(PChar(Path)) and (FileExistsAbs(Path))) do
   begin
     pMsgBox := TfrmReadOnlyMsgBox.Create(nil);
     iAnswer := pMsgBox.MessageBox('The project '+Path+' is read-only. Save anyway?      ', 'LuaEdit');
@@ -1494,7 +1551,7 @@ begin
 
   // Erase existing file if any to ensure a new clean project
   // NOTE: IniFiles append datas when they already exists
-  if FileExists(Path) then
+  if FileExistsAbs(Path) then
     DeleteFile(PChar(Path));
 
   if Self.Path <> Path then
@@ -1563,9 +1620,9 @@ begin
       if Application.MessageBox(PChar('Save changes to file '+pLuaUnit.Path+'?'), 'LuaEdit', MB_YESNO+MB_ICONQUESTION) = IDYES then
       begin
         if SaveUnitsInc then
-          pLuaUnit.SaveUnitInc(pLuaUnit.Path)
+          pLuaUnit.SaveInc(pLuaUnit.Path)
         else
-          pLuaUnit.SaveUnit(pLuaUnit.Path);
+          pLuaUnit.Save(pLuaUnit.Path);
       end;
     end;
 

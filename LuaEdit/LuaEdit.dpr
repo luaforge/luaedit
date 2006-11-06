@@ -68,7 +68,8 @@ uses
   GUIInspector in 'GUIInspector.pas' {frmGUIInspector},
   GUIDesigner in 'GUIDesigner.pas' {GUIForm1},
   GUIControls in 'GUIControls.pas' {frmGUIControls},
-  GUIFormType in 'GUIFormType.pas' {frmGUIFormType};
+  GUIFormType in 'GUIFormType.pas' {frmGUIFormType},
+  ConvertPath in 'ConvertPath.pas' {frmConvertPath};
 
 {$R *.res}
 
@@ -107,7 +108,7 @@ begin
   if CheckAppInstance() then
   begin
     copyDataStruct.dwData := Integer(cdtAnsiString);
-    copyDataStruct.cbData := Length(CmdLine)+1; // +1 NULL
+    copyDataStruct.cbData := Length(CmdLine) + 1; // +1 NULL
     copyDataStruct.lpData := CmdLine;
 
 
@@ -154,6 +155,7 @@ begin
   Application.CreateForm(TfrmComponentList, frmComponentList);
   Application.CreateForm(TfrmGUID, frmGUID);
   Application.CreateForm(TfrmMacroManager, frmMacroManager);
+  Application.CreateForm(TfrmConvertPath, frmConvertPath);
   frmLuaEditMain.CheckButtons;
 
   // show splash screen...
@@ -173,7 +175,7 @@ begin
   LoadDockTreeFromFile(ExtractFilePath(Application.ExeName) + 'LuaEdit.dck');
 
   // Backward compatibility with the ini file (versions < 3.0)
-  if FileExists(GetLuaEditInstallPath()+'\LuaEdit.ini') then
+  if FileExistsAbs(GetLuaEditInstallPath()+'\LuaEdit.ini') then
   begin
     frmLuaEditMain.LoadEditorSettingsFromReg;
     frmLuaEditMain.LoadEditorSettingsFromIni;
@@ -189,7 +191,7 @@ begin
     begin
       FileName := ParamStr(x);
 
-      if FileExists(FileName) then
+      if FileExistsAbs(FileName) then
       begin
         pFiles.Add(FileName);
         frmLuaEditMain.DoOpenFileExecute(pFiles);

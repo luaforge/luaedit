@@ -27,7 +27,8 @@ type
     { Private declarations }
   public
     { Public declarations }
-    procedure Put(MsgText: String; MsgType: Integer; FileName: String = ''; LineNumber: Integer = -1);
+    function Put(MsgText: String; MsgType: Integer; FileName: String = ''; LineNumber: Integer = -1): PVirtualNode;
+    function PutChild(Parent: PVirtualNode; MsgText: String; MsgType: Integer; FileName: String = ''; LineNumber: Integer = -1): PVirtualNode;
   end;
 
 var
@@ -39,7 +40,7 @@ uses Main, Misc;
 
 {$R *.dfm}
 
-procedure TfrmLuaEditMessages.Put(MsgText: String; MsgType: Integer; FileName: String = ''; LineNumber: Integer = -1);
+function TfrmLuaEditMessages.Put(MsgText: String; MsgType: Integer; FileName: String = ''; LineNumber: Integer = -1): PVirtualNode;
 var
   pData: PLuaEditMsgLine;
   pNode: PVirtualNode;
@@ -50,6 +51,25 @@ begin
   pData.MsgText := MsgText;
   pData.MsgType := MsgType;
   pData.LineNumber := LineNumber;
+
+  vstLuaEditMessages.FullExpand();
+  Result := pNode;
+end;
+
+function TfrmLuaEditMessages.PutChild(Parent: PVirtualNode; MsgText: String; MsgType: Integer; FileName: String = ''; LineNumber: Integer = -1): PVirtualNode;
+var
+  pData: PLuaEditMsgLine;
+  pNode: PVirtualNode;
+begin
+  pNode := vstLuaEditMessages.AddChild(Parent);
+  pData := vstLuaEditMessages.GetNodeData(pNode);
+  pData.FileName := FileName;
+  pData.MsgText := MsgText;
+  pData.MsgType := MsgType;
+  pData.LineNumber := LineNumber;
+
+  vstLuaEditMessages.FullExpand();
+  Result := pNode;
 end;
 
 procedure TfrmLuaEditMessages.vstLuaEditMessagesGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: WideString);
@@ -65,12 +85,17 @@ begin
         LUAEDIT_HINT_MSG:     CellText := '[HINT]';
         LUAEDIT_WARNING_MSG:  CellText := '[WARNING]';
         LUAEDIT_ERROR_MSG:    CellText := '[ERROR]';
+      else
+        CellText := '';
       end;
     end;
     1:
     begin
       pData := vstLuaEditMessages.GetNodeData(Node);
-      CellText := pData.MsgText;
+      CellText := TrimLeft(pData.MsgText);
+
+      if pData.MsgType = LUAEDIT_ERROR_MSG then
+        CellText := UpperCase(CellText[1]) + Copy(CellText, 2, Length(CellText) - 1);
     end;
   end;
 end;

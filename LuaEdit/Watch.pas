@@ -84,8 +84,8 @@ type
     procedure Collapse1Click(Sender: TObject);
     procedure ExpandAll1Click(Sender: TObject);
     procedure CollapseAll1Click(Sender: TObject);
-    procedure vstWatchMouseDown(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
+    procedure vstWatchMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure vstWatchDblClick(Sender: TObject);
   private
     { Private declarations }
     procedure WMStartEditing(var Message: TMessage); message WM_STARTEDITING;
@@ -471,6 +471,14 @@ begin
     ExpandAll1.Enabled := (vstWatch.GetFirstSelected().ChildCount > 0);
     Collapse1.Enabled := (vstWatch.GetFirstSelected().ChildCount > 0);
     CollapseAll1.Enabled := (vstWatch.GetFirstSelected().ChildCount > 0);
+  end;
+end;
+
+procedure TfrmWatch.vstWatchDblClick(Sender: TObject);
+begin
+  if Assigned(vstWatch.GetFirstSelected()) then
+  begin
+    // todo: Allow Variable Inspection...
   end;
 end;
 

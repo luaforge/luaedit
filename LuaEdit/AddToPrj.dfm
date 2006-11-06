@@ -103,7 +103,7 @@ object frmAddToPrj: TfrmAddToPrj
       Top = 24
       Width = 305
       Height = 17
-      Caption = 'Existing Unit(s)'
+      Caption = 'Existing File(s)'
       TabOrder = 0
       OnClick = chkExistingClick
     end

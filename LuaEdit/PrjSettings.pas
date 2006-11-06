@@ -7,7 +7,7 @@ uses
   Dialogs, StdCtrls, ExtCtrls, ComCtrls, Main, Mask, JvExMask, JvSpin,
   JvExStdCtrls, JvEdit, JvValidateEdit, JvPageList, JvExControls, Misc,
   JvComponent, JvExComCtrls, JvPageListTreeView, ImgList, JvGroupHeader,
-  JvBaseDlg, JvSelectDirectory, JvDotNetControls;
+  JvBaseDlg, JvSelectDirectory, JvDotNetControls, JvBrowseFolder;
 
 type
   TfrmPrjOptions = class(TForm)
@@ -57,7 +57,6 @@ type
     btnBrowseDir: TButton;
     Label15: TLabel;
     cboUnits: TComboBox;
-    jvSelectDir: TJvSelectDirectory;
     Splitter1: TSplitter;
     JvGroupHeader8: TJvGroupHeader;
     JvGroupHeader5: TJvGroupHeader;
@@ -70,6 +69,7 @@ type
     btnBrowseDir2: TButton;
     Label18: TLabel;
     txtCompileExt: TEdit;
+    jvSelectDir: TJvBrowseForFolderDialog;
     procedure FormShow(Sender: TObject);
     procedure btnBrowseFileClick(Sender: TObject);
     procedure btnOkClick(Sender: TObject);
@@ -260,7 +260,7 @@ end;
 
 procedure TfrmPrjOptions.btnBrowseDirClick(Sender: TObject);
 begin
-  jvSelectDir.InitialDir := txtRuntimeDir.Text;
+  jvSelectDir.Directory := txtRuntimeDir.Text;
   jvSelectDir.Title := 'Select Runtime Directory...';
 
   if jvSelectDir.Execute then
@@ -272,7 +272,7 @@ end;
 
 procedure TfrmPrjOptions.btnBrowseDir2Click(Sender: TObject);
 begin
-  jvSelectDir.InitialDir := txtCompileDir.Text;
+  jvSelectDir.Directory := txtCompileDir.Text;
   jvSelectDir.Title := 'Select Compilation Output Directory...';
 
   if jvSelectDir.Execute then

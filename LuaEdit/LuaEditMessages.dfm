@@ -34,11 +34,12 @@ object frmLuaEditMessages: TfrmLuaEditMessages
     Header.Options = [hoAutoResize, hoColumnResize, hoDrag, hoVisible]
     Header.Style = hsFlatButtons
     Images = imlMessages
+    LineMode = lmBands
     ScrollBarOptions.AlwaysVisible = True
     TabOrder = 0
     TreeOptions.MiscOptions = [toAcceptOLEDrop, toFullRepaintOnResize, toInitOnSave, toReportMode, toToggleOnDblClick, toWheelPanning]
     TreeOptions.PaintOptions = [toShowDropmark, toThemeAware, toUseBlendedImages]
-    TreeOptions.SelectionOptions = [toFullRowSelect, toRightClickSelect]
+    TreeOptions.SelectionOptions = [toExtendedFocus, toFullRowSelect, toRightClickSelect, toSiblingSelectConstraint]
     OnDblClick = vstLuaEditMessagesDblClick
     OnGetText = vstLuaEditMessagesGetText
     OnGetImageIndex = vstLuaEditMessagesGetImageIndex
@@ -65,7 +66,7 @@ object frmLuaEditMessages: TfrmLuaEditMessages
     Left = 24
     Top = 48
     Bitmap = {
-      494C010103000400040010001000FFFFFFFFFF00FFFFFFFFFFFFFFFF424D3600
+      494C010103000400040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000004A1E0B0063361B00502511000000
@@ -201,6 +202,7 @@ object frmLuaEditMessages: TfrmLuaEditMessages
       FC1F0001C0070000E007000180030000C0038003800300008001800300010000
       0000C007000100000000C007000100000000E00F000100000000E00F00010000
       0000F01F000100000000F01F000100000001F81F800300008003F83FC0070000
-      C007F87FE00F0000E00FFCFFF01F0000}
+      C007F87FE00F0000E00FFCFFF01F000000000000000000000000000000000000
+      000000000000}
   end
 end

@@ -18,6 +18,7 @@ type
     Source: String;
     FctPointer: Pointer; // Functions's pointer
     Line: Integer; // Function call line declaration
+    MemUsage: Double; // Lua's memory usage at the call
     Parent: PVirtualNode; // Parent's pointer (pointer to caller's informations structure)
     DurationRGauge: TGauge; // Relative duration gauge
     DurationOGauge: TGauge; // Overall duration gauge
@@ -29,11 +30,8 @@ type
     procedure vstLuaProfilerGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: WideString);
     procedure vstLuaProfilerGetNodeDataSize(Sender: TBaseVirtualTree; var NodeDataSize: Integer);
     procedure FormDestroy(Sender: TObject);
-    procedure vstLuaProfilerAfterCellPaint(Sender: TBaseVirtualTree;
-      TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex;
-      CellRect: TRect);
-    procedure vstLuaProfilerCollapsing(Sender: TBaseVirtualTree;
-      Node: PVirtualNode; var Allowed: Boolean);
+    procedure vstLuaProfilerAfterCellPaint(Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; CellRect: TRect);
+    procedure vstLuaProfilerCollapsing(Sender: TBaseVirtualTree; Node: PVirtualNode; var Allowed: Boolean);
     procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
@@ -43,7 +41,7 @@ type
     { Public declarations }
     procedure InitProfiler;
     procedure ComputeProfiler;
-    function AddCall(FctPointer: Pointer; FctName: String; Line: Integer; Source: String): PProfilerCall;
+    function AddCall(FctPointer: Pointer; FctName: String; Line: Integer; Source: String; MemUsage: Double): PProfilerCall;
     procedure AddReturn(FctPointer: Pointer; FctName: String);
   end;
 
@@ -110,6 +108,7 @@ begin
   pNodeData.Line := -1;
   pNodeData.Source := 'Lua';
   pNodeData.FctPointer := nil;
+  pNodeData.MemUsage := -1;
   pNodeData.FctName := '[RESIDUAL PROCESSES]';
 
   pNodeData.DurationRGauge := TGauge.Create(Self);
@@ -130,7 +129,7 @@ begin
   vstLuaProfiler.EndUpdate;
 end;
 
-function TfrmProfiler.AddCall(FctPointer: Pointer; FctName: String; Line: Integer; Source: String): PProfilerCall;
+function TfrmProfiler.AddCall(FctPointer: Pointer; FctName: String; Line: Integer; Source: String; MemUsage: Double): PProfilerCall;
 var
   StartedTime: Int64;
   pCallData: PProfilerCall;
@@ -161,6 +160,7 @@ begin
   pCallData.Line := Line;
   pCallData.Source := Source;
   pCallData.EnterTime := StartedTime;
+  pCallData.MemUsage := MemUsage;
   pCurrentCall := pCallNode;
   Result := pCallData;
 end;
@@ -230,6 +230,15 @@ begin
           CellText := 'N/A'
         else
           CellText := pData.ExitTimeStr;
+      end;
+      8: // Memory Usage
+      begin
+        pData := Sender.GetNodeData(Node);
+
+        if (pData.Parent = Sender.RootNode) or (pData.MemUsage < 0) then
+          CellText := 'N/A'
+        else
+          CellText := FloatToStr(pData.MemUsage) + ' kb';
       end;
     else
       CellText := '';

@@ -1,7 +1,7 @@
 object frmProfiler: TfrmProfiler
-  Left = 441
-  Top = 247
-  Width = 601
+  Left = 356
+  Top = 236
+  Width = 612
   Height = 211
   BorderStyle = bsSizeToolWin
   Caption = 'Profiler'
@@ -23,7 +23,7 @@ object frmProfiler: TfrmProfiler
   object vstLuaProfiler: TVirtualStringTree
     Left = 0
     Top = 0
-    Width = 593
+    Width = 604
     Height = 184
     Align = alClient
     Header.AutoSizeIndex = 0
@@ -80,6 +80,11 @@ object frmProfiler: TfrmProfiler
         Position = 7
         Width = 75
         WideText = 'Exit Time'
+      end
+      item
+        Position = 8
+        Width = 100
+        WideText = 'Lua Memory'
       end>
   end
   object JvDockClient1: TJvDockClient

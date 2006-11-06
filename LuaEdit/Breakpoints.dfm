@@ -712,7 +712,7 @@ object frmBreakpoints: TfrmBreakpoints
   end
   object JvDockClient1: TJvDockClient
     DirectDrag = False
-    DockStyle = frmMain.jvDockVSNet
+    DockStyle = frmLuaEditMain.jvDockVSNet
     Left = 24
     Top = 80
   end

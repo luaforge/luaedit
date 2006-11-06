@@ -17,6 +17,7 @@ type
     imlLua: TImage;
     Image1: TImage;
     Image2: TImage;
+    shpBorder: TShape;
     procedure FormShow(Sender: TObject);
   private
     { Private declarations }

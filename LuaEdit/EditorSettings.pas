@@ -127,6 +127,10 @@ type
     chkAutoLoadLibDebug: TCheckBox;
     jvspinMaxSubTablesLevel: TJvSpinEdit;
     Label19: TLabel;
+    chkAutoLoadLibPackage: TCheckBox;
+    chkCheckCyclicReferencing: TCheckBox;
+    JvGroupHeader9: TJvGroupHeader;
+    chkShowStackTraceOnError: TCheckBox;
     procedure cboFontsMeasureItem(Control: TWinControl; Index: Integer;  var Height: Integer);
     procedure cboFontsDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
     procedure FormCreate(Sender: TObject);
@@ -430,12 +434,20 @@ begin
     if chkFileAssociate.Checked then
     begin
       // Register file association for .lpr files
-      RegSetAssociation('.lpr', 'LuaEdit.lpr', 'LuaEdit Project', 'LuaEdit/LuaEdit.lpr', PChar(ExtractFileDir(Application.ExeName) + '\Graphics\Project.ico'));
+      RegSetAssociation('.lpr', 'LuaEdit.lpr', 'LuaEdit Project', 'LuaEdit/LuaEdit.lpr', PChar(GetLuaEditInstallPath() + '\Graphics\Project.ico'));
       RegSetOpenWith('LuaEdit.lpr', PChar(Application.ExeName + ' %1'));
 
       // Register file association for .lua files
-      RegSetAssociation('.lua', 'LuaEdit.lua', 'LuaEdit Unit', 'LuaEdit/LuaEdit.lua', PChar(ExtractFileDir(Application.ExeName) + '\Graphics\Unit.ico'));
+      RegSetAssociation('.lua', 'LuaEdit.lua', 'LuaEdit Unit', 'LuaEdit/LuaEdit.lua', PChar(GetLuaEditInstallPath() + '\Graphics\Unit.ico'));
       RegSetOpenWith('LuaEdit.lua', PChar(Application.ExeName + ' %1'));
+
+      // Register file association for .lmc files
+      RegSetAssociation('.lmc', 'LuaEdit.lmc', 'LuaEdit Macro', 'LuaEdit/LuaEdit.lmc', PChar(GetLuaEditInstallPath() + '\Graphics\LuaMacros.ico'));
+      RegSetOpenWith('LuaEdit.lmc', PChar(Application.ExeName + ' %1'));
+
+      // Register file association for .gui files
+      RegSetAssociation('.gui', 'LuaEdit.gui', 'LuaEdit GUI Form', 'LuaEdit/LuaEdit.gui', PChar(GetLuaEditInstallPath() + '\Graphics\LuaGUIForm.ico'));
+      RegSetOpenWith('LuaEdit.gui', PChar(Application.ExeName + ' %1'));
     end
     else
     begin      
@@ -446,6 +458,14 @@ begin
       // Clear file association registration for .lua files
       RegClearIEOpenKey('.lua');
       RegClearAssociation('.lua', 'LuaEdit.lua');
+
+      // Clear file association registration for .lmc files
+      RegClearIEOpenKey('.lmc');
+      RegClearAssociation('.lmc', 'LuaEdit.lmc');
+
+      // Clear file association registration for .gui files
+      RegClearIEOpenKey('.gui');
+      RegClearAssociation('.gui', 'LuaEdit.gui');
     end;
 
     if Application.MessageBox('You must restart your computer for some of the changes to take effect. Do you want to restart your computer now?', 'LuaEdit', MB_ICONQUESTION+MB_YESNO) = IDYES then
@@ -467,13 +487,15 @@ begin
   pReg.OpenKey('\Software\LuaEdit\EditorSettings\Debugger', True);
   pReg.WriteInteger('MaxTablesSize', Trunc(jvspinMaxTablesSize.Value));
   pReg.WriteInteger('MaxSubTablesLevel', Trunc(jvspinMaxSubTablesLevel.Value));
+  pReg.WriteBool('CheckCyclicReferencing', chkCheckCyclicReferencing.Checked);
   pReg.WriteBool('AutoLoadLibBasic', chkAutoLoadLibBasic.Checked);
+  pReg.WriteBool('AutoLoadLibPackage', chkAutoLoadLibPackage.Checked);
   pReg.WriteBool('AutoLoadLibTable', chkAutoLoadLibTable.Checked);
   pReg.WriteBool('AutoLoadLibString', chkAutoLoadLibString.Checked);
   pReg.WriteBool('AutoLoadLibMath', chkAutoLoadLibMath.Checked);
   pReg.WriteBool('AutoLoadLibOSIO', chkAutoLoadLibOSIO.Checked);
   pReg.WriteBool('AutoLoadLibDebug', chkAutoLoadLibDebug.Checked);
-
+  pReg.WriteBool('ShowStackTraceOnError', chkShowStackTraceOnError.Checked);
 
   //Writing display settings
   pReg.OpenKey('\Software\LuaEdit\EditorSettings\Display', True);
@@ -614,13 +636,16 @@ begin
   txtTempFolder.Text := TempFolder;
   jvspinHistoryMaxAge.Value := HistoryMaxAge;
   jvspinMaxTablesSize.Value := MaxTablesSize;
+  chkCheckCyclicReferencing.Checked := CheckCyclicReferencing;
   jvspinMaxSubTablesLevel.Value := MaxSubTablesLevel;
   chkAutoLoadLibBasic.Checked := AutoLoadLibBasic;
+  chkAutoLoadLibPackage.Checked := AutoLoadLibPackage;
   chkAutoLoadLibTable.Checked := AutoLoadLibTable;
   chkAutoLoadLibString.Checked := AutoLoadLibString;
   chkAutoLoadLibMath.Checked := AutoLoadLibMath;
   chkAutoLoadLibOSIO.Checked := AutoLoadLibOSIO;
   chkAutoLoadLibDebug.Checked := AutoLoadLibDebug;
+  chkShowStackTraceOnError.Checked := ShowStackTraceOnError;
 
   // Manage serach paths
   txtLibraries.Text := '';
@@ -877,7 +902,7 @@ begin
   begin
     if sColorSet <> '' then
     begin
-      if not FileExists(GetLuaEditInstallPath()+'\Data\'+sColorSet+'.dat') then
+      if not FileExistsAbs(GetLuaEditInstallPath()+'\Data\'+sColorSet+'.dat') then
       begin
         if not DirectoryExists(GetLuaEditInstallPath()+'\Data\') then
           CreateDirectory(PChar(GetLuaEditInstallPath()+'\Data\'), nil);
