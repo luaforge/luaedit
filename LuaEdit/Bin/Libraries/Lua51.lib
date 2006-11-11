@@ -1,0 +1,122 @@
+_VERSION	gbl
+_G	gbl
+assert(v, [message])	foo
+collectgarbage(opt, [arg])	foo
+dofile(filename)	foo
+error(message, [level])	foo
+getfenv(f)	foo
+getmetatable(object)	foo
+ipairs(t)	foo
+load(func, [chunkname])	foo
+loadfile([filename])	foo
+loadstring(string, [chunkname])	foo
+module(name, [...])	foo
+next(table, [index])	foo
+pairs(t)	foo
+pcall(f, arg1, ...)	foo
+print(e1, e2, ...)	foo
+rawequal(v1, v2)	foo
+rawget(table, index)	foo
+rawset(table, index, value)	foo
+require(modname)	foo
+select(index, ...)	foo
+setfenv(f, table)	foo
+setmetatable(table, metatable)	foo
+tonumber(e, [base])	foo
+tostring(e)	foo
+type(v)	foo
+unpack(list, [i], [j])	foo
+xpcall(f, err)	foo
+coroutine.create(f)	foo
+coroutine.running()	foo
+coroutine.status(co)	foo
+coroutine.wrap(f)	foo
+coroutine.yield(val1, ...)	foo
+string.byte(s, [i], [j])	foo
+string.char(i1, i2, ...)	foo
+string.dump(function)	foo
+string.find(s, pattern, [init], [plain])	foo
+string.format(formatstring, e1, e2, ...)	foo
+string.gmatch(s, pattern)	foo
+string.gsub(s, pattern, rep1, [n])	foo
+string.len(s)	foo
+string.lower(s)	foo
+string.rep(s, n)	foo
+string.reverse(s)	foo
+string.sub(s, i, [j])	foo
+string.upper(s)	foo
+table.concat(table, [sep], [i], [j])	foo
+table.getn(table)	foo
+table.sort(table, [comp])	foo
+table.insert(table, [pos], value)	foo
+table.remove(table, [pos])	foo
+math.abs(x)	foo
+math.acos(x)	foo
+math.asin(x)	foo
+math.atan(x)	foo
+math.atan2(x, y)	foo
+math.ceil(x)	foo
+math.cos(x)	foo
+math.cosh(x)	foo
+math.deg(x)	foo
+math.exp(x)	foo
+math.floor(x)	foo
+math.log(x)	foo
+math.log10(x)	foo
+math.max(x, [...])	foo
+math.min(x, [...])	foo
+math.modf(x, y)	foo
+math.pi	lcl
+math.pow(x, y)	foo
+math.rad(x)	foo
+math.sin(x)	foo
+math.sinh(x)	foo
+math.sqrt(x)	foo
+math.tan(x)	foo
+math.tanh(x)	foo
+math.frexp(x)	foo
+math.ldexp(m, e)	foo
+math.random([m], [n])	foo
+math.randomseed(seed)	foo
+io.close([file])	foo
+io.flush()	foo
+io.input([file])	foo
+io.lines([filename])	foo
+io.open(filename, [mode])	foo
+io.output([file])	foo
+io.popen(prog, [mode])	foo
+io.read(format1, ...)	foo
+io.tmpfile()	foo
+io.type(obj)	foo
+io.write(value1, ...)	foo
+os.clock()	foo
+os.date([format], [time])	foo
+os.difftime(t2, t1)	foo
+os.execute(command)	foo
+os.exit([code])	foo
+os.getenv(varname)	foo
+os.remove(filename)	foo
+os.rename(oldname, newname)	foo
+os.setlocale(locale, [category])	foo
+os.time([table])	foo
+os.tmpname()	foo
+debug.debug()	foo
+debug.getfenv(o)	foo
+debug.gethook()	foo
+debug.getinfo(function, [what])	foo
+debug.getlocal([thread], level, local)	foo
+debug.getmetatable(object)	foo
+debug.getrefistry()	foo
+debug.getupvalue(func, up)	foo
+debug.setfenv(object, table)	foo
+debug.setlocal([thread], level, local, value)	foo
+debug.setupvalue(func, up, value)	foo
+debug.sethook([thread], hook, mask, [count])	foo
+debug.setmetatable(object, table)	foo
+debug.traceback([thread], [message], [level])	foo
+package.cpath()	foo
+package.loaded()	foo
+package.loadlib(libname, funcname)	foo
+package.path	foo
+package.preload	foo
+package.seeall(module)	foo

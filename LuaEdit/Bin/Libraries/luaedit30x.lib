@@ -1,0 +1,15 @@
+luaedit._VERSION	lcl
+luaedit.exit()	foo
+luaedit.getactiveprj()	foo
+luaedit.getproductname()	foo
+luaedit.getfile([index])	foo
+luaedit.getver()	foo
+luaedit.openfile([file1path], [file2path], [...])	foo
+luaedit.openprj()	foo
+luaedit.print(msg, msgtype)	foo
+luaedit.regread(hkey, keyname, value1name, [value2name], [...])	foo
+luaedit.regwrite(hkey, keyname, [valuename], [value])	foo
+luaedit.saveall()	foo
+luaedit.saveprjas()	foo
+luaedit.saveunit()	foo
+luaedit.saveunitas()	foo
