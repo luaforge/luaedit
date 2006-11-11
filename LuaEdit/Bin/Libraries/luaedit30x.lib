@@ -11,5 +11,5 @@ luaedit.regread(hkey, keyname, value1name, [value2name], [...])	foo
 luaedit.regwrite(hkey, keyname, [valuename], [value])	foo
 luaedit.saveall()	foo
 luaedit.saveprjas()	foo
-luaedit.saveunit()	foo
-luaedit.saveunitas()	foo
+luaedit.saveunit(filepath)	foo
+luaedit.saveunitas(filepath)	foo
