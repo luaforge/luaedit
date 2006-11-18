@@ -35,22 +35,27 @@ body {
 	margin-bottom: 0px;
 }
 
+.NormalText {
+	font-family: arial, sans-serif;
+	font-size:   11px;
+}
+
 .TopImg {
-	width: 752px;
+	width:    752px;
 	border-left:  1px #000000 solid;
 	border-top:   1px #000000 solid;
 	border-right: 1px #000000 solid;
 	position: relative;
-	left: 50%;
+	left:     50%;
 	margin-left: -376px; /* half the width of the div */
 }
 
 .Menu {
-	width: 752px;
+	width:    752px;
 	border-left:  1px #000000 solid;
 	border-right: 1px #000000 solid;
 	position: relative;
-	left: 50%;
+	left:     50%;
 	margin-left: -376px; /* half the width of the div */
 }
 
@@ -69,13 +74,13 @@ body {
 	background-repeat: repeat-x;
 	padding-top:  25px;
 	padding-left: 19px;
-	color: #000000;
+	color:        #000000;
 	background-color: #EBF1FE;
 }
 
 .ModuleTopLeft {
-	width: 280px;
-	height: 23px;
+	width:        280px;
+	height:       23px;
 	background-image:url(images/ModuleTopLeft.gif);
 	border-left:  1px #26375E solid;
 	border-top:   1px #26375E solid;
@@ -83,8 +88,32 @@ body {
 	padding-left: 13px;
 }
 
+.ModuleTopLeftLarge {
+	width:        475px;
+	height:       23px;
+	background-image:url(images/ModuleTopLeftLarge.gif);
+	border-left:  1px #26375E solid;
+	border-top:   1px #26375E solid;
+	border-right: 1px #26375E solid;
+	padding-left: 13px;
+}
+
 .ModuleContentLeft {
-	width: 280px;
+	width:            280px;
+	border-left:      1px #26375E solid;
+	border-right:     1px #26375E solid;
+	color:            #000000;
+	background-color: #FFFFFF;
+	padding-left:     13px;
+	padding-top:      16px;
+	padding-right:    13px;
+	padding-bottom:   16px;
+	font-family:      arial, sans-serif;
+	font-size:        11px;
+}
+
+.ModuleContentLeftLarge {
+	width:            475px;
 	border-left:      1px #26375E solid;
 	border-right:     1px #26375E solid;
 	color:            #000000;
@@ -114,6 +143,17 @@ body {
 	border-bottom: 1px #26375E solid;
 }
 
+.ModuleBottomLeftLarge {
+	width:  475px;
+	height: 3px;
+	color: #000000;
+	background-color: #4D67A2;
+	font-size:     1px;
+	border-left:   1px #26375E solid;
+	border-right:  1px #26375E solid;
+	border-bottom: 1px #26375E solid;
+}
+
 .EmailTextbox {
 	border: 1px #000000 solid;
 	height: 19px;
@@ -133,8 +173,32 @@ body {
 	padding-left: 13px;
 }
 
+.ModuleTopRightInfo {
+	width:  220px;
+	height: 23px;
+	background-image:url(images/ModuleTopRightInfo.gif);
+	border-left:  1px #26375E solid;
+	border-top:   1px #26375E solid;
+	border-right: 1px #26375E solid;
+	padding-left: 13px;
+}
+
 .ModuleContentRight {
 	width: 417px;
+	border-left:  1px #26375E solid;
+	border-right: 1px #26375E solid;
+	color: #000000;
+	background-color: #FFFFFF;
+	padding-left:   13px;
+	padding-top:    16px;
+	padding-right:  13px;
+	padding-bottom: 16px;
+	font-family: arial, sans-serif;
+	font-size:   11px;
+}
+
+.ModuleContentRightInfo {
+	width: 220px;
 	border-left:  1px #26375E solid;
 	border-right: 1px #26375E solid;
 	color: #000000;
@@ -158,6 +222,17 @@ body {
 
 .ModuleBottomRight {
 	width:  417px;
+	height: 3px;
+	color: #000000;
+	background-color: #4D67A2;
+	font-size:     1px;
+	border-left:   1px #26375E solid;
+	border-right:  1px #26375E solid;
+	border-bottom: 1px #26375E solid;
+}
+
+.ModuleBottomRightInfo {
+	width:  220px;
 	height: 3px;
 	color: #000000;
 	background-color: #4D67A2;
