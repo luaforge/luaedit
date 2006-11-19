@@ -1,0 +1,101 @@
+<html>	
+	<head>
+		  <title>
+		  		 The Integrated Development Environment
+		  </title>
+	</head>
+
+	<body bgcolor="#FFFFFF" vlink="silver" alink="navy" link="navy">
+		 <table width="100%" border="0" cellpadding="0" cellspacing="0" summary="">
+				<tr> 
+					<td valign="bottom">													  
+						<div align="left">
+							<b><font face="Tahoma" size="3" color="navy">The Profiler Window</font></b>
+							<br>
+							<font face="Tahoma" size="2">		
+							<a href="TopicGroup_TIDE.html">Topic Groups</a>
+							</font>
+						</div>	
+					</td> 
+					<td>
+						<font face="Tahoma" size="1" color="silver">  
+						<div align="right" valign="top">
+							 <a href="http://www.lua.org">Lua homepage</a>
+						</div>	
+						</font>
+					</td>
+				</tr>
+				<tr valign="top">
+					<td colspan="2">
+						  <hr size="1" color="#000000" align="top">
+						  <br>
+						  <br>
+						  <font face="Tahoma" size="2">
+						  <p style="text-align: justify">
+						  	 The "Profiler" window is a tool that can be use to measure, in time, the performances of your scripts. It can
+							 also be very useful to find out where exactly you should improve syntax logic to gain performances. The
+							 precision of this profiler goes down to microseconds (millionth of a second = 0.000001s = 10<sup>-6</sup>s).
+							 The profiler also provides useful information such as the Lua's VM memory at the moment of the call, the line
+							 and file path and name related to the call, overall duration usage, the nature of the call, etc.<br>
+							 <br>
+							 <b>The Main call</b><br>
+							 The profiler will never display informations in runtime to provide the most accurate data as possible. The information
+							 will instead be displayed as soon as the script is stopped. (due to error, user or normally) It will always have
+							 a [MAIN] call. That call is the script's entry call and will always have a 100% overall usage since it's the call that
+							 starts and end the script. Use the [MAIN] call to have an idea of the complete run duration of your script.<br>
+							 <br>
+							 <b>Interpreting Your Results</b><br>
+							 The profiler, as mentioned, can be a very powerful and useful tool to pinpoint your scripts' weaknesses or
+							 poor performances. To do so, LuaEdit provide a multitude of information for each call made in your script.
+							 Here is the complete list of those information:
+							 <ul type="square">
+							 	 <li>Function Name: The name of the function that was called.</li>
+								 <li>Line: The line number where the call was made.</li>
+								 <li>Source: The nature of the call. (either 'C' or 'Lua' depending of where the function was declared)</li>
+								 <li>Relative Usage: Percentage representating the time usage of the call relative to the previous call.</li>
+								 <li>Overall Usage: Percentage representating the time usage according to the [MAIN] call.</li>
+								 <li>Duration: Total call duration time in seconds.</li>
+								 <li>Enter Time: The most accurate time possible when the call was made.</li>
+								 <li>Exit Time: The most accurate time possible when the call returned.</li>
+								 <li>Lua Memory: The amount of memory used by Lua's virtual machine at the moment of the call.</li>
+							 </ul>		  
+							 <b>Tip<sup>1</sup>:</b> A very large large amount of memory used by Lua's virtual machine can be the source of poor performances.<br>
+							 <b>Tip<sup>2</sup>:</b> Put your attention and sweath toward functions that are taking most of your overall processing time. Sometimes,
+							 						 simply reorganizing the code can improve the performances.<br>
+							 <br>
+							 <b>Residual Processes</b><br>
+							 When a script is running, a large amount of processing time is spent to code logic itself. That is, all if
+							 statements, for and while loops, variable declaration and accessing, etc. This time is spent somewhere and
+							 is displayed as [RESIDUAL PROCESSES].<br>
+							 <br>
+							 <b>Note<sup>1</sup>:</b> Be aware that if LuaEdit hits a breakpoint, this will "falsify" the results. To get "true"
+							 performances values, you should always run the script from begining to end without hitting a breakpoint.<br>
+							 <br>
+							 <b>Note<sup>2</sup>:</b> If all the results from the profiler are equal to zero (0), it might means that your hardware setup does not
+							 support high performances counter and high performances frequencies.
+							 <br>
+							 <br>
+							 <br>
+							 <img src="..\..\Medias\Profiler.jpg" alt="The Profiler Window">
+						  </p> 
+						  <br> 
+						  </font>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<font face="Tahoma" size="1" color="silver">
+						<hr size="1" color="#000000">
+							<div align="right">			  
+								<a href="http://www.luaedit.net">www.luaedit.net</a>
+								<br>
+								© Copyright 2004-2007 Jean-Francois Goulet
+								<br>
+								LuaEdit 3.0.4 for Lua 5.1
+							</div>
+						</font>
+					</td>
+				</tr>
+		  </table>
+	</body>
+</html>
