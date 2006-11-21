@@ -741,7 +741,7 @@ function ParamCountEx(CommandLine: PChar): Integer; cdecl; external 'LuaEditSys.
 implementation
 
 uses
-  LuaSyntax, Search, Replace, ReplaceQuerry, GotoLine, About,
+  LuaVirtualTrees, LuaSyntax, Search, Replace, ReplaceQuerry, GotoLine, About,
   ProjectTree, Stack, Watch, Grids, AddToPrj, EditorSettings,
   PrjSettings, RemFromPrj, ErrorLookup, LuaStack, PrintSetup,
   Math, Contributors, LuaOutput, Breakpoints, LuaGlobals,
