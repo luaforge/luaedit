@@ -1,5 +1,5 @@
 (*
-** $Id: lualib.pas,v 1.3 2006-11-17 00:02:17 jfgoulet Exp $
+** $Id: lualib.pas,v 1.4 2006-12-11 04:27:13 jfgoulet Exp $
 ** Lua standard libraries
 ** See Copyright Notice in lua.h
 *)
@@ -74,7 +74,14 @@ end;
 
 function lua_iolibopen(L: Plua_State): Integer;
 begin
-  Result := luaopen_io(L);
+  lua_pushcfunction(L, luaopen_io);
+  lua_pushstring(L, 'io');
+  lua_call(L, 1, 0);
+
+  lua_pushcfunction(L, luaopen_os);
+  lua_pushstring(L, 'os');
+  lua_call(L, 1, 0);
+  Result := 1;
 end;
 
 function lua_strlibopen(L: Plua_State): Integer;
