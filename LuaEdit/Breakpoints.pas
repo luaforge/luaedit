@@ -159,25 +159,33 @@ begin
   if Assigned(lvwBreakpoints.Selected) then
   begin
     Answer := InputBox('Breakpoint Condition', 'Enter condition for selected breakpoint:', lvwBreakpoints.Selected.SubItems.Strings[0]);
-    if Answer <> lvwBreakpoints.Selected.SubItems.Strings[1] then
+    if Answer <> lvwBreakpoints.Selected.SubItems.Strings[0] then
     begin
-      L := lua_open;
-
-      // test the given expression
-      if luaL_loadbuffer(L, PChar('return ('+Answer+')'), Length('return ('+Answer+')'), 'Main') <> 0 then
+      if Answer = '' then
       begin
-        ReturnMsg := lua_tostring(L, 1);
-        ReturnMsg := Copy(ReturnMsg, Pos(':', ReturnMsg) + 1, Length(ReturnMsg) - Pos(':', ReturnMsg));
-        ReturnMsg := Copy(ReturnMsg, Pos(':', ReturnMsg) + 1, Length(ReturnMsg) - Pos(':', ReturnMsg));
-        Application.MessageBox(PChar('The expression "'+Answer+'" is not a valid expression: '#13#10#13#10#13#10+ReturnMsg), 'LuaEdit', MB_OK+MB_ICONERROR);
+        lvwBreakpoints.Selected.SubItems.Strings[0] := '(no condition)';
+        TLuaEditDebugFile(lvwBreakpoints.Selected.Data).DebugInfos.GetBreakpointAtLine(StrToInt(lvwBreakpoints.Selected.SubItems.Strings[2])).sCondition := '';
       end
       else
       begin
-        lvwBreakpoints.Selected.SubItems.Strings[0] := Answer;
-        TLuaEditUnit(lvwBreakpoints.Selected.Data).DebugInfos.GetBreakpointAtLine(StrToInt(lvwBreakpoints.Selected.SubItems.Strings[2])).sCondition := Answer;
-      end;
+        L := lua_open;
 
-      lua_close(L);
+        // Test the given expression
+        if luaL_loadbuffer(L, PChar('return ('+Answer+')'), Length('return ('+Answer+')'), 'Main') <> 0 then
+        begin
+          ReturnMsg := lua_tostring(L, 1);
+          ReturnMsg := Copy(ReturnMsg, Pos(':', ReturnMsg) + 1, Length(ReturnMsg) - Pos(':', ReturnMsg));
+          ReturnMsg := Copy(ReturnMsg, Pos(':', ReturnMsg) + 1, Length(ReturnMsg) - Pos(':', ReturnMsg));
+          Application.MessageBox(PChar('The expression "'+Answer+'" is not a valid expression: '#13#10#13#10#13#10+ReturnMsg), 'LuaEdit', MB_OK+MB_ICONERROR);
+        end
+        else
+        begin
+          lvwBreakpoints.Selected.SubItems.Strings[0] := Answer;
+          TLuaEditDebugFile(lvwBreakpoints.Selected.Data).DebugInfos.GetBreakpointAtLine(StrToInt(lvwBreakpoints.Selected.SubItems.Strings[2])).sCondition := Answer;
+        end;
+
+        lua_close(L);
+      end;
     end;
   end;
 end;
