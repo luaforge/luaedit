@@ -19,11 +19,11 @@ object frmLuaConsole: TfrmLuaConsole
   Position = poOwnerFormCenter
   PixelsPerInch = 96
   TextHeight = 13
-  object vstLuaOutput: TVirtualStringTree
+  object vstLuaConsole: TVirtualStringTree
     Left = 0
     Top = 0
     Width = 474
-    Height = 213
+    Height = 187
     Align = alClient
     Header.AutoSizeIndex = 0
     Header.Font.Charset = DEFAULT_CHARSET
@@ -38,10 +38,34 @@ object frmLuaConsole: TfrmLuaConsole
     TabOrder = 0
     TreeOptions.PaintOptions = [toShowDropmark, toThemeAware, toUseBlendedImages]
     TreeOptions.SelectionOptions = [toFullRowSelect, toMultiSelect, toRightClickSelect]
-    OnDblClick = vstLuaOutputDblClick
-    OnGetText = vstLuaOutputGetText
-    OnGetNodeDataSize = vstLuaOutputGetNodeDataSize
+    OnDblClick = vstLuaConsoleDblClick
+    OnGetText = vstLuaConsoleGetText
+    OnGetNodeDataSize = vstLuaConsoleGetNodeDataSize
     Columns = <>
+  end
+  object Panel1: TPanel
+    Left = 0
+    Top = 187
+    Width = 474
+    Height = 26
+    Align = alBottom
+    BevelOuter = bvNone
+    TabOrder = 1
+    DesignSize = (
+      474
+      26)
+    object cboConsole: TComboBox
+      Left = 0
+      Top = 4
+      Width = 474
+      Height = 21
+      AutoDropDown = True
+      Anchors = [akLeft, akTop, akRight, akBottom]
+      DropDownCount = 15
+      ItemHeight = 13
+      TabOrder = 0
+      OnKeyPress = cboConsoleKeyPress
+    end
   end
   object JvDockClient1: TJvDockClient
     DirectDrag = False
