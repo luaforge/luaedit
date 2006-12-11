@@ -1499,7 +1499,7 @@ object frmAbout: TfrmAbout
     Left = 8
     Top = 8
     Width = 265
-    Height = 137
+    Height = 129
     Cursor = crHandPoint
     AutoSize = False
     Transparent = True
@@ -1589,9 +1589,9 @@ object frmAbout: TfrmAbout
   object Label9: TLabel
     Left = 122
     Top = 204
-    Width = 210
+    Width = 213
     Height = 13
-    Caption = 'Copyright'#169' 2004-2006 Jean-Fran'#231'ois Goulet'
+    Caption = 'Copyright '#169' 2004-2006 Jean-Fran'#231'ois Goulet'
     Transparent = True
   end
   object Label10: TLabel
