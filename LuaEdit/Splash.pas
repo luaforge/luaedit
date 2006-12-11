@@ -8,15 +8,16 @@ uses
 
 type
   TfrmSplash = class(TForm)
+    imlLua: TImage;
+    Image1: TImage;
+    Image2: TImage;
     Label3: TLabel;
     lblVersion: TLabel;
     Label5: TLabel;
     Label6: TLabel;
     Label7: TLabel;
     Label8: TLabel;
-    imlLua: TImage;
-    Image1: TImage;
-    Image2: TImage;
+    Label1: TLabel;
     shpBorder: TShape;
     procedure FormShow(Sender: TObject);
   private

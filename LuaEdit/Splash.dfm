@@ -1,11 +1,11 @@
 object frmSplash: TfrmSplash
-  Left = 466
+  Left = 364
   Top = 328
   Cursor = crHourGlass
   BorderIcons = []
   BorderStyle = bsNone
-  ClientHeight = 280
-  ClientWidth = 490
+  ClientHeight = 271
+  ClientWidth = 487
   Color = clWhite
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -21,8 +21,8 @@ object frmSplash: TfrmSplash
   object Image2: TImage
     Left = 0
     Top = 0
-    Width = 490
-    Height = 280
+    Width = 487
+    Height = 271
     Align = alClient
     Picture.Data = {
       0A544A504547496D616765DBB60000FFD8FFE000104A46494600010200006400
@@ -1492,8 +1492,8 @@ object frmSplash: TfrmSplash
     Transparent = True
   end
   object Label3: TLabel
-    Left = 312
-    Top = 224
+    Left = 80
+    Top = 192
     Width = 38
     Height = 13
     Caption = 'Version:'
@@ -1508,8 +1508,8 @@ object frmSplash: TfrmSplash
     Transparent = True
   end
   object lblVersion: TLabel
-    Left = 461
-    Top = 224
+    Left = 213
+    Top = 192
     Width = 15
     Height = 13
     Alignment = taRightJustify
@@ -1525,8 +1525,8 @@ object frmSplash: TfrmSplash
     Transparent = True
   end
   object Label5: TLabel
-    Left = 312
-    Top = 240
+    Left = 80
+    Top = 208
     Width = 34
     Height = 13
     Caption = 'Author:'
@@ -1541,8 +1541,8 @@ object frmSplash: TfrmSplash
     Transparent = True
   end
   object Label6: TLabel
-    Left = 376
-    Top = 240
+    Left = 128
+    Top = 208
     Width = 100
     Height = 13
     Caption = 'Jean-Fran'#231'ois Goulet'
@@ -1557,8 +1557,8 @@ object frmSplash: TfrmSplash
     Transparent = True
   end
   object Label7: TLabel
-    Left = 312
-    Top = 256
+    Left = 80
+    Top = 224
     Width = 41
     Height = 13
     Caption = 'Licence:'
@@ -1573,8 +1573,8 @@ object frmSplash: TfrmSplash
     Transparent = True
   end
   object Label8: TLabel
-    Left = 455
-    Top = 256
+    Left = 207
+    Top = 224
     Width = 21
     Height = 13
     Caption = 'Free'
@@ -1589,8 +1589,8 @@ object frmSplash: TfrmSplash
     Transparent = True
   end
   object imlLua: TImage
-    Left = 8
-    Top = 224
+    Left = 360
+    Top = 192
     Width = 48
     Height = 48
     Picture.Data = {
@@ -1817,8 +1817,8 @@ object frmSplash: TfrmSplash
     Transparent = True
   end
   object Image1: TImage
-    Left = 64
-    Top = 221
+    Left = 416
+    Top = 189
     Width = 65
     Height = 50
     Picture.Data = {
@@ -2134,11 +2134,19 @@ object frmSplash: TfrmSplash
     Stretch = True
     Transparent = True
   end
+  object Label1: TLabel
+    Left = 363
+    Top = 251
+    Width = 116
+    Height = 13
+    Caption = 'Copyright '#169' 2004 - 2006'
+    Transparent = True
+  end
   object shpBorder: TShape
     Left = 0
     Top = 0
-    Width = 490
-    Height = 280
+    Width = 487
+    Height = 271
     Align = alClient
     Brush.Style = bsClear
   end
