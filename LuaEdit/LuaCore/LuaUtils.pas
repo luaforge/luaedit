@@ -33,7 +33,7 @@ unit LuaUtils;
 interface
 
 uses
-  SysUtils, Classes, ComCtrls, luaconf, lua, lualib, lauxlib, Variants;
+  SysUtils, Classes, ComCtrls, lua, lualib, lauxlib, Variants, VirtualTrees, Contnrs;
 
 const
      ERR_Script ='Script Error : ';  
@@ -46,6 +46,35 @@ type
     Line: Integer;
     Msg: string;
     constructor Create(Title: string; Line: Integer; Msg: string);
+  end;
+
+  TLuaVariable = class(TObject)
+    FName: String;
+    FValue: String;
+  public
+    constructor Create(VarName, VarValue: String);
+
+    property Name: String read FName write FName;
+    property Value: String read FValue write FValue;
+  end;
+
+  TLuaTable = class(TLuaVariable)
+    FIntKeyValue: array of TLuaVariable;
+    FStrKeyValue: TList;
+  public
+    constructor Create(TableName, TableValue: String);
+    destructor Destroy();
+    procedure InsertAt(Index: Cardinal; Member: TLuaVariable); overload;
+    procedure InsertAt(Index: String; Member: TLuaVariable); overload;
+    function GetAt(Index: Cardinal): TLuaVariable; overload;
+    function GetAt(Index: String): TLuaVariable; overload;
+    procedure Clear();
+  end;
+
+  PBasicTreeData = ^TBasicTreeData;
+  TBasicTreeData = record
+    sName: String;
+    sValue: String;
   end;
 
   TVariantArray =array of Variant;
@@ -106,16 +135,20 @@ function LuaGetMetaFunction(L: Plua_State; Index: Integer; Key: string): lua_CFu
 procedure LuaSetMetaFunction(L: Plua_State; Index: Integer; Key: string; F: lua_CFunction);
 
 procedure LuaShowStack(L: Plua_State; Caption: string = '');
-function LuaStackToStr(L: Plua_State; Index: Integer; MaxTable: Integer = -1; SubTableMax: Integer = 99): string;
+function LuaStackToStr(L: Plua_State; Index: Integer; MaxTable: Integer = -1; SubTableMax: Integer = 99; CheckCyclicReferencing: Boolean = True; TablePtrs: TList = nil): String;
+procedure LuaRegisterInPackage(L: PLua_State; const Package: PChar; const lr: PLuaL_Reg);
 procedure LuaRegisterCustom(L: PLua_State; TableIndex: Integer; const Name: PChar; F: lua_CFunction);
 procedure LuaRegister(L: Plua_State; const Name: PChar; F: lua_CFunction);
 procedure LuaRegisterMetatable(L: Plua_State; const Name: PChar; F: lua_CFunction);
 procedure LuaRegisterProperty(L: PLua_State; const Name: PChar; ReadFunc, WriteFunc: lua_CFunction);
-procedure LuaStackToStrings(L: Plua_State; Lines: TStrings; MaxTable: Integer = -1; SubTableMax: Integer = 99);
-procedure LuaLocalToStrings(L: Plua_State; Lines: TStrings; MaxTable: Integer = -1; Level: Integer = 0; SubTableMax: Integer = 99);
-procedure LuaGlobalToStrings(L: PLua_State; Lines: TStrings; MaxTable: Integer = -1; SubTableMax: Integer = 99);
-procedure LuaTableToStrings(L: Plua_State; Index: Integer; Lines: TStrings; MaxTable: Integer = -1; SubTableMax: Integer = 99);
-procedure LuaTableToTreeView(L: Plua_State; Index: Integer; TV: TTreeView; MaxTable: Integer = -1; SubTableMax: Integer = 99);
+procedure LuaStackToStrings(L: Plua_State; Lines: TStrings; MaxTable: Integer = -1; SubTableMax: Integer = 99; CheckCyclicReferencing: Boolean = True);
+procedure LuaLocalToStrings(L: Plua_State; Lines: TStrings; MaxTable: Integer = -1; Level: Integer = 0; SubTableMax: Integer = 99; CheckCyclicReferencing: Boolean = True);
+procedure LuaLocalToVariables(L: Plua_State; Locals: TList; MaxTable: Integer; Level: Integer = 0; SubTableMax: Integer = 99; CheckCyclicReferencing: Boolean = True);
+procedure LuaGlobalToStrings(L: PLua_State; Lines: TStrings; MaxTable: Integer = -1; SubTableMax: Integer = 99; CheckCyclicReferencing: Boolean = True);
+procedure LuaGlobalToVariables(L: PLua_State; Globals: TLuaTable; MaxTable: Integer = -1; SubTableMax: Integer = 99; CheckCyclicReferencing: Boolean = True);
+procedure LuaTableToStrings(L: Plua_State; Index: Integer; Lines: TStrings; MaxTable: Integer = -1; SubTableMax: Integer = 99; CheckCyclicReferencing: Boolean = True);
+procedure LuaTableToVariables(L: Plua_State; Index: Integer; Table: TLuaTable; MaxTable: Integer = -1; SubTableMax: Integer = 99; CheckCyclicReferencing: Boolean = True);
+procedure LuaTableToVirtualTreeView(L: Plua_State; Index: Integer; VTV: TVirtualStringTree; MaxTable: Integer; SubTableMax: Integer; CheckCyclicReferencing: Boolean);
 function LuaGetIdentValue(L: Plua_State; Ident: string; MaxTable: Integer = -1): string;
 procedure LuaSetIdentValue(L: Plua_State; Ident, Value: string; MaxTable: Integer = -1);
 procedure LuaLoadBuffer(L: Plua_State; const Code: string; const Name: string);
@@ -145,8 +178,7 @@ var
 
 implementation
 
-uses
-  Dialogs;
+uses Dialogs;
 
 const
   QuoteStr = '"';
@@ -154,7 +186,87 @@ const
   LF = #$0A;
   CRLF = CR + LF;
 
-function Quote(const Str: string): string;
+///////////////////////////////////////////////////////////////////
+// TLuaVariable
+///////////////////////////////////////////////////////////////////
+constructor TLuaVariable.Create(VarName, VarValue: String);
+begin
+  FName := VarName;
+  FValue := VarValue;
+end;
+
+///////////////////////////////////////////////////////////////////
+// TLuaTable
+///////////////////////////////////////////////////////////////////
+constructor TLuaTable.Create(TableName, TableValue: String);
+begin
+  inherited Create(TableName, TableValue);
+  FStrKeyValue := TList.Create;
+end;
+
+destructor TLuaTable.Destroy();
+begin
+  Clear();
+  FStrKeyValue.Free;
+end;
+
+procedure TLuaTable.InsertAt(Index: Cardinal; Member: TLuaVariable);
+begin
+  SetLength(FIntKeyValue, SizeOf(FIntKeyValue) + 1);
+  FIntKeyValue[Index] := Member;
+end;
+
+procedure TLuaTable.InsertAt(Index: String; Member: TLuaVariable);
+var
+  CheckExistance: TLuaVariable;
+begin
+  CheckExistance := GetAt(Index);
+
+  if Assigned(CheckExistance) then
+    FStrKeyValue.Remove(CheckExistance);
+
+  FStrKeyValue.Add(Member);
+end;
+
+function TLuaTable.GetAt(Index: Cardinal): TLuaVariable;
+begin
+  Result := nil;
+                   
+  if Index < SizeOf(FIntKeyValue) then
+    Result := FIntKeyValue[Index];
+end;
+
+function TLuaTable.GetAt(Index: String): TLuaVariable;
+var
+  x: Integer;
+begin
+  Result := nil;
+  x := 0;
+
+  while ((not Assigned(Result)) and (x < FStrKeyValue.Count)) do
+  begin
+    if TLuaVariable(FStrKeyValue.Items[x]).Name = Index then
+      Result := TLuaVariable(FStrKeyValue.Items[x]);
+      
+    Inc(x);
+  end;
+end;
+
+procedure TLuaTable.Clear();
+var
+  x: Integer;
+begin
+  for x := 0 to SizeOf(FIntKeyValue) do
+    TLuaVariable(FIntKeyValue).Free;
+
+  SetLength(FIntKeyValue, 0);
+  FStrKeyValue.Clear();
+end;
+
+///////////////////////////////////////////////////////////////////
+// Utilities
+///////////////////////////////////////////////////////////////////
+function Quote(const Str: String): String;
 begin
   Result := AnsiQuotedStr(Str, QuoteStr);
 end;
@@ -781,8 +893,19 @@ var
       else
         Value := LuaStackToStr(L, -1, MaxTable, SubTableMax);
 
-      if (lua_type(L, -1) = LUA_TFUNCTION) then
-        Result := Result + Format('%s()=%p ', [Key, lua_topointer(L, -1)])
+      if lua_type(L, -1) = LUA_TFUNCTION then
+      begin
+        if lua_iscfunction(L, -1) then
+          Result := Result + Format('%s=CFUNC:%p ', [Key, lua_topointer(L, -1)])
+        else
+          Result := Result + Format('%s=FUNC:%p ', [Key, lua_topointer(L, -1)]);
+      end
+      else if lua_type(L, -1) = LUA_TUSERDATA then
+        Result := Result + Format('%s=USERDATA:%p', [Key, lua_touserdata(L, -1)])
+      else if lua_type(L, -1) = LUA_TLIGHTUSERDATA then
+        Result := Result + Format('%s=LIGHTUSERDATA:%p', [Key, lua_touserdata(L, -1)])
+      else if lua_type(L, -1) = LUA_TTHREAD then
+        Result := Result + Format('%s=THREAD:%p', [Key, lua_tothread(L, -1)])
       else
         Result := Result + Format('%s=%s ', [Key, Value]);
 
@@ -828,10 +951,10 @@ begin
       Result := Format('FUNC:%p', [lua_topointer(L, Index)]);
   LUA_TUSERDATA:
     Result := Format('USERDATA:%p', [lua_touserdata(L, Index)]);
-  LUA_TTHREAD:
-    Result := Format('THREAD:%p', [lua_tothread(L, Index)]);
   LUA_TLIGHTUSERDATA:
     Result := Format('LIGHTUSERDATA:%p', [lua_touserdata(L, Index)]);
+  LUA_TTHREAD:
+    Result := Format('THREAD:%p', [lua_tothread(L, Index)]);
   else
     Assert(False);
   end;
@@ -904,6 +1027,11 @@ begin
   end;
 end;
 
+procedure LuaRegisterInPackage(L: PLua_State; const Package: PChar; const lr: PLuaL_Reg);
+begin
+  luaL_register(L, Package, lr);
+end;
+
 procedure LuaRegisterCustom(L: PLua_State; TableIndex: Integer; const Name: PChar; F: lua_CFunction);
 var
   Count: Integer;
@@ -973,10 +1101,12 @@ begin
   AR := @Debug;
   Lines.Clear;
   Index := 1;
+
   if (lua_getstack(L, Level, AR) = 0) then
     Exit;
 
   Name := lua_getlocal(L, AR, Index);
+
   while (Name <> nil) do
   begin
     Lines.Values[Name] := LuaStackToStr(L, -1, MaxTable, SubTableMax);
@@ -986,14 +1116,79 @@ begin
   end;
 end;
 
-procedure LuaGlobalToStrings(L: PLua_State; Lines: TStrings; MaxTable: Integer; SubTableMax: Integer);
+procedure LuaLocalToVariables(L: Plua_State; Locals: TList; MaxTable: Integer; Level: Integer; SubTableMax: Integer; CheckCyclicReferencing: Boolean);
+var
+  Variable: TLuaVariable;
+  Name: PChar;
+  Index: Integer;
+  Debug: lua_Debug;
+  AR: Plua_Debug;
+begin
+  AR := @Debug;
+  Locals.Clear();
+  Index := 1;
+
+  if (lua_getstack(L, Level, AR) = 0) then
+    Exit;
+
+  Name := lua_getlocal(L, AR, Index);
+
+  while (Name <> nil) do
+  begin
+    Variable := TLuaVariable.Create(Name, LuaStackToStr(L, -1, MaxTable, SubTableMax, CheckCyclicReferencing));
+    Locals.Add(Variable);
+    lua_pop(L, 1);
+    Inc(Index);
+    Name := lua_getlocal(L, AR, Index);
+  end;
+end;
+
+procedure LuaGlobalToVariables(L: PLua_State; Globals: TLuaTable; MaxTable: Integer; SubTableMax: Integer; CheckCyclicReferencing: Boolean);
+begin
+  lua_pushvalue(L, LUA_GLOBALSINDEX);
+  LuaTableToVariables(L, -1, Globals, MaxTable, SubTableMax);
+  lua_pop(L, 1);
+end;
+
+procedure LuaGlobalToStrings(L: PLua_State; Lines: TStrings; MaxTable: Integer; SubTableMax: Integer; CheckCyclicReferencing: Boolean);
 begin
   lua_pushvalue(L, LUA_GLOBALSINDEX);
   LuaTableToStrings(L, -1, Lines, MaxTable, SubTableMax);
   lua_pop(L, 1);
 end;
 
-procedure LuaTableToStrings(L: Plua_State; Index: Integer; Lines: TStrings; MaxTable: Integer; SubTableMax: Integer);
+procedure LuaTableToVariables(L: Plua_State; Index: Integer; Table: TLuaTable; MaxTable: Integer; SubTableMax: Integer; CheckCyclicReferencing: Boolean);
+var
+  Variable: TLuaVariable;
+  StrKey, Value: string;
+  IntKey: Integer;
+begin
+  Index := LuaAbsIndex(L, Index);
+  Table.Clear();
+  lua_pushnil(L);
+  
+  while (lua_next(L, Index) <> 0) do
+  begin
+    Value := LuaStackToStr(L, -1, MaxTable, SubTableMax, CheckCyclicReferencing);
+
+    if lua_type(L, -2) = LUA_TNUMBER then
+    begin
+      IntKey := lua_tointeger(L, -2);
+      Variable := TLuaVariable.Create(IntToStr(IntKey), Value);
+      Table.InsertAt(IntKey, Variable);
+    end
+    else
+    begin
+      StrKey := Dequote(LuaStackToStr(L, -2, MaxTable, SubTableMax, CheckCyclicReferencing));
+      Variable := TLuaVariable.Create(StrKey, Value);
+      Table.InsertAt(StrKey, Variable);
+    end;
+
+    lua_pop(L, 1);
+  end;
+end;
+
+procedure LuaTableToStrings(L: Plua_State; Index: Integer; Lines: TStrings; MaxTable: Integer; SubTableMax: Integer; CheckCyclicReferencing: Boolean);
 var
   Key, Value: string;
 begin
