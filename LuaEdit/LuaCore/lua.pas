@@ -1,5 +1,5 @@
 (*
-** $Id: lua.pas,v 1.3 2006-11-17 00:02:17 jfgoulet Exp $
+** $Id: lua.pas,v 1.4 2007-01-20 16:40:27 jfgoulet Exp $
 ** Lua - An Extensible Extension Language
 ** Lua.org, PUC-Rio, Brazil (http://www.lua.org)
 ** See Copyright Notice at the end of this file
@@ -113,111 +113,111 @@ const
 (*
 ** state manipulation
 *)
-function lua_newstate(f: lua_Alloc; ud :Pointer): Plua_State; cdecl external 'lua.dll';
-procedure lua_close(L: Plua_State); cdecl external 'lua.dll';
-function lua_newthread(L: Plua_State): Plua_State; cdecl external 'lua.dll';
+function lua_newstate(f: lua_Alloc; ud :Pointer): Plua_State; cdecl external 'lua5.1.dll';
+procedure lua_close(L: Plua_State); cdecl external 'lua5.1.dll';
+function lua_newthread(L: Plua_State): Plua_State; cdecl external 'lua5.1.dll';
 
-function lua_atpanic(L: Plua_State; panicf: lua_CFunction): lua_CFunction; cdecl external 'lua.dll';
+function lua_atpanic(L: Plua_State; panicf: lua_CFunction): lua_CFunction; cdecl external 'lua5.1.dll';
 
 
 (*
 ** basic stack manipulation
 *)
-function lua_gettop(L: Plua_State): Integer; cdecl external 'lua.dll';
-procedure lua_settop(L: Plua_State; idx: Integer); cdecl external 'lua.dll';
-procedure lua_pushvalue(L: Plua_State; idx: Integer); cdecl external 'lua.dll';
-procedure lua_remove(L: Plua_State; idx: Integer); cdecl external 'lua.dll';
-procedure lua_insert(L: Plua_State; idx: Integer); cdecl external 'lua.dll';
-procedure lua_replace(L: Plua_State; idx: Integer); cdecl external 'lua.dll';
-function lua_checkstack(L: Plua_State; sz: Integer): Integer; cdecl external 'lua.dll';
+function lua_gettop(L: Plua_State): Integer; cdecl external 'lua5.1.dll';
+procedure lua_settop(L: Plua_State; idx: Integer); cdecl external 'lua5.1.dll';
+procedure lua_pushvalue(L: Plua_State; idx: Integer); cdecl external 'lua5.1.dll';
+procedure lua_remove(L: Plua_State; idx: Integer); cdecl external 'lua5.1.dll';
+procedure lua_insert(L: Plua_State; idx: Integer); cdecl external 'lua5.1.dll';
+procedure lua_replace(L: Plua_State; idx: Integer); cdecl external 'lua5.1.dll';
+function lua_checkstack(L: Plua_State; sz: Integer): Integer; cdecl external 'lua5.1.dll';
 
-procedure lua_xmove(_from, _to: Plua_State; n: Integer); cdecl external 'lua.dll';
+procedure lua_xmove(_from, _to: Plua_State; n: Integer); cdecl external 'lua5.1.dll';
 
 
 (*
 ** access functions (stack -> C)
 *)
 
-function lua_isnumber(L: Plua_State; idx: Integer): Integer; cdecl external 'lua.dll';
-function lua_isstring(L: Plua_State; idx: Integer): Integer; cdecl external 'lua.dll';
-function lua_iscfunction(L: Plua_State; idx: Integer): Integer; cdecl external 'lua.dll';
-function lua_isuserdata(L: Plua_State; idx: Integer): Integer; cdecl external 'lua.dll';
-function lua_type(L: Plua_State; idx: Integer): Integer; cdecl external 'lua.dll';
-function lua_typename(L: Plua_State; tp: Integer): PChar; cdecl external 'lua.dll';
+function lua_isnumber(L: Plua_State; idx: Integer): Integer; cdecl external 'lua5.1.dll';
+function lua_isstring(L: Plua_State; idx: Integer): Integer; cdecl external 'lua5.1.dll';
+function lua_iscfunction(L: Plua_State; idx: Integer): Integer; cdecl external 'lua5.1.dll';
+function lua_isuserdata(L: Plua_State; idx: Integer): Integer; cdecl external 'lua5.1.dll';
+function lua_type(L: Plua_State; idx: Integer): Integer; cdecl external 'lua5.1.dll';
+function lua_typename(L: Plua_State; tp: Integer): PChar; cdecl external 'lua5.1.dll';
 
-function lua_equal(L: Plua_State; idx1, idx2: Integer): Integer; cdecl external 'lua.dll';
-function lua_rawequal(L: Plua_State; idx1, idx2: Integer): Integer; cdecl external 'lua.dll';
-function lua_lessthan(L: Plua_State; Idx1: Integer; Idx2: Integer): Integer; cdecl external 'lua.dll';
+function lua_equal(L: Plua_State; idx1, idx2: Integer): Integer; cdecl external 'lua5.1.dll';
+function lua_rawequal(L: Plua_State; idx1, idx2: Integer): Integer; cdecl external 'lua5.1.dll';
+function lua_lessthan(L: Plua_State; Idx1: Integer; Idx2: Integer): Integer; cdecl external 'lua5.1.dll';
 
-function lua_tonumber(L: Plua_State; idx: Integer): LUA_NUMBER; cdecl external 'lua.dll';
-function lua_tointeger(L: Plua_State; idx: Integer): lua_Integer; cdecl external 'lua.dll';
-function lua_toboolean(L: Plua_State; idx: Integer): Integer; cdecl external 'lua.dll';
-function lua_tolstring(L: Plua_State; idx: Integer; len: Psize_t): PChar; cdecl external 'lua.dll';
-function lua_objlen(L: Plua_State; idx: Integer): size_t; cdecl external 'lua.dll';
-function lua_tocfunction(L: Plua_State; idx: Integer): lua_CFunction; cdecl external 'lua.dll';
-function lua_touserdata(L: Plua_State; idx: Integer): Pointer; cdecl external 'lua.dll';
-function lua_tothread(L: Plua_State; idx: Integer): Plua_State; cdecl external 'lua.dll';
-function lua_topointer(L: Plua_State; idx: Integer): Pointer; cdecl external 'lua.dll';
+function lua_tonumber(L: Plua_State; idx: Integer): LUA_NUMBER; cdecl external 'lua5.1.dll';
+function lua_tointeger(L: Plua_State; idx: Integer): lua_Integer; cdecl external 'lua5.1.dll';
+function lua_toboolean(L: Plua_State; idx: Integer): Integer; cdecl external 'lua5.1.dll';
+function lua_tolstring(L: Plua_State; idx: Integer; len: Psize_t): PChar; cdecl external 'lua5.1.dll';
+function lua_objlen(L: Plua_State; idx: Integer): size_t; cdecl external 'lua5.1.dll';
+function lua_tocfunction(L: Plua_State; idx: Integer): lua_CFunction; cdecl external 'lua5.1.dll';
+function lua_touserdata(L: Plua_State; idx: Integer): Pointer; cdecl external 'lua5.1.dll';
+function lua_tothread(L: Plua_State; idx: Integer): Plua_State; cdecl external 'lua5.1.dll';
+function lua_topointer(L: Plua_State; idx: Integer): Pointer; cdecl external 'lua5.1.dll';
 
 
 (*
 ** push functions (C -> stack)
 *)
-procedure lua_pushnil(L: Plua_State); cdecl external 'lua.dll';
-procedure lua_pushnumber(L: Plua_State; n: LUA_NUMBER); cdecl external 'lua.dll';
-procedure lua_pushinteger(L: Plua_State; n: lua_Integer); cdecl external 'lua.dll';
-procedure lua_pushlstring(L: Plua_State; const s: PChar; n: size_t); cdecl external 'lua.dll';
-procedure lua_pushstring(L: Plua_State; const s: PChar); cdecl external 'lua.dll';
-function lua_pushvfstring(L: Plua_State; const fmt: PChar; Argp: Pointer): PChar; cdecl external 'lua.dll';
-function lua_pushfstring(L: Plua_State; const Fmt: PChar): PChar; varargs; cdecl external 'lua.dll';
-procedure lua_pushcclosure(L: Plua_State; fn: lua_CFunction; n: Integer); cdecl external 'lua.dll';
-procedure lua_pushboolean(L: Plua_State; b: Integer); cdecl external 'lua.dll';
-procedure lua_pushlightuserdata(L: Plua_State; p: Pointer); cdecl external 'lua.dll';
-function lua_pushthread(L: Plua_State): Integer; cdecl external 'lua.dll';
+procedure lua_pushnil(L: Plua_State); cdecl external 'lua5.1.dll';
+procedure lua_pushnumber(L: Plua_State; n: LUA_NUMBER); cdecl external 'lua5.1.dll';
+procedure lua_pushinteger(L: Plua_State; n: lua_Integer); cdecl external 'lua5.1.dll';
+procedure lua_pushlstring(L: Plua_State; const s: PChar; n: size_t); cdecl external 'lua5.1.dll';
+procedure lua_pushstring(L: Plua_State; const s: PChar); cdecl external 'lua5.1.dll';
+function lua_pushvfstring(L: Plua_State; const fmt: PChar; Argp: Pointer): PChar; cdecl external 'lua5.1.dll';
+function lua_pushfstring(L: Plua_State; const Fmt: PChar): PChar; varargs; cdecl external 'lua5.1.dll';
+procedure lua_pushcclosure(L: Plua_State; fn: lua_CFunction; n: Integer); cdecl external 'lua5.1.dll';
+procedure lua_pushboolean(L: Plua_State; b: Integer); cdecl external 'lua5.1.dll';
+procedure lua_pushlightuserdata(L: Plua_State; p: Pointer); cdecl external 'lua5.1.dll';
+function lua_pushthread(L: Plua_State): Integer; cdecl external 'lua5.1.dll';
 
 
 (*
 ** get functions (Lua -> stack)
 *)
-procedure lua_gettable(L: Plua_State; idx: Integer); cdecl external 'lua.dll';
-procedure lua_getfield(L: Plua_State; idx: Integer; k: PChar); cdecl external 'lua.dll';
-procedure lua_rawget(L: Plua_State; idx: Integer); cdecl external 'lua.dll';
-procedure lua_rawgeti(L: Plua_State; idx, n: Integer); cdecl external 'lua.dll';
-procedure lua_createtable(L: Plua_State; narr, nrec: Integer); cdecl external 'lua.dll';
-function lua_newuserdata(L: Plua_State; sz: size_t): Pointer; cdecl external 'lua.dll';
-function lua_getmetatable(L: Plua_State; objindex: Integer): Integer; cdecl external 'lua.dll';
-procedure lua_getfenv(L: Plua_State; idx: Integer); cdecl external 'lua.dll';
+procedure lua_gettable(L: Plua_State; idx: Integer); cdecl external 'lua5.1.dll';
+procedure lua_getfield(L: Plua_State; idx: Integer; k: PChar); cdecl external 'lua5.1.dll';
+procedure lua_rawget(L: Plua_State; idx: Integer); cdecl external 'lua5.1.dll';
+procedure lua_rawgeti(L: Plua_State; idx, n: Integer); cdecl external 'lua5.1.dll';
+procedure lua_createtable(L: Plua_State; narr, nrec: Integer); cdecl external 'lua5.1.dll';
+function lua_newuserdata(L: Plua_State; sz: size_t): Pointer; cdecl external 'lua5.1.dll';
+function lua_getmetatable(L: Plua_State; objindex: Integer): Integer; cdecl external 'lua5.1.dll';
+procedure lua_getfenv(L: Plua_State; idx: Integer); cdecl external 'lua5.1.dll';
 
 
 (*
 ** set functions (stack -> Lua)
 *)
-procedure lua_settable(L: Plua_State; idx: Integer); cdecl external 'lua.dll';
-procedure lua_setfield(L: Plua_State; idx: Integer; k: PChar); cdecl external 'lua.dll';
-procedure lua_rawset(L: Plua_State; idx: Integer); cdecl external 'lua.dll';
-procedure lua_rawseti(L: Plua_State; idx, n: Integer); cdecl external 'lua.dll';
-function lua_setmetatable(L: Plua_State; objindex: Integer): Integer; cdecl external 'lua.dll';
-function lua_setfenv(L: Plua_State; idx: Integer): Integer; cdecl external 'lua.dll';
+procedure lua_settable(L: Plua_State; idx: Integer); cdecl external 'lua5.1.dll';
+procedure lua_setfield(L: Plua_State; idx: Integer; k: PChar); cdecl external 'lua5.1.dll';
+procedure lua_rawset(L: Plua_State; idx: Integer); cdecl external 'lua5.1.dll';
+procedure lua_rawseti(L: Plua_State; idx, n: Integer); cdecl external 'lua5.1.dll';
+function lua_setmetatable(L: Plua_State; objindex: Integer): Integer; cdecl external 'lua5.1.dll';
+function lua_setfenv(L: Plua_State; idx: Integer): Integer; cdecl external 'lua5.1.dll';
 
 
 (*
 ** `load' and `call' functions (load and run Lua code)
 *)
-procedure lua_call(L: Plua_State; nargs, nresults: Integer); cdecl external 'lua.dll';
-function lua_pcall(L: Plua_State; nargs, nresults, errfunc: Integer): Integer; cdecl external 'lua.dll';
-function lua_cpcall(L: Plua_State; func: lua_CFunction; ud: Pointer): Integer; cdecl external 'lua.dll';
+procedure lua_call(L: Plua_State; nargs, nresults: Integer); cdecl external 'lua5.1.dll';
+function lua_pcall(L: Plua_State; nargs, nresults, errfunc: Integer): Integer; cdecl external 'lua5.1.dll';
+function lua_cpcall(L: Plua_State; func: lua_CFunction; ud: Pointer): Integer; cdecl external 'lua5.1.dll';
 function lua_load(L: Plua_State; reader: lua_Reader; dt: Pointer;
-                        const chunkname: PChar): Integer; cdecl external 'lua.dll';
+                        const chunkname: PChar): Integer; cdecl external 'lua5.1.dll';
 
-function lua_dump(L: Plua_State; writer: lua_Writer; data: Pointer): Integer; cdecl external 'lua.dll';
+function lua_dump(L: Plua_State; writer: lua_Writer; data: Pointer): Integer; cdecl external 'lua5.1.dll';
 
 
 (*
 ** coroutine functions
 *)
-function lua_yield(L: Plua_State; nresults: Integer): Integer; cdecl external 'lua.dll';
-function lua_resume(L: Plua_State; narg: Integer): Integer; cdecl external 'lua.dll';
-function lua_status(L: Plua_State): Integer; cdecl external 'lua.dll';
+function lua_yield(L: Plua_State; nresults: Integer): Integer; cdecl external 'lua5.1.dll';
+function lua_resume(L: Plua_State; narg: Integer): Integer; cdecl external 'lua5.1.dll';
+function lua_status(L: Plua_State): Integer; cdecl external 'lua5.1.dll';
 
 (*
 ** garbage-collection functions and options
@@ -232,20 +232,20 @@ const
      LUA_GCSETPAUSE =6;
      LUA_GCSETSTEPMUL =7;
 
-function lua_gc(L: Plua_State; what, data: Integer): Integer; cdecl external 'lua.dll';
+function lua_gc(L: Plua_State; what, data: Integer): Integer; cdecl external 'lua5.1.dll';
 
 (*
 ** miscellaneous functions
 *)
 
-function lua_error(L: Plua_State): Integer; cdecl external 'lua.dll';
+function lua_error(L: Plua_State): Integer; cdecl external 'lua5.1.dll';
 
-function lua_next(L: Plua_State; idx: Integer): Integer; cdecl external 'lua.dll';
+function lua_next(L: Plua_State; idx: Integer): Integer; cdecl external 'lua5.1.dll';
 
-procedure lua_concat(L: Plua_State; n: Integer); cdecl external 'lua.dll';
+procedure lua_concat(L: Plua_State; n: Integer); cdecl external 'lua5.1.dll';
 
-function lua_getallocf(L: Plua_State; ud: PPointer): lua_Alloc; cdecl external 'lua.dll';
-procedure lua_setallocf(L: Plua_State; f: lua_Alloc; ud: Pointer); cdecl external 'lua.dll';
+function lua_getallocf(L: Plua_State; ud: PPointer): lua_Alloc; cdecl external 'lua5.1.dll';
+procedure lua_setallocf(L: Plua_State; f: lua_Alloc; ud: Pointer); cdecl external 'lua5.1.dll';
 
 (*
 ** ===============================================================
@@ -328,6 +328,7 @@ type
     currentline: Integer;  (* (l) *)
     nups: Integer;   (* (u) number of upvalues *)
     linedefined: Integer;  (* (S) *)
+    lastlinedefined: Integer;
     short_src: array [0..LUA_IDSIZE - 1] of Char; (* (S) *)
     (* private part *)
     i_ci: Integer;  (* active function *)
@@ -338,17 +339,17 @@ type
   lua_Hook = procedure (L: Plua_State; ar: Plua_Debug); cdecl;
 
 
-function lua_getstack(L: Plua_State; level: Integer; ar: Plua_Debug): Integer; cdecl external 'lua.dll';
-function lua_getinfo(L: Plua_State; const what: PChar; ar: Plua_Debug): Integer; cdecl external 'lua.dll';
-function lua_getlocal(L: Plua_State; const ar: Plua_Debug; n: Integer): PChar; cdecl external 'lua.dll';
-function lua_setlocal(L: Plua_State; const ar: Plua_Debug; n: Integer): PChar; cdecl external 'lua.dll';
-function lua_getupvalue(L: Plua_State; funcindex: Integer; n: Integer): PChar; cdecl external 'lua.dll';
-function lua_setupvalue(L: Plua_State; funcindex: Integer; n: Integer): PChar; cdecl external 'lua.dll';
+function lua_getstack(L: Plua_State; level: Integer; ar: Plua_Debug): Integer; cdecl external 'lua5.1.dll';
+function lua_getinfo(L: Plua_State; const what: PChar; ar: Plua_Debug): Integer; cdecl external 'lua5.1.dll';
+function lua_getlocal(L: Plua_State; const ar: Plua_Debug; n: Integer): PChar; cdecl external 'lua5.1.dll';
+function lua_setlocal(L: Plua_State; const ar: Plua_Debug; n: Integer): PChar; cdecl external 'lua5.1.dll';
+function lua_getupvalue(L: Plua_State; funcindex: Integer; n: Integer): PChar; cdecl external 'lua5.1.dll';
+function lua_setupvalue(L: Plua_State; funcindex: Integer; n: Integer): PChar; cdecl external 'lua5.1.dll';
 
-function lua_sethook(L: Plua_State; func: lua_Hook; mask, count: Integer): Integer; cdecl external 'lua.dll';
-function lua_gethook(L: Plua_State): lua_Hook; cdecl external 'lua.dll';
-function lua_gethookmask(L: Plua_State): Integer; cdecl external 'lua.dll';
-function lua_gethookcount(L: Plua_State): Integer; cdecl external 'lua.dll';
+function lua_sethook(L: Plua_State; func: lua_Hook; mask, count: Integer): Integer; cdecl external 'lua5.1.dll';
+function lua_gethook(L: Plua_State): lua_Hook; cdecl external 'lua5.1.dll';
+function lua_gethookmask(L: Plua_State): Integer; cdecl external 'lua5.1.dll';
+function lua_gethookcount(L: Plua_State): Integer; cdecl external 'lua5.1.dll';
 
 
 implementation

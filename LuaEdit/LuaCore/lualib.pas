@@ -1,5 +1,5 @@
 (*
-** $Id: lualib.pas,v 1.4 2006-12-11 04:27:13 jfgoulet Exp $
+** $Id: lualib.pas,v 1.5 2007-01-20 16:40:27 jfgoulet Exp $
 ** Lua standard libraries
 ** See Copyright Notice in lua.h
 *)
@@ -15,6 +15,7 @@ uses
   lua;
 
 const
+  LUA_PACKLIBNAME = 'package';
   LUA_COLIBNAME = 'coroutine';
   LUA_TABLIBNAME = 'table';
   LUA_IOLIBNAME = 'io';
@@ -24,26 +25,26 @@ const
   LUA_DBLIBNAME = 'debug';
 
 function luaopen_base(L: Plua_State): Integer;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 
+function luaopen_package(L: Plua_State): Integer;
+  cdecl external 'lua5.1.dll';
 function luaopen_table(L: Plua_State): Integer;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 
 function luaopen_io(L: Plua_State): Integer;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 
 function luaopen_string(L: Plua_State): Integer;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 
 function luaopen_math(L: Plua_State): Integer;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 
 function luaopen_debug(L: Plua_State): Integer;
-  cdecl external 'lua.dll';
+  cdecl external 'lua5.1.dll';
 
 
-function luaopen_loadlib(L: Plua_State): Integer;
-  cdecl external 'lua.dll';
 
 
 (* to help testing the libraries *)
@@ -54,6 +55,7 @@ function luaopen_loadlib(L: Plua_State): Integer;
 
 (* compatibility code *)
 function lua_baselibopen(L: Plua_State): Integer;
+function lua_packlibopen(L: Plua_State): Integer;
 function lua_tablibopen(L: Plua_State): Integer;
 function lua_iolibopen(L: Plua_State): Integer;
 function lua_strlibopen(L: Plua_State): Integer;
@@ -64,12 +66,26 @@ implementation
 
 function lua_baselibopen(L: Plua_State): Integer;
 begin
-  Result := luaopen_base(L);
+  lua_pushcfunction(L, luaopen_base);
+  lua_pushstring(L, '');
+  lua_call(L, 1, 0);
+  Result := 1;
+end;
+
+function lua_packlibopen(L: Plua_State): Integer;
+begin
+  lua_pushcfunction(L, luaopen_package);
+  lua_pushstring(L, 'package');
+  lua_call(L, 1, 0);
+  Result := 1;
 end;
 
 function lua_tablibopen(L: Plua_State): Integer;
 begin
-  Result := luaopen_table(L);
+  lua_pushcfunction(L, luaopen_table);
+  lua_pushstring(L, 'table');
+  lua_call(L, 1, 0);
+  Result := 1;
 end;
 
 function lua_iolibopen(L: Plua_State): Integer;
@@ -78,25 +94,34 @@ begin
   lua_pushstring(L, 'io');
   lua_call(L, 1, 0);
 
-  lua_pushcfunction(L, luaopen_os);
+  {lua_pushcfunction(L, luaopen_os);
   lua_pushstring(L, 'os');
   lua_call(L, 1, 0);
-  Result := 1;
+  Result := 1;}
 end;
 
 function lua_strlibopen(L: Plua_State): Integer;
 begin
-  Result := luaopen_string(L);
+  lua_pushcfunction(L, luaopen_string);
+  lua_pushstring(L, 'string');
+  lua_call(L, 1, 0);
+  Result := 1;
 end;
 
 function lua_mathlibopen(L: Plua_State): Integer;
 begin
-  Result := luaopen_math(L);
+  lua_pushcfunction(L, luaopen_math);
+  lua_pushstring(L, 'math');
+  lua_call(L, 1, 0);
+  Result := 1;
 end;
 
 function lua_dblibopen(L: Plua_State): Integer;
 begin
-  Result := luaopen_debug(L);
+  lua_pushcfunction(L, luaopen_debug);
+  lua_pushstring(L, 'debug');
+  lua_call(L, 1, 0);
+  Result := 1;
 end;
 
 end.
