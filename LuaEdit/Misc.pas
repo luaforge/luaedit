@@ -242,8 +242,8 @@ type
   public
     constructor Create(Path: String; otType: TLuaEditFileType = otTextFile);
 
-    function  Save(Path: String): Boolean; virtual;
-    function  SaveInc(Path: String): Boolean; virtual;
+    function  Save(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; virtual;
+    function  SaveInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; virtual;
   published
     property FileType: TLuaEditFileType read FOTFileType write FOTFileType;
     property LastTimeModified: TDateTime read FLastTimeModified write FLastTimeModified;
@@ -279,8 +279,8 @@ type
     constructor Create(Path: String; otType: TLuaEditFileType = otTextFile);
     destructor Destroy; override;
 
-    function  Save(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; overload;
-    function  SaveInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; overload;
+    function  Save(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; override;
+    function  SaveInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; override;
   published
     property LastEditedLine:   Integer read FLastEditedLine write FLastEditedLine;
     property SynUnit:          TSynEdit read FSynUnit write FSynUnit;
@@ -298,8 +298,8 @@ type
     constructor Create(Path: String; otType: TLuaEditFileType = otTextFile);
     destructor Destroy; override;
 
-    function  Save(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; overload;
-    function  SaveInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; overload;
+    function  Save(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; override;
+    function  SaveInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; override;
     procedure SaveBreakpoints();
     procedure GetBreakpoints();
   published
@@ -349,9 +349,11 @@ type
     constructor Create(Path: String; otType: TLuaEditFileType = otLuaEditProject);
     destructor  Destroy; override;
 
+    procedure AddFile(pFile: TLuaEditFile); overload;
+    function AddFile(FileName: String; IsNew: Boolean): TLuaEditBasicTextFile; overload;
     procedure GetProjectFromDisk(Path: String);
-    function  Save(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; overload;
-    function  SaveInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; overload;
+    function  Save(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; override;
+    function  SaveInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean; override;
     procedure RealoadProject();
   end;
 
@@ -373,7 +375,7 @@ function FileExistsAbs(FileName: String): Boolean;
 implementation
 
 uses
-  Main, Breakpoints, ReadOnlyMsgBox, ProjectTree, GUIDesigner;
+  Main, Breakpoints, ReadOnlyMsgBox, ProjectTree, GUIDesigner, LuaEditMessages;
 
 ///////////////////////////////////////////////////////////////////
 // Misc functions
@@ -499,7 +501,7 @@ begin
 end;
 
 ///////////////////////////////////////////////////////////////////
-//TFctInfo
+// TFctInfo
 ///////////////////////////////////////////////////////////////////
 constructor TFctInfo.Create;
 begin
@@ -509,7 +511,7 @@ begin
 end;
 
 ///////////////////////////////////////////////////////////////////
-//TBreakInfo
+// TBreakInfo
 ///////////////////////////////////////////////////////////////////
 constructor TBreakInfo.Create;
 begin
@@ -520,7 +522,7 @@ begin
 end;
 
 ///////////////////////////////////////////////////////////////////
-//TBreakpoint class
+// TBreakpoint class
 ///////////////////////////////////////////////////////////////////
 constructor TBreakpoint.Create;
 begin
@@ -531,7 +533,7 @@ begin
 end;
 
 ///////////////////////////////////////////////////////////////////
-//TLineDebugInfos class
+// TLineDebugInfos class
 ///////////////////////////////////////////////////////////////////
 constructor TLineDebugInfos.Create;
 begin
@@ -773,12 +775,12 @@ begin
   FName := ChangeFileExt(ExtractFileName(Path), '');
 end;
 
-function TLuaEditFile.Save(Path: String): Boolean;
+function TLuaEditFile.Save(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
 begin
   FDisplayPath := Path;
 end;
 
-function TLuaEditFile.SaveInc(Path: String): Boolean;
+function TLuaEditFile.SaveInc(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
 begin
   FDisplayPath := Path;
 end;
@@ -859,111 +861,120 @@ var
   xPos, IncValue, iAnswer, TempIncValue: Integer;
   bResult: Boolean;
   pMsgBox: TfrmReadOnlyMsgBox;
-begin  
-  frmLuaEditMain.jvchnNotifier.Active := False;
-  Result := True;
+begin
+  try
+    try
+      frmLuaEditMain.jvchnNotifier.Active := False;
+      Result := True;
 
-  // save only if the file is opened in the tab...
-  // if not, there is no way that the file was modified so no needs to save
-  if Assigned(Self.AssociatedTab) then
-  begin
-    // Popup a open dialog according to parameters and the state of the file
-    if ((IsNew and not bNoDialog) or (bForceDialog)) then
-    begin
-      frmLuaEditMain.sdlgSaveAsUnit.FileName := ExtractFileName(FName);
-
-      if ExtractFileExt(FPath) = '.lua' then
-        frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 1
-      else if ExtractFileExt(FPath) = '.lmc' then
-        frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 2
-      else if ExtractFileExt(FPath) = '.txt' then
-        frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 3
-      else
-        frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 4;
-
-      if frmLuaEditMain.sdlgSaveAsUnit.Execute then
+      // save only if the file is opened in the tab...
+      // if not, there is no way that the file was modified so no needs to save
+      if Assigned(Self.AssociatedTab) then
       begin
-        Path := frmLuaEditMain.sdlgSaveAsUnit.FileName;
-
-        if IsNew then
-          frmLuaEditMain.MonitorFileToRecent(Path);
-      end
-      else
-      begin
-        // Return false because action was cancel and quit function
-        Result := False;
-        Exit;
-      end;
-    end;
-
-    // Getting currently assigned number
-    IncValue := -1;  // For future testing
-    xPos := Length(ExtractFileExt(Path)) + 1;  // Assign initial try position
-    bResult := True;  // For a first try
-    while bResult do
-    begin
-      bResult := TryStrToInt(Copy(Path, Length(Path) - xPos + 1, xPos - Length(ExtractFileExt(Path))), TempIncValue);
-      if bResult then
-      begin
-        IncValue := TempIncValue;
-        Inc(XPos);
-      end;
-    end;
-
-    if IncValue = -1 then
-      IncValue := 1 // Give an initial value
-    else
-      Inc(IncValue);  // Increment actual value
-
-    // Build the new name
-    Path := Copy(Self.Path, 1, Length(Self.Path) - xPos + 1) + IntToStr(IncValue) + ExtractFileExt(Self.Path);
-
-    // Check if file is read only first
-    while (GetFileReadOnlyAttr(PChar(Path)) and (FileExistsAbs(Path))) do
-    begin
-      pMsgBox := TfrmReadOnlyMsgBox.Create(nil);
-      iAnswer := pMsgBox.MessageBox('The project '+Path+' is read-only. Save anyway?      ', 'LuaEdit');
-      pMsgBox.Free;
-      if iAnswer = mrOk then
-      begin
-        ToggleFileReadOnlyAttr(PChar(Path));
-        // Now that we wrote on the disk we may retrieve the time it has been writen
-        LastTimeModified := GetFileLastTimeModified(PChar(Path));
-        IsReadOnly := False;
-      end
-      else if iAnswer = mrYes then
-      begin
-        // Popup an open dialog according to parameters and the state of the file
-        frmLuaEditMain.sdlgSaveAsUnit.FileName := ExtractFileName(Self.Name);
-
-        if frmLuaEditMain.sdlgSaveAsUnit.Execute then
+        // Popup a open dialog according to parameters and the state of the file
+        if ((IsNew and not bNoDialog) or (bForceDialog)) then
         begin
-          Path := frmLuaEditMain.sdlgSaveAsUnit.FileName;
-        end
-        else
-        begin
-          // Return false because action was cancel and quit function
-          Result := False;
-          Exit;
+          frmLuaEditMain.sdlgSaveAsUnit.FileName := ExtractFileName(FName);
+
+          if ExtractFileExt(FPath) = '.lua' then
+            frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 1
+          else if ExtractFileExt(FPath) = '.lmc' then
+            frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 2
+          else if ExtractFileExt(FPath) = '.txt' then
+            frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 3
+          else
+            frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 4;
+
+          if frmLuaEditMain.sdlgSaveAsUnit.Execute then
+          begin
+            Path := frmLuaEditMain.sdlgSaveAsUnit.FileName;
+
+            if IsNew then
+              frmLuaEditMain.MonitorFileToRecent(Path);
+          end
+          else
+          begin
+            // Return false because action was cancel and quit function
+            Result := False;
+            Exit;
+          end;
         end;
-      end
-      else
-      begin
-        Result := False;
-        Exit;
+
+        // Getting currently assigned number
+        IncValue := -1;  // For future testing
+        xPos := Length(ExtractFileExt(Path)) + 1;  // Assign initial try position
+        bResult := True;  // For a first try
+        while bResult do
+        begin
+          bResult := TryStrToInt(Copy(Path, Length(Path) - xPos + 1, xPos - Length(ExtractFileExt(Path))), TempIncValue);
+          if bResult then
+          begin
+            IncValue := TempIncValue;
+            Inc(XPos);
+          end;
+        end;
+
+        if IncValue = -1 then
+          IncValue := 1 // Give an initial value
+        else
+          Inc(IncValue);  // Increment actual value
+
+        // Build the new name
+        Path := Copy(Self.Path, 1, Length(Self.Path) - xPos + 1) + IntToStr(IncValue) + ExtractFileExt(Self.Path);
+
+        // Check if file is read only first
+        while (GetFileReadOnlyAttr(PChar(Path)) and (FileExistsAbs(Path))) do
+        begin
+          pMsgBox := TfrmReadOnlyMsgBox.Create(nil);
+          iAnswer := pMsgBox.MessageBox('The project '+Path+' is read-only. Save anyway?      ', 'LuaEdit');
+          pMsgBox.Free;
+          if iAnswer = mrOk then
+          begin
+            ToggleFileReadOnlyAttr(PChar(Path));
+            // Now that we wrote on the disk we may retrieve the time it has been writen
+            LastTimeModified := GetFileLastTimeModified(PChar(Path));
+            IsReadOnly := False;
+          end
+          else if iAnswer = mrYes then
+          begin
+            // Popup an open dialog according to parameters and the state of the file
+            frmLuaEditMain.sdlgSaveAsUnit.FileName := ExtractFileName(Self.Name);
+
+            if frmLuaEditMain.sdlgSaveAsUnit.Execute then
+            begin
+              Path := frmLuaEditMain.sdlgSaveAsUnit.FileName;
+            end
+            else
+            begin
+              // Return false because action was cancel and quit function
+              Result := False;
+              Exit;
+            end;
+          end
+          else
+          begin
+            Result := False;
+            Exit;
+          end;
+        end;
+
+        FPath := Path;
+        PrjOwner.HasChanged := True;  // Since the name has changed, the project must be saved
+        SynUnit.Lines.SaveToFile(FPath);  // Save to file to hard drive
+        FName := ExtractFileName(FPath);  // Get short name for fast display
+        IsNew := False;  // The file is no more new
+        HasChanged := False;  // The has no more changes
+        SynUnit.Modified := False;  // The actual editor must not notice any changes now
+        LastTimeModified := GetFileLastTimeModified(PChar(Path));  // Now we wrote on the disk we may retrieve the time it has been writen
+        
+        inherited SaveInc(Path);
       end;
+    except
+      frmLuaEditMessages.Put('Could not save file "'+FPath+'" on disk!', LUAEDIT_ERROR_MSG, FPath);
+      Result := False;
     end;
-
-    FPath := Path;
-    PrjOwner.HasChanged := True;  // Since the name has changed, the project must be saved
-    SynUnit.Lines.SaveToFile(FPath);  // Save to file to hard drive
-    FName := ExtractFileName(FPath);  // Get short name for fast display
-    IsNew := False;  // The file is no more new
-    HasChanged := False;  // The has no more changes
-    SynUnit.Modified := False;  // The actual editor must not notice any changes now
-    LastTimeModified := GetFileLastTimeModified(PChar(Path));  // Now we wrote on the disk we may retrieve the time it has been writen
-
-    // Reinitialize stuff...
+  finally
+    // Refresh interface
     frmLuaEditMain.RefreshOpenedUnits;
     frmLuaEditMain.jvUnitBarChange(frmLuaEditMain.jvUnitBar);
     frmProjectTree.BuildProjectTree;
@@ -971,100 +982,108 @@ begin
     frmLuaEditMain.stbMain.Panels[5].Text := '';
     frmLuaEditMain.stbMain.Refresh;
     SynUnit.Refresh;
-  end;
 
-  frmLuaEditMain.jvchnNotifier.Active := True;
-  inherited SaveInc(Path);
+    frmLuaEditMain.jvchnNotifier.Active := True;
+  end;
 end;
 
 function TLuaEditBasicTextFile.Save(Path: String; bNoDialog: Boolean = False; bForceDialog: Boolean = False): Boolean;
 var
   iAnswer: Integer;
   pMsgBox: TfrmReadOnlyMsgBox;
-begin  
-  frmLuaEditMain.jvchnNotifier.Active := False;
-  Result := True;
+begin
+  try
+    try
+      frmLuaEditMain.jvchnNotifier.Active := False;
+      Result := True;
 
-  // save only if the file is opened in the tab...
-  // if not, there is no way that the file was modified so no needs to save
-  if Assigned(Self.AssociatedTab) then
-  begin
-    // Popup a open dialog according to parameters and the state of the file
-    if ((IsNew and not bNoDialog) or (bForceDialog)) then
-    begin
-      frmLuaEditMain.sdlgSaveAsUnit.FileName := ExtractFileName(Self.Name);
-
-      if ExtractFileExt(FPath) = '.lua' then
-        frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 1
-      else if ExtractFileExt(FPath) = '.lmc' then
-        frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 2
-      else if ExtractFileExt(FPath) = '.txt' then
-        frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 3
-      else
-        frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 4;
-
-      if frmLuaEditMain.sdlgSaveAsUnit.Execute then
+      // save only if the file is opened in the tab...
+      // if not, there is no way that the file was modified so no needs to save
+      if Assigned(Self.AssociatedTab) then
       begin
-        Path := frmLuaEditMain.sdlgSaveAsUnit.FileName;
-        PrjOwner.HasChanged := True;
-
-        if IsNew then
-          frmLuaEditMain.MonitorFileToRecent(Path);
-      end
-      else
-      begin
-        // Return false because action was cancel and quit function
-        Result := False;
-        Exit;
-      end;
-    end;
-
-    // Check if file is read only first
-    while (GetFileReadOnlyAttr(PChar(Path)) and (FileExistsAbs(Path))) do
-    begin
-      pMsgBox := TfrmReadOnlyMsgBox.Create(nil);
-      iAnswer := pMsgBox.MessageBox('The project '+Path+' is read-only. Save anyway?      ', 'LuaEdit');
-      pMsgBox.Free;
-      if iAnswer = mrOk then
-      begin
-        ToggleFileReadOnlyAttr(PChar(Path));
-        // Now that we wrote on the disk we may retrieve the time it has been writen
-        LastTimeModified := GetFileLastTimeModified(PChar(Path));
-        IsReadOnly := False;
-      end
-      else if iAnswer = mrYes then
-      begin
-        // Popup an open dialog according to parameters and the state of the file
-        frmLuaEditMain.sdlgSaveAsUnit.FileName := ExtractFileName(Self.Name);
-
-        if frmLuaEditMain.sdlgSaveAsUnit.Execute then
+        // Popup a open dialog according to parameters and the state of the file
+        if ((IsNew and not bNoDialog) or (bForceDialog)) then
         begin
-          Path := frmLuaEditMain.sdlgSaveAsUnit.FileName;
-          PrjOwner.HasChanged := True;
-        end
-        else
-        begin
-          // Return false because action was cancel and quit function
-          Result := False;
-          Exit;
+          frmLuaEditMain.sdlgSaveAsUnit.FileName := ExtractFileName(Self.Name);
+
+          if ExtractFileExt(FPath) = '.lua' then
+            frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 1
+          else if ExtractFileExt(FPath) = '.lmc' then
+            frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 2
+          else if ExtractFileExt(FPath) = '.txt' then
+            frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 3
+          else
+            frmLuaEditMain.sdlgSaveAsUnit.FilterIndex := 4;
+
+          if frmLuaEditMain.sdlgSaveAsUnit.Execute then
+          begin
+            Path := frmLuaEditMain.sdlgSaveAsUnit.FileName;
+            PrjOwner.HasChanged := True;
+
+            if IsNew then
+              frmLuaEditMain.MonitorFileToRecent(Path);
+          end
+          else
+          begin
+            // Return false because action was cancel and quit function
+            Result := False;
+            Exit;
+          end;
         end;
-      end
-      else
-      begin
-        Result := False;
-        Exit;
+
+        // Check if file is read only first
+        while (GetFileReadOnlyAttr(PChar(Path)) and (FileExistsAbs(Path))) do
+        begin
+          pMsgBox := TfrmReadOnlyMsgBox.Create(nil);
+          iAnswer := pMsgBox.MessageBox('The project '+Path+' is read-only. Save anyway?      ', 'LuaEdit');
+          pMsgBox.Free;
+          if iAnswer = mrOk then
+          begin
+            ToggleFileReadOnlyAttr(PChar(Path));
+            // Now that we wrote on the disk we may retrieve the time it has been writen
+            LastTimeModified := GetFileLastTimeModified(PChar(Path));
+            IsReadOnly := False;
+          end
+          else if iAnswer = mrYes then
+          begin
+            // Popup an open dialog according to parameters and the state of the file
+            frmLuaEditMain.sdlgSaveAsUnit.FileName := ExtractFileName(Self.Name);
+
+            if frmLuaEditMain.sdlgSaveAsUnit.Execute then
+            begin
+              Path := frmLuaEditMain.sdlgSaveAsUnit.FileName;
+              PrjOwner.HasChanged := True;
+            end
+            else
+            begin
+              // Return false because action was cancel and quit function
+              Result := False;
+              Exit;
+            end;
+          end
+          else
+          begin
+            Result := False;
+            Exit;
+          end;
+        end;
+
+        synUnit.Lines.SaveToFile(Path);  // Save the file to hard drive
+        Self.Name := ExtractFileName(Path);  // Get short name for fast display
+        Self.Path := Path;  // Assign filepath to class filepath
+        IsNew := False;  // The file is not new anymore
+        HasChanged := False;  // The file does't have anymore changes
+        synUnit.Modified := False;  // The actual editor must not notice any changes now
+        LastTimeModified := GetFileLastTimeModified(PChar(Path));  // Now we wrote on the disk we may retrieve the time it has been writen
+
+        inherited Save(Path);
       end;
+    except
+      frmLuaEditMessages.Put('Could not save file "'+FPath+'" on disk!', LUAEDIT_ERROR_MSG, FPath);
+      Result := False;
     end;
-
-    synUnit.Lines.SaveToFile(Path);  // Save the file to hard drive
-    Self.Name := ExtractFileName(Path);  // Get short name for fast display
-    Self.Path := Path;  // Assign filepath to class filepath
-    IsNew := False;  // The file is not new anymore
-    HasChanged := False;  // The file does't have anymore changes
-    synUnit.Modified := False;  // The actual editor must not notice any changes now
-    LastTimeModified := GetFileLastTimeModified(PChar(Path));  // Now we wrote on the disk we may retrieve the time it has been writen
-
-    // Initialize stuff...
+  finally
+    // Refresh interface
     frmLuaEditMain.RefreshOpenedUnits;
     frmLuaEditMain.jvUnitBarChange(frmLuaEditMain.jvUnitBar);
     frmProjectTree.BuildProjectTree;
@@ -1072,10 +1091,9 @@ begin
     frmLuaEditMain.stbMain.Panels[5].Text := '';
     frmLuaEditMain.stbMain.Refresh;
     synUnit.Refresh;
-  end;
 
-  frmLuaEditMain.jvchnNotifier.Active := True;
-  inherited Save(Path);
+    frmLuaEditMain.jvchnNotifier.Active := True;
+  end;
 end;
 
 ///////////////////////////////////////////////////////////////////
@@ -1108,7 +1126,7 @@ end;
 
 function TLuaEditDebugFile.Save(Path: String; bNoDialog: Boolean; bForceDialog: Boolean): Boolean;
 begin
-  inherited Save(Path, bNoDialog, bForceDialog);
+  Result := inherited Save(Path, bNoDialog, bForceDialog);
 
   // Reinitialize variables
   DebugInfos.iLineError := -1;  // Do not display anymore the current line error
@@ -1124,7 +1142,7 @@ end;
 
 function TLuaEditDebugFile.SaveInc(Path: String; bNoDialog: Boolean; bForceDialog: Boolean): Boolean;
 begin
-  inherited SaveInc(Path, bNoDialog, bForceDialog);
+  Result := inherited SaveInc(Path, bNoDialog, bForceDialog);
 
   // Reinitialize variables
   DebugInfos.iLineError := -1;  // Do not display anymore the current line error
@@ -1250,8 +1268,43 @@ end;
 destructor TLuaEditProject.Destroy;
 begin
   inherited Destroy;
-  
+
   lstUnits.Free;
+end;
+
+procedure TLuaEditProject.AddFile(pFile: TLuaEditFile);
+begin
+  if FName = '[@@SingleUnits@@]' then
+    lstUnits.Insert(lstUnits.Count, pFile)
+  else
+    lstUnits.Add(pFile);
+
+  FHasChanged := True;
+end;
+
+function TLuaEditProject.AddFile(FileName: String; IsNew: Boolean): TLuaEditBasicTextFile;
+var
+  pFile: TLuaEditFile;
+begin
+  if ExtractFileExt(FileName) = '.gui' then
+    pFile := TLuaEditGUIForm.Create(FileName)
+  else if ExtractFileExt(FileName) = '.lua' then
+    pFile := TLuaEditDebugFile(TLuaEditUnit.Create(FileName))
+  else if ExtractFileExt(FileName) = '.lmc' then
+    pFile := TLuaEditDebugFile(TLuaEditMacro.Create(FileName))
+  else
+    pFile := TLuaEditBasicTextFile.Create(FileName);
+
+  pFile.PrjOwner := Self;
+  pFile.IsNew := IsNew;
+
+  if FName = '[@@SingleUnits@@]' then
+    lstUnits.Insert(lstUnits.Count, pFile)
+  else
+    lstUnits.Add(pFile);
+
+  Result := TLuaEditBasicTextFile(pFile);
+  FHasChanged := True;
 end;
 
 procedure TLuaEditProject.GetProjectFromDisk(Path: String);
@@ -1309,7 +1362,7 @@ begin
       if FileExistsAbs(sUnitName) then
       begin
         // Initialize unit and global variables considering the fact that open was a success
-        pLuaUnit := TLuaEditUnit(frmLuaEditMain.AddFileInProject(sUnitName, False, Self));
+        pLuaUnit := TLuaEditUnit(AddFile(sUnitName, False));
         pLuaUnit.Path := sUnitName;
         pLuaUnit.Name := ExtractFileName(sUnitName);
         pLuaUnit.IsLoaded := True;
@@ -1322,7 +1375,7 @@ begin
       begin
         // Initialize unit and global variables considering the fact that open was a failure
         Application.MessageBox(PChar('The file "'+sUnitName+'" is innexistant!'), 'LuaEdit', MB_OK+MB_ICONERROR);
-        pLuaUnit := TLuaEditUnit(frmLuaEditMain.AddFileInProject(sUnitName, False, Self));
+        pLuaUnit := TLuaEditUnit(AddFile(sUnitName, False));
         pLuaUnit.IsLoaded := False;
       end;
 

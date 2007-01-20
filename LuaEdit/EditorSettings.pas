@@ -435,19 +435,19 @@ begin
     begin
       // Register file association for .lpr files
       RegSetAssociation('.lpr', 'LuaEdit.lpr', 'LuaEdit Project', 'LuaEdit/LuaEdit.lpr', PChar(GetLuaEditInstallPath() + '\Graphics\Project.ico'));
-      RegSetOpenWith('LuaEdit.lpr', PChar(Application.ExeName + ' %1'));
+      RegSetOpenWith('LuaEdit.lpr', PChar(Application.ExeName+ ' "%1"'));
 
       // Register file association for .lua files
       RegSetAssociation('.lua', 'LuaEdit.lua', 'LuaEdit Unit', 'LuaEdit/LuaEdit.lua', PChar(GetLuaEditInstallPath() + '\Graphics\Unit.ico'));
-      RegSetOpenWith('LuaEdit.lua', PChar(Application.ExeName + ' %1'));
+      RegSetOpenWith('LuaEdit.lua', PChar(Application.ExeName + ' "%1"'));
 
       // Register file association for .lmc files
       RegSetAssociation('.lmc', 'LuaEdit.lmc', 'LuaEdit Macro', 'LuaEdit/LuaEdit.lmc', PChar(GetLuaEditInstallPath() + '\Graphics\LuaMacros.ico'));
-      RegSetOpenWith('LuaEdit.lmc', PChar(Application.ExeName + ' %1'));
+      RegSetOpenWith('LuaEdit.lmc', PChar(Application.ExeName + ' "%1"'));
 
       // Register file association for .gui files
       RegSetAssociation('.gui', 'LuaEdit.gui', 'LuaEdit GUI Form', 'LuaEdit/LuaEdit.gui', PChar(GetLuaEditInstallPath() + '\Graphics\LuaGUIForm.ico'));
-      RegSetOpenWith('LuaEdit.gui', PChar(Application.ExeName + ' %1'));
+      RegSetOpenWith('LuaEdit.gui', PChar(Application.ExeName + ' "%1"'));
     end
     else
     begin      

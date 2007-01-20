@@ -12,7 +12,7 @@ interface
 uses lua, lualib, lauxlib, Forms, SysUtils, LuaUtils, Misc, SynEdit,
      LuaEditMessages, Classes, Registry, Windows;
 
-procedure LERegisterToLua(L: Plua_State);
+procedure LERegisterToLua(L: Plua_State; NeedLuaLibs: Boolean = True);
 
 implementation
 
@@ -47,7 +47,7 @@ begin
       FilesName.Add(StrPas(lua_tostring(L, x)));
 
   // Return the luaedit version as a string
-  lua_pushboolean(L, frmLuaEditMain.DoOpenFileExecute(FilesName));
+  lua_pushboolean(L, Integer(frmLuaEditMain.DoOpenFileExecute(FilesName)));
 
   // Free variables
   FilesName.Free;
@@ -67,7 +67,7 @@ end;
 function LuaLEOpenProject(L: Plua_State): Integer; cdecl;
 begin
   // Return the luaedit version as a string
-  lua_pushboolean(L, frmLuaEditMain.DoOpenProjectExecute());
+  lua_pushboolean(L, Integer(frmLuaEditMain.DoOpenProjectExecute()));
 
   // Return in Delphi the number of argument pushed on the stack
   Result := 1;
@@ -84,7 +84,7 @@ end;
 function LuaLESaveAll(L: Plua_State): Integer; cdecl;
 begin
   // Return the luaedit version as a string
-  lua_pushboolean(L, frmLuaEditMain.DoSaveAllExecute());
+  lua_pushboolean(L, Integer(frmLuaEditMain.DoSaveAllExecute()));
 
   // Return in Delphi the number of argument pushed on the stack
   Result := 1;
@@ -101,7 +101,7 @@ end;
 function LuaLESavePrjAs(L: Plua_State): Integer; cdecl;
 begin
   // Return the luaedit version as a string
-  lua_pushboolean(L, frmLuaEditMain.DoSaveProjectAsExecute());
+  lua_pushboolean(L, Integer(frmLuaEditMain.DoSaveProjectAsExecute()));
 
   // Return in Delphi the number of argument pushed on the stack
   Result := 1;
@@ -109,16 +109,32 @@ end;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Desc: This function save the currently opened unit as...
-// In:   None
+// In:   (1) Path of unit to save as
 // Out:  (1) True if the operation ended successfully. False if canceled,
 //           unavailable (disabled) or failed.
 //
 // 14/05/2006 - Jean-Francois Goulet
 ////////////////////////////////////////////////////////////////////////////////
 function LuaLESaveUnitAs(L: Plua_State): Integer; cdecl;
+var
+  bRes: Boolean;
+  sPath: String;
+  pFile: TLuaEditBasicTextFile; 
 begin
-  // Return the luaedit version as a string
-  lua_pushboolean(L, frmLuaEditMain.DoSaveAsExecute());
+  // Initialize result
+  bRes := False;
+
+  // Retrieve SAFELY the first parameter
+  if lua_type(L, -1) = LUA_TSTRING then
+    sPath := lua_tostring(L, -1);
+
+  pFile := frmLuaEditMain.GetOpenedFile(sPath);
+
+  // Save the specified file
+  if Assigned(pFile) then
+    bRes := frmLuaEditMain.DoSaveAsExecute(pFile);
+
+  lua_pushboolean(L, Integer(bRes));
 
   // Return in Delphi the number of argument pushed on the stack
   Result := 1;
@@ -126,16 +142,32 @@ end;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Desc: This function save the currently opened unit
-// In:   None
+// In:   (1) Path of unit to save
 // Out:  (1) True if the operation ended successfully. False if canceled,
 //           unavailable (disabled) or failed.
 //
 // 14/05/2006 - Jean-Francois Goulet
 ////////////////////////////////////////////////////////////////////////////////
 function LuaLESaveUnit(L: Plua_State): Integer; cdecl;
+var
+  bRes: Boolean;
+  sPath: String;
+  pFile: TLuaEditBasicTextFile; 
 begin
-  // Return the luaedit version as a string
-  lua_pushboolean(L, frmLuaEditMain.DoSaveExecute());
+  // Initialize result
+  bRes := False;
+
+  // Retrieve SAFELY the first parameter
+  if lua_type(L, -1) = LUA_TSTRING then
+    sPath := lua_tostring(L, -1);
+
+  pFile := frmLuaEditMain.GetOpenedFile(sPath);
+
+  // Save the specified file
+  if Assigned(pFile) then
+    bRes := frmLuaEditMain.DoSaveExecute(pFile);
+
+  lua_pushboolean(L, Integer(bRes));
 
   // Return in Delphi the number of argument pushed on the stack
   Result := 1;
@@ -160,7 +192,7 @@ end;
 //
 // 14/05/2006 - Jean-Francois Goulet
 ////////////////////////////////////////////////////////////////////////////////
-function LuaLEGetUnit(L: Plua_State): Integer; cdecl;
+function LuaLEGetFile(L: Plua_State): Integer; cdecl;
 var
   Index, x: Integer;
   pLuaUnit: TLuaEditUnit;
@@ -196,27 +228,27 @@ begin
 
         // Push "Path" data
         lua_pushstring(L, 'Path');
-        lua_pushstring(L, PChar(pLuaUnit.Path));
+        lua_pushstring(L, PChar(pLuaUnit.DisplayPath));
         lua_settable(L, -3);
 
         // Push "IsLoaded" data
         lua_pushstring(L, 'IsLoaded');
-        lua_pushboolean(L, pLuaUnit.IsLoaded);
+        lua_pushboolean(L, Integer(pLuaUnit.IsLoaded));
         lua_settable(L, -3);
 
         // Push "IsReadOnly" data
         lua_pushstring(L, 'IsReadOnly');
-        lua_pushboolean(L, pLuaUnit.IsReadOnly);
+        lua_pushboolean(L, Integer(pLuaUnit.IsReadOnly));
         lua_settable(L, -3);
 
         // Push "IsNew" data
         lua_pushstring(L, 'IsNew');
-        lua_pushboolean(L, pLuaUnit.IsNew);
+        lua_pushboolean(L, Integer(pLuaUnit.IsNew));
         lua_settable(L, -3);
 
         // Push "HasChanged" data
         lua_pushstring(L, 'HasChanged');
-        lua_pushboolean(L, pLuaUnit.HasChanged);
+        lua_pushboolean(L, Integer(pLuaUnit.HasChanged));
         lua_settable(L, -3);
 
         // Push "Text" data
@@ -304,7 +336,7 @@ begin
 
     // Push "Path" data
     lua_pushstring(L, 'Path');
-    lua_pushstring(L, PChar(ActiveProject.Path));
+    lua_pushstring(L, PChar(ActiveProject.DisplayPath));
     lua_settable(L, -3);
 
     // Push "Initializer" data
@@ -344,22 +376,22 @@ begin
 
     // Push "AutoIncRevNumber" data
     lua_pushstring(L, 'AutoIncRevNumber');
-    lua_pushboolean(L, ActiveProject.AutoIncRevNumber);
+    lua_pushboolean(L, Integer(ActiveProject.AutoIncRevNumber));
     lua_settable(L, -3);
 
     // Push "IsReadOnly" data
     lua_pushstring(L, 'IsReadOnly');
-    lua_pushboolean(L, ActiveProject.IsReadOnly);
+    lua_pushboolean(L, Integer(ActiveProject.IsReadOnly));
     lua_settable(L, -3);
 
     // Push "IsNew" data
     lua_pushstring(L, 'IsNew');
-    lua_pushboolean(L, ActiveProject.IsNew);
+    lua_pushboolean(L, Integer(ActiveProject.IsNew));
     lua_settable(L, -3);
 
     // Push "HasChanged" data
     lua_pushstring(L, 'HasChanged');
-    lua_pushboolean(L, ActiveProject.HasChanged);
+    lua_pushboolean(L, Integer(ActiveProject.HasChanged));
     lua_settable(L, -3);
     
     // Push "VersionMajor" data
@@ -665,48 +697,62 @@ end;
 // This function register in the given lua state all luaedit related function
 // to allow to the user some interface customization. Kind of like macros but
 // using lua.
-procedure LERegisterToLua(L: Plua_State);
+procedure LERegisterToLua(L: Plua_State; NeedLuaLibs: Boolean);
 const
   LETableName = 'luaedit';
+  LuaEditFuncPackage: array [0..14] of LuaL_Reg = (// LuaEdit's core system functions
+                                                   (name: 'getver'; func: LuaLEGetVersion),
+                                                   (name: 'getproductname'; func: LuaLEGetProductName),
+                                                   (name: 'exit'; func: LuaLEExit),
+
+                                                   // LuaEdit's interfaces functions
+                                                   (name: 'print'; func: LuaLEPrint),
+
+                                                   // LuaEdit's file manipulation functions
+                                                   (name: 'openfile'; func: LuaLEOpenFile),
+                                                   (name: 'openprj'; func: LuaLEOpenProject),
+                                                   (name: 'saveall'; func: LuaLESaveAll),
+                                                   (name: 'saveprjas'; func: LuaLESavePrjAs),
+                                                   (name: 'saveunit'; func: LuaLESaveUnit),
+                                                   (name: 'saveunitas'; func: LuaLESaveUnitAs),
+                                                   (name: 'getfile'; func: LuaLEGetFile),
+                                                   (name: 'getactiveprj'; func: LuaLEGetActivePrj),
+
+                                                   // Win32 system functions
+                                                   (name: 'regread'; func: LuaLERegRead),
+                                                   (name: 'regwrite'; func: LuaLERegWrite),
+                                                   (name: nil; func: nil)
+                                                  );
+
+  procedure LuaRegisterVarStrInPackage(L: PLua_State; const Package: PChar; const VarName: PChar; const VarValue: PChar);
+  begin
+    // Get package table from globals
+    lua_getglobal(L, Package);
+
+    // Pushes variable name on the stack
+    lua_pushstring(L, VarName);
+    lua_pushstring(L, VarValue);
+    lua_settable(L, -3);
+    lua_pop(L, 1);
+  end;
 begin
-  // Open basic lua libraries
-  lua_baselibopen(L);
-  lua_packlibopen(L);
-  lua_tablibopen(L);
-  lua_strlibopen(L);
-  lua_iolibopen(L);
-  lua_mathlibopen(L);
-  lua_dblibopen(L);
+  // Open basic lua libraries (if required)
+  if NeedLuaLibs then
+  begin
+    lua_baselibopen(L);
+    lua_packlibopen(L);
+    lua_tablibopen(L);
+    lua_strlibopen(L);
+    lua_iolibopen(L);
+    lua_mathlibopen(L);
+    lua_dblibopen(L);
+  end;
 
-  // LuaEdit's core system functions
-  LuaRegister(L, LETableName+'.getver', LuaLEGetVersion);
-  LuaRegister(L, LETableName+'.getproductname', LuaLEGetProductName);
-  LuaRegister(L, LETableName+'.exit', LuaLEExit);
-
-  // LuaEdit's interfaces functions
-  LuaRegister(L, LETableName+'.print', LuaLEPrint);
-
-  // LuaEdit's file manipulation functions
-  LuaRegister(L, LETableName+'.openfile', LuaLEOpenFile);
-  LuaRegister(L, LETableName+'.openprj', LuaLEOpenProject);
-  LuaRegister(L, LETableName+'.saveall', LuaLESaveAll);
-  LuaRegister(L, LETableName+'.saveprjas', LuaLESavePrjAs);
-  LuaRegister(L, LETableName+'.saveunit', LuaLESaveUnit);
-  LuaRegister(L, LETableName+'.saveunitas', LuaLESaveUnitAs);
-  LuaRegister(L, LETableName+'.getunit', LuaLEGetUnit);
-  LuaRegister(L, LETableName+'.getactiveprj', LuaLEGetActivePrj);
-
-  // Win32 system functions
-  LuaRegister(L, LETableName+'.regread', LuaLERegRead);
-  LuaRegister(L, LETableName+'.regwrite', LuaLERegWrite);
+  // Register functions
+  luaL_Register(L, LETableName, @LuaEditFuncPackage);
 
   // Register variables
-  lua_getglobal(L, LETableName);
-
-  // Push LuaEdit's version
-  lua_pushstring(L, '_VERSION');
-  lua_pushstring(L, _LuaEditVersion);
-  lua_settable(L, -3);
+  LuaRegisterVarStrInPackage(L, LETableName, '_VERSION', PChar(_LuaEditVersion));
 end;
 
 end.

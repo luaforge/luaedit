@@ -77,7 +77,7 @@ object frmFunctionList: TfrmFunctionList
   end
   object JvDockClient1: TJvDockClient
     DirectDrag = False
-    DockStyle = frmMain.jvDockVSNet
+    DockStyle = frmLuaEditMain.jvDockVSNet
     Left = 8
     Top = 40
   end

@@ -32,13 +32,11 @@ uses
   Watch in 'Watch.pas' {frmWatch},
   FunctionList in 'FunctionList.pas' {frmFunctionList},
   AddToPrj in 'AddToPrj.pas' {frmAddToPrj},
-  RemFromPrj in 'RemFromPrj.pas' {frmRemoveFile},
   ErrorLookup in 'ErrorLookup.pas' {frmErrorLookup},
   LuaStack in 'LuaStack.pas' {frmLuaStack},
   PrintSetup in 'PrintSetup.pas' {frmPrintSetup},
   PrjSettings in 'PrjSettings.pas' {frmPrjOptions},
   Contributors in 'Contributors.pas' {frmContributors},
-  LuaOutput in 'LuaOutput.pas' {frmLuaOutput},
   LuaUtils in 'LuaCore\LuaUtils.pas',
   Breakpoints in 'Breakpoints.pas' {frmBreakpoints},
   RegSetFileType in 'RegSetFileType.pas',
@@ -69,7 +67,8 @@ uses
   GUIDesigner in 'GUIDesigner.pas' {GUIForm1},
   GUIControls in 'GUIControls.pas' {frmGUIControls},
   GUIFormType in 'GUIFormType.pas' {frmGUIFormType},
-  ConvertPath in 'ConvertPath.pas' {frmConvertPath};
+  ConvertPath in 'ConvertPath.pas' {frmConvertPath},
+  LuaConsole in 'LuaConsole.pas' {frmLuaConsole};
 
 {$R *.res}
 
@@ -142,7 +141,6 @@ begin
   Application.CreateForm(TfrmReplaceQuerry, frmReplaceQuerry);
   Application.CreateForm(TfrmSearch, frmSearch);
   Application.CreateForm(TfrmAddToPrj, frmAddToPrj);
-  Application.CreateForm(TfrmRemoveFile, frmRemoveFile);
   Application.CreateForm(TfrmErrorLookup, frmErrorLookup);
   Application.CreateForm(TfrmPrintSetup, frmPrintSetup);
   Application.CreateForm(TfrmPrjOptions, frmPrjOptions);

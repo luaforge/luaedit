@@ -71,19 +71,29 @@ object frmProjectTree: TfrmProjectTree
     OnPopup = ppmProjectTreePopup
     Left = 8
     Top = 72
-    object ActivateSelectedProject1: TMenuItem
-      Action = frmLuaEditMain.actActiveSelPrj
+    object N3: TMenuItem
+      Caption = 'Save'
+      ImageIndex = 5
+      OnClick = N3Click
     end
-    object UnloadFileProject1: TMenuItem
-      Caption = 'Unload File/Project'
-      OnClick = UnloadFileProject1Click
+    object SaveAs1: TMenuItem
+      Caption = 'Save As...'
+      ImageIndex = 7
+      OnClick = SaveAs1Click
     end
     object mnuFindTarget: TMenuItem
       Caption = 'Find Target...'
       OnClick = mnuFindTargetClick
     end
+    object UnloadFileProject1: TMenuItem
+      Caption = 'Unload File/Project'
+      OnClick = UnloadFileProject1Click
+    end
     object N2: TMenuItem
       Caption = '-'
+    end
+    object ActivateSelectedProject1: TMenuItem
+      Action = frmLuaEditMain.actActiveSelPrj
     end
     object AddUnittoProject1: TMenuItem
       Action = frmLuaEditMain.actAddToPrj

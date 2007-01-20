@@ -26,7 +26,7 @@ uses
   {$ifdef madExcept} ,madExcept, madLinkDisAsm {$endif}
   ,JvDragDrop, JvAppEvent, JvExStdCtrls, JvButton, JvCtrls, JvComCtrls,
   JvDockTree, JvAppInst, JvExExtCtrls, JvItemsPanel, JvGradientCaption,
-  JvgCaption;
+  JvgCaption, xmldom, XMLIntf, msxmldom, XMLDoc, MSXML, JvComponentBase;
                                
 type                  
   TfrmLuaEditMain = class(TForm)
@@ -182,7 +182,7 @@ type
     actShowWatchList: TAction;
     actShowCallStack: TAction;
     actShowLuaStack: TAction;
-    actShowLuaOutput: TAction;
+    actShowLuaConsole: TAction;
     actShowLuaGlobals: TAction;
     actShowLuaLocals: TAction;
     mnuMain: TMainMenu;
@@ -356,8 +356,10 @@ type
     GUIControls1: TMenuItem;
     actBringGUIFormToFront: TAction;
     N27: TMenuItem;
-    BringGUIFormtoFront1: TMenuItem;
     PathConverter1: TMenuItem;
+    N28: TMenuItem;
+    BringGUIFormtoFront1: TMenuItem;
+    XMLDocument1: TXMLDocument;
     procedure FormCreate(Sender: TObject);
     procedure synEditKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure actOpenFileExecute(Sender: TObject);
@@ -428,7 +430,7 @@ type
     procedure actShowWatchListExecute(Sender: TObject);
     procedure actShowCallStackExecute(Sender: TObject);
     procedure actShowLuaStackExecute(Sender: TObject);
-    procedure actShowLuaOutputExecute(Sender: TObject);
+    procedure actShowLuaConsoleExecute(Sender: TObject);
     procedure actShowLuaGlobalsExecute(Sender: TObject);
     procedure actShowLuaLocalsExecute(Sender: TObject);
     procedure actShowRingsExecute(Sender: TObject);
@@ -515,7 +517,6 @@ type
     function ClosingUnit(): Boolean;
     procedure AddFileInTab(pFile: TLuaEditBasicTextFile);
     procedure AddToNotifier(sPath: String);
-    function AddFileInProject(sFilePath: String; IsNew: Boolean; pPrj: TLuaEditProject): TLuaEditFile;
     function GetNewProjectName(sFileSuffix: String): String;
     function GetNewFileName(sFileSuffix: String): String;
     procedure CheckButtons;
@@ -528,6 +529,8 @@ type
     procedure btnXFilesClick(Sender: TObject);
     procedure btnXClipboardClick(Sender: TObject);
     function IsProjectOpened(sProjectPath: String): Boolean;
+    function IsFileOpened(sFilePath: String): Boolean;
+    function GetOpenedFile(sFilePath: String): TLuaEditBasicTextFile;
     procedure SynEditReplaceText(Sender: TObject; const ASearch, AReplace: String; Line, Column: Integer; var Action: TSynReplaceAction);
     procedure synEditSpecialLineColors(Sender: TObject; Line: Integer; var Special: Boolean; var FG, BG: TColor);
     procedure synEditGutterClick(Sender: TObject; Button: TMouseButton; X, Y, Line: Integer; Mark: TSynEditMark);
@@ -549,8 +552,8 @@ type
     procedure synParamsExecute(Kind: SynCompletionType; Sender: TObject; var AString: String; var x, y: Integer; var CanExecute: Boolean);
     procedure FillLookUpList;
     function FileIsInTree(sFileName: String): PVirtualNode;
-    function FindUnitInTabs(pLuaEditBasicTextFile: TLuaEditBasicTextFile): TLuaEditBasicTextFile;
-    function FindUnitInTabsStr(sUnitName: String): TLuaEditBasicTextFile;
+    //function FindUnitInTabs(pLuaEditBasicTextFile: TLuaEditBasicTextFile): TLuaEditBasicTextFile;
+    //function FindUnitInTabsStr(sUnitName: String): TLuaEditBasicTextFile;
     procedure PrintLuaStack(L: Plua_State);
     procedure PrintStack;
     procedure PrintLocal(L: Plua_State; Level: Integer = 0);
@@ -559,7 +562,6 @@ type
     function IsBreak(sFileName: String; Line: Integer): Boolean;
     function IsICI(ICI: Integer): Boolean;
     function IsEdited(pIgnoreUnit: TLuaEditUnit = nil): Boolean;
-    function GetValue(Name: string): string;
     function PopUpUnitToScreen(sFileName: String; iLine: Integer = -1; bCleanPrevUnit: Boolean = False; HighlightMode: Integer = -1): TLuaEditBasicTextFile;
     procedure ExecuteCurrent(Pause: Boolean; PauseICI: Integer; PauseFile: string; PauseLine: Integer);
     procedure CustomExecute(Pause: Boolean; PauseICI: Integer; PauseFile: string; PauseLine: Integer; FuncName: string; const Args: array of string; Results: TStrings);
@@ -573,7 +575,7 @@ type
     function DoOpenFileExecute(FilesName: TStringList): Boolean;
     function DoOpenProjectExecute(): Boolean;
     function DoExitExecute(): Boolean;
-    function DoSaveAsExecute(): Boolean;
+    function DoSaveAsExecute(pFile: TLuaEditBasicTextFile): Boolean;
     function DoNewTextFileExecute(): Boolean;
     function DoNewMacroExecute(): Boolean;
     function DoNewGUIFormExecute(): Boolean;
@@ -598,7 +600,7 @@ type
     function DoShowGUIControlsExecute(): Boolean;
     function DoShowCallStackExecute(): Boolean;
     function DoShowLuaStackExecute(): Boolean;
-    function DoShowLuaOutputExecute(): Boolean;
+    function DoShowLuaConsoleExecute(): Boolean;
     function DoShowLuaGlobalsExecute(): Boolean;
     function DoShowLuaLocalsExecute(): Boolean;
     function DoShowRingsExecute(): Boolean;
@@ -641,12 +643,12 @@ type
     function DoActiveSelPrjExecute(): Boolean;
     function DoPrintExecute(): Boolean;
     function DoCloseExecute(): Boolean;
-    function DoSaveExecute(): Boolean;
+    function DoSaveExecute(pFile: TLuaEditBasicTextFile): Boolean;
     function DoRemoteSessionExecute(): Boolean;
   end;
 
 const
-  _LuaEditVersion = '3.0.3a';
+  _LuaEditVersion = '3.0.4';
 
 var
   frmLuaEditMain: TfrmLuaEditMain;
@@ -706,8 +708,8 @@ var
   //Debugger variables
   LDebug: Plua_State;
   FirstClickPos: TBufferCoord;
-  lstLocals: TStringList;
-  lstGlobals: TStringList;
+  lstLocals: TList;
+  ltGlobals: TLuaTable;
   lstStack: TStringList;
   lstLuaStack: TStringList;
   IsCompiledComplete: Boolean;
@@ -729,10 +731,11 @@ var
   pRSock: TSocket;
 
 // Misc functions
-procedure CallRemoteHookFunc(pSock: TSocket);
+function GetLocal(Key: String): TLuaVariable;
 procedure DoLuaStdoutEx(F, S: PChar; L, N: Integer);
 function LocalOutput(L: PLua_State): Integer; cdecl;
 procedure HookCaller(L: Plua_State; AR: Plua_Debug); cdecl;
+procedure CallRemoteHookFunc(pSock: TSocket);
 
 function ParamStrEx(Index: Integer; CommandLine: PChar; ExeName: PChar): PChar; cdecl; external 'LuaEditSys.dll';
 function ParamCountEx(CommandLine: PChar): Integer; cdecl; external 'LuaEditSys.dll';
@@ -743,15 +746,519 @@ implementation
 uses
   LuaVirtualTrees, LuaSyntax, Search, Replace, ReplaceQuerry, GotoLine, About,
   ProjectTree, Stack, Watch, Grids, AddToPrj, EditorSettings,
-  PrjSettings, RemFromPrj, ErrorLookup, LuaStack, PrintSetup,
-  Math, Contributors, LuaOutput, Breakpoints, LuaGlobals,
+  PrjSettings, ErrorLookup, LuaStack, PrintSetup,
+  Math, Contributors, LuaConsole, Breakpoints, LuaGlobals,
   LuaLocals, LuaEditMessages, ExSaveExit, AsciiTable, ReadOnlyMsgBox,
   Rings, JvOutlookBar, SynEditTextBuffer, FunctionList,
   JvDockSupportControl, InternalBrowser, FindInFiles, SIFReport,
   FindWindow1, FindWindow2, UploadFiles, Profiler, ComponentList, GUID,
-  MacroManager, GUIInspector, GUIControls, GUIFormType, ConvertPath;
+  MacroManager, GUIInspector, GUIControls, GUIFormType, ConvertPath,
+  ComObj;
 
 {$R *.dfm}
+
+///////////////////////////////////////////////////////////////////
+// Misc functions
+///////////////////////////////////////////////////////////////////
+
+// Get a lua local from the lstLocals global variable...
+function GetLocal(Key: String): TLuaVariable;
+var
+  bFound: Boolean;
+  x: Integer;
+begin
+  Result := nil;
+  bFound := False;
+  x := 0;
+
+  while ((not bFound) and (x < lstLocals.Count)) do
+  begin    
+    if TLuaVariable(lstLocals.Items[x]).Name = Key then
+    begin
+      Result := TLuaVariable(lstLocals.Items[x]);
+      bFound := True;
+    end
+    else
+      Inc(x);
+  end;
+end;
+
+// stdout extended function for lua_print and lua_io_write override
+procedure DoLuaStdoutEx(F, S: PChar; L, N: Integer);
+const
+  CR = #$0D;
+  LF = #$0A;
+  CRLF = CR + LF;
+begin
+  frmLuaConsole.Put(F, StringReplace(S, LF, CRLF, [rfReplaceAll]), L);
+end;
+
+// Handle localy lua print to stdout
+function LocalOutput(L: PLua_State): Integer; cdecl;
+begin
+  // Prints out here!
+  lua_print(L);
+  Result := 0;
+end;
+
+// Function used for lua call hooks (localy)
+procedure HookCaller(L: Plua_State; AR: Plua_Debug); cdecl;
+begin
+  frmLuaEditMain.CallHookFunc(L, AR);
+end;
+
+// Function used for lua call hooks (remotely)
+procedure CallRemoteHookFunc(pSock: TSocket);
+var
+  sStackString: String;
+  x, Status: Integer;
+  BtnInfos: Integer;
+  Answer, CaretY: Integer;
+  Len, ItemCount: Integer;
+  AR: lua_Debug;
+  DbgBuffer: array[0..5000] of char;
+  DbgString: String;
+  DbgInt: Integer;
+  DbgLen: Integer;
+  Buffer: array[0..5000] of char;
+begin
+  if StopPressed then
+  begin
+    Answer := 1;
+    StopPressed := False;
+    TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).DebugInfos.iCurrentLineDebug := -1;
+  end
+  else
+    Answer := 0;
+
+  //sending Stop button status
+  Status := send(pSock, Answer, SizeOf(Answer), 0);
+  if Status <> SizeOf(Answer) then
+    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the stop button status');
+
+  //sending Pause button status
+  if PausePressed then
+    Answer := 1
+  else
+    Answer := 0;
+    
+  Status := send(pSock, Answer, SizeOf(Answer), 0);
+  if Status <> SizeOf(Answer) then
+    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the pause button status');
+
+  //sending RunToCursor button status
+  if RunToCursorPressed then
+    Answer := 1
+  else
+    Answer := 0;
+
+  Status := send(pSock, Answer, SizeOf(Answer), 0);
+  if Status <> SizeOf(Answer) then
+    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the RunToCursor button status');
+
+  //receiving the lua_debug structure
+  Status := recv(pSock, DbgInt, SizeOf(DbgInt), 0);
+  if Status <> SizeOf(DbgInt) then
+    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
+
+  // - 1 because of the lua debug bug!!!
+  AR.currentline := DbgInt - 1;
+
+  Status := recv(pSock, DbgInt, SizeOf(DbgInt), 0);
+  if Status <> SizeOf(DbgInt) then
+    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
+
+  AR.event := DbgInt;
+
+  Status := recv(pSock, DbgInt, SizeOf(DbgInt), 0);
+  if Status <> SizeOf(DbgInt) then
+    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
+
+  AR.i_ci := DbgInt;
+
+  Status := recv(pSock, DbgInt, SizeOf(DbgInt), 0);
+  if Status <> SizeOf(DbgInt) then
+    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
+
+  AR.linedefined := DbgInt;
+
+  Status := recv(pSock, DbgInt, SizeOf(DbgInt), 0);
+  if Status <> SizeOf(DbgInt) then
+    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
+
+  AR.nups := DbgInt;
+
+  FillChar(DbgBuffer, 5000, 0);
+  DbgString := '';
+  DbgLen := 0;
+
+  Status := recv(pSock, DbgLen, SizeOf(DbgLen), 0);
+  if Status <> SizeOf(DbgLen) then
+    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
+
+  Status := recv(pSock, DbgBuffer, DbgLen, 0);
+  if Status <> DbgLen then
+    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
+
+  DbgString := DbgBuffer;
+  if DbgString = '@@LUA_TNIL@@' then
+    AR.name := nil
+  else
+    AR.name := PChar(DbgString); 
+
+  FillChar(DbgBuffer, 5000, 0);
+  DbgString := '';
+  DbgLen := 0;
+
+  Status := recv(pSock, DbgLen, SizeOf(DbgLen), 0);
+  if Status <> SizeOf(DbgLen) then
+    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
+
+  Status := recv(pSock, DbgBuffer, DbgLen, 0);
+  if Status <> DbgLen then
+    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
+
+  DbgString := DbgBuffer;
+  if DbgString = '@@LUA_TNIL@@' then
+    AR.namewhat := nil
+  else
+    AR.namewhat := PChar(DbgString);
+
+  FillChar(DbgBuffer, 5000, 0);
+  DbgString := '';
+  DbgLen := 0;
+
+  Status := recv(pSock, DbgLen, SizeOf(DbgLen), 0);
+  if Status <> SizeOf(DbgLen) then
+    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
+
+  Status := recv(pSock, DbgBuffer, DbgLen, 0);
+  if Status <> DbgLen then
+    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
+
+  DbgString := DbgBuffer;
+  if DbgString = '@@LUA_TNIL@@' then
+    AR.short_src := ''
+  else
+    StrPCopy(AR.short_src, DbgString[1]);
+
+  FillChar(DbgBuffer, 5000, 0);
+  DbgString := '';
+  DbgLen := 0;
+
+  Status := recv(pSock, DbgLen, SizeOf(DbgLen), 0);
+  if Status <> SizeOf(DbgLen) then
+    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
+
+  Status := recv(pSock, DbgBuffer, DbgLen, 0);
+  if Status <> DbgLen then
+    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
+
+  DbgString := DbgBuffer;
+  if DbgString = '@@LUA_TNIL@@' then
+    AR.source := nil
+  else
+    AR.source := PChar(DbgString);
+
+  FillChar(DbgBuffer, 5000, 0);
+  DbgString := '';
+  DbgLen := 0;
+
+  Status := recv(pSock, DbgLen, SizeOf(DbgLen), 0);
+  if Status <> SizeOf(DbgLen) then
+    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
+
+  Status := recv(pSock, DbgBuffer, DbgLen, 0);
+  if Status <> DbgLen then
+    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
+
+  DbgString := DbgBuffer;
+  if DbgString = '@@LUA_TNIL@@' then
+    AR.what := nil
+  else
+    AR.what := PChar(DbgString);
+
+  //Sending Current line informations...
+  if TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).DebugInfos.IsBreakPointLine(AR.currentline) then
+  begin
+    Answer := 1;
+    frmLuaEditMain.Running := False;
+    WaitInCallLevel := -1;
+  end
+  else if FirstLineStop then
+  begin
+    FirstLineStop := False;
+    Answer := 1;
+    frmLuaEditMain.Running := False;
+    WaitInCallLevel := -1;
+  end
+  else
+    Answer := 0;
+
+  Status := send(pSock, Answer, SizeOf(Answer), 0);
+  if Status <> SizeOf(Answer) then
+    ELuaEditException.Create('Remote Debug Failed: The operation failed while sending Current line informations');
+
+  //sending Caret Y...
+  CaretY := TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).synUnit.CaretY;
+  Status := send(pSock, CaretY, SizeOf(CaretY), 0);
+  if Status <> SizeOf(CaretY) then
+    raise ELuaEditException.Create('Remote Debug Failed: The opertion failed while sending the caret y position');
+
+  if ((RunToCursorPressed = True) and (AR.currentline = TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).synUnit.CaretY)) then
+  begin
+    RunToCursorPressed := False;
+    frmLuaEditMain.Running := False;
+    WaitInCallLevel := -1;
+  end
+  else if ((RunToCursorPressed = True) and not frmLuaEditMain.Running) then
+  begin
+    frmLuaEditMain.Running := True;
+  end;
+
+  if (not frmLuaEditMain.Running and (StopPressed = False)) then
+  begin
+    frmStack.lstCallStack.Items.Assign(Main.lstStack);
+    frmStack.lstCallStack.Refresh;
+    lstLuaStack.Clear;
+
+    //receiving item numbers...
+    Status := recv(pSock, ItemCount, SizeOf(ItemCount), 0);
+    if Status <> SizeOf(ItemCount) then
+      raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the number of item for the lua stack');
+
+    //receiving items values
+    for x := 0 to ItemCount - 1 do
+    begin
+      FillChar(Buffer, SizeOf(Buffer), 0);
+      Len := 0;
+
+      Status := recv(pSock, Len, SizeOf(Len), 0);
+      if Status <> SizeOf(Len) then
+        raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the length of an item value for the lua stack');
+
+      Status := recv(pSock, Buffer, Len, 0);
+      if Status <> Len then
+        raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the value of an item for the lua stack');
+
+      lstLuaStack.Add(Buffer);
+    end;
+
+    frmLuaStack.lstLuaStack.Items.Assign(Main.lstLuaStack);
+    frmLuaStack.lstLuaStack.Refresh;
+  end;
+
+  Case AR.event of
+    LUA_HOOKCALL:
+    begin
+      if AR.name <> nil then
+      begin
+        //receiving sStackString...
+        FillChar(Buffer, SizeOf(Buffer), 0);
+        Len := 0;
+
+        Status := recv(pSock, Len, SizeOf(Len), 0);
+        if Status <> SizeOf(Len) then
+          raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the length of the sStackString value');
+
+        Status := recv(pSock, Buffer, Len, 0);
+        if Status <> Len then
+          raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the sStackString value');
+
+        sStackString := Buffer;
+
+        lstStack.Add(sStackString);
+      end;
+      Inc(CallLevel);
+    end;
+    LUA_HOOKRET:
+    begin
+      if AR.name <> nil then
+      begin
+        lstStack.Delete(lstStack.Count - 1);
+        StepIntoPressed := False;
+      end;
+      Dec(CallLevel);
+    end;
+    LUA_HOOKLINE:
+    begin
+      if ((WaitInCallLevel <> -1) and (PausePressed = False)) then
+      begin
+        if CallLevel > WaitInCallLevel then
+        begin
+          Exit;
+        end
+        else
+        begin
+          WaitInCallLevel := -1;
+        end;
+      end;
+      
+      if (not frmLuaEditMain.Running or (PausePressed = True)) then
+      begin
+        TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).synUnit.GotoLineAndCenter(AR.currentline);
+        TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).DebugInfos.iCurrentLineDebug := AR.currentline;
+        TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
+        frmStack.lstCallStack.Items.Assign(Main.lstStack);
+        lstLuaStack.Clear;
+        lstLocals.Clear;
+        ltGlobals.Clear;
+
+        //receiving items numbers...
+        Status := recv(pSock, ItemCount, SizeOf(ItemCount), 0);
+        if Status <> SizeOf(ItemCount) then
+          raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the number of item for the lua stack');
+
+        //receiving items values
+        for x := 0 to ItemCount - 1 do
+        begin
+          FillChar(Buffer, SizeOf(Buffer), 0);
+          Len := 0;
+
+          Status := recv(pSock, Len, SizeOf(Len), 0);
+          if Status <> SizeOf(Len) then
+            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the length of an item value for the lua stack');
+
+          Status := recv(pSock, Buffer, Len, 0);
+          if Status <> Len then
+            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the value of an item for the lua stack');
+
+          lstLuaStack.Add(Buffer);
+        end;
+
+        //receiving locals numbers...
+        Status := recv(pSock, ItemCount, SizeOf(ItemCount), 0);
+        if Status <> SizeOf(ItemCount) then
+          raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the number of locals to get');
+
+        //receiving locals values
+        for x := 0 to ItemCount - 1 do
+        begin
+          FillChar(Buffer, SizeOf(Buffer), 0);
+          Len := 0;
+
+          Status := recv(pSock, Len, SizeOf(Len), 0);
+          if Status <> SizeOf(Len) then
+            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the length of a local value');
+
+          Status := recv(pSock, Buffer, Len, 0);
+          if Status <> Len then
+            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the value of a local');
+
+          /////////////////////////////////////////////////////////////////////////////////////////////////////
+          // WARNING: to part of the function is to be reviewed when remote debugging will be available
+          /////////////////////////////////////////////////////////////////////////////////////////////////////
+          //lstLocals.Add(Buffer);
+        end;
+
+        //receiving globals numbers...
+        Status := recv(pSock, ItemCount, SizeOf(ItemCount), 0);
+        if Status <> SizeOf(ItemCount) then
+          raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the number of globals to get');
+
+        //receiving globals values
+        for x := 0 to ItemCount - 1 do
+        begin
+          FillChar(Buffer, SizeOf(Buffer), 0);
+          Len := 0;
+
+          Status := recv(pSock, Len, SizeOf(Len), 0);
+          if Status <> SizeOf(Len) then
+            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the length of a global value');
+
+          Status := recv(pSock, Buffer, Len, 0);
+          if Status <> Len then
+            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the value of a global');
+
+          /////////////////////////////////////////////////////////////////////////////////////////////////////
+          // WARNING: to part of the function is to be reviewed when remote debugging will be available
+          /////////////////////////////////////////////////////////////////////////////////////////////////////
+          //lstGlobals.Add(Buffer);
+        end;
+
+        frmLuaStack.lstLuaStack.Items.Assign(Main.lstLuaStack);
+
+        if PausePressed then
+        begin
+          frmLuaEditMain.Running := False;
+          StepOverPressed := False;
+          StepIntoPressed := False;
+          PlayPressed := False;
+          PausePressed := False;
+        end;
+
+        //Waiting for user action...
+        while ((StepOverPressed = False) and (StepIntoPressed = False) and (PlayPressed = False) and (StopPressed = False)) do
+        begin
+          Application.ProcessMessages;
+          Sleep(20);
+        end;
+
+        //Send pressed button informations
+        if StepOverPressed then
+        begin
+          BtnInfos := LUA_DBGSTEPOVER;
+          Status := send(pSock, BtnInfos, SizeOf(BtnInfos), 0);
+          if Status <> SizeOf(BtnInfos) then
+            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the pressed button informations');
+        end
+        else if StepIntoPressed then
+        begin
+          BtnInfos := LUA_DBGSTEPINTO;
+          Status := send(pSock, BtnInfos, SizeOf(BtnInfos), 0);
+          if Status <> SizeOf(BtnInfos) then
+            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the pressed button informations');
+        end
+        else if PlayPressed then
+        begin
+          BtnInfos := LUA_DBGPLAY;
+          Status := send(pSock, BtnInfos, SizeOf(BtnInfos), 0);
+          if Status <> SizeOf(BtnInfos) then
+            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the pressed button informations');
+        end
+        else if StopPressed then
+        begin
+          BtnInfos := LUA_DBGSTOP;
+          Status := send(pSock, BtnInfos, SizeOf(BtnInfos), 0);
+          if Status <> SizeOf(BtnInfos) then
+            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the pressed button informations');
+        end;
+
+        if HasChangedWhileCompiled then
+        begin
+          if Application.MessageBox('Source has been modified. Recompile?', 'LuaEdit', MB_YESNO+MB_ICONQUESTION) = IDYES then
+          begin
+            Answer := 1;
+            StopPressed := True;
+          end
+          else
+          begin
+            Answer := 0;
+            HasChangedWhileCompiled := False;
+          end;
+        end
+        else
+          Answer := 0;
+
+        //sending changing status...
+        Status := send(pSock, Answer, SizeOf(Answer), 0);
+        if Status <> SizeOf(Answer) then
+          ELuaEditException.Create('Remote Debug Failed: The operation failed while sending changing status');
+
+        if StepOverPressed = True then
+        begin
+          WaitInCallLevel := CallLevel;
+          TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).DebugInfos.iCurrentLineDebug := -1;
+        end;
+
+        StepOverPressed := False;
+        StepIntoPressed := False;
+        PlayPressed := False;
+        PausePressed := False;
+      end;
+    end;
+  end;
+end;
 
 ///////////////////////////////////////////////////////////////////
 // TfrmLuaEditMain class
@@ -761,6 +1268,8 @@ var
   AFont: TFont;
   pReg: TRegistry;
 begin
+  
+
   // Initialize important data
   LuaEditDebugFilesTypeSet := [otLuaEditUnit, otLuaEditMacro];
   LuaEditTextFilesTypeSet := [otLuaEditUnit, otLuaEditMacro, otTextFile];
@@ -810,10 +1319,8 @@ begin
   LookupList := TStringList.Create;
   EditorColors := TList.Create;
   CallStack := TList.Create;
-  lstLocals := TStringList.Create;
-  lstLocals.CaseSensitive := True;
-  lstGlobals := TStringList.Create;
-  lstGlobals.CaseSensitive := True;
+  lstLocals := TList.Create;
+  ltGlobals := TLuaTable.Create('_G', '');
   lstStack := TStringList.Create;
   lstLuaStack := TStringList.Create;
   LuaProjects := TList.Create;
@@ -833,7 +1340,7 @@ begin
 
   // Create dockable forms...
   frmProjectTree := TfrmProjectTree.Create(Self);
-  frmLuaOutput := TfrmLuaOutput.Create(Self);
+  frmLuaConsole := TfrmLuaConsole.Create(Self);
   frmLuaStack := TfrmLuaStack.Create(Self);
   frmWatch := TfrmWatch.Create(Self);
   frmStack := TfrmStack.Create(Self);
@@ -854,7 +1361,7 @@ begin
   imlDock.GetIcon(0, frmWatch.Icon);
   imlDock.GetIcon(1, frmStack.Icon);
   imlDock.GetIcon(2, frmLuaStack.Icon);
-  imlDock.GetIcon(3, frmLuaOutput.Icon);
+  imlDock.GetIcon(3, frmLuaConsole.Icon);
   imlDock.GetIcon(7, frmLuaGlobals.Icon);
   imlDock.GetIcon(8, frmLuaLocals.Icon);
   imlDock.GetIcon(9, frmLuaEditMessages.Icon);
@@ -917,7 +1424,7 @@ begin
   lstStack.Free;
   lstLuaStack.Free;
   lstLocals.Free;
-  lstGlobals.Free;
+  ltGlobals.Free;
   EditorColors.Free;
   LookupList.Free;
   CallStack.Free;
@@ -1016,7 +1523,7 @@ var
           if not Assigned(FileIsInTree(Files.Strings[z])) then
           begin
             Result := True;
-            pFile := TLuaEditBasicTextFile(AddFileInProject(Files.Strings[z], False, LuaSingleFiles));
+            pFile := LuaSingleFiles.AddFile(Files.Strings[z], False);
             pFile.IsLoaded := True;
             AddFileInTab(pFile);
             MonitorFileToRecent(Files.Strings[z]);
@@ -1164,30 +1671,6 @@ begin
   end;
 
   Result := sFileSuffix+IntToStr(IncFileNumber);
-end;
-
-function TfrmLuaEditMain.AddFileInProject(sFilePath: String; IsNew: Boolean; pPrj: TLuaEditProject): TLuaEditFile;
-var
-  pFile: TLuaEditFile;
-begin
-  if ExtractFileExt(sFilePath) = '.gui' then
-    pFile := TLuaEditGUIForm.Create(sFilePath)
-  else if ExtractFileExt(sFilePath) = '.lua' then
-    pFile := TLuaEditBasicTextFile(TLuaEditUnit.Create(sFilePath))
-  else if ExtractFileExt(sFilePath) = '.lmc' then
-    pFile := TLuaEditBasicTextFile(TLuaEditMacro.Create(sFilePath))
-  else
-    pFile := TLuaEditBasicTextFile.Create(sFilePath);
-
-  pFile.PrjOwner := pPrj;
-  pFile.IsNew := IsNew;
-
-  if pPrj.Name = '[@@SingleUnits@@]' then
-    pPrj.lstUnits.Insert(pPrj.lstUnits.Count, pFile)
-  else
-    pPrj.lstUnits.Add(pFile);
-
-  Result := pFile;
 end;
 
 // Add root to the changes notifier
@@ -1386,54 +1869,52 @@ begin
   DoExitExecute;
 end;
 
-function TfrmLuaEditMain.DoSaveExecute(): Boolean;
-var
-  pLuaUnit: TLuaEditUnit;
+function TfrmLuaEditMain.DoSaveExecute(pFile: TLuaEditBasicTextFile): Boolean;
 begin
   Result := False;
 
-  if Assigned(frmLuaEditMain.jvUnitBar.SelectedTab) then
+  if Assigned(pFile) then
   begin
-    pLuaUnit := TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data);
-
-    if Assigned(pLuaUnit) then
-    begin
-      if SaveUnitsInc then
-        Result := pLuaUnit.SaveInc(pLuaUnit.Path)
-      else
-        Result := pLuaUnit.Save(pLuaUnit.Path);
-    end;
+    if SaveUnitsInc then
+      Result := pFile.SaveInc(pFile.Path)
+    else
+      Result := pFile.Save(pFile.Path);
   end;
 end;
 
 procedure TfrmLuaEditMain.actSaveExecute(Sender: TObject);
+var
+  pFile: TLuaEditBasicTextFile;
 begin
-  DoSaveExecute;
+  if Assigned(frmLuaEditMain.jvUnitBar.SelectedTab) then
+  begin
+    pFile := TLuaEditBasicTextFile(frmLuaEditMain.jvUnitBar.SelectedTab.Data);
+    DoSaveExecute(pFile);
+  end;
 end;
 
-function TfrmLuaEditMain.DoSaveAsExecute(): Boolean;
-var
-  pLuaUnit: TLuaEditUnit;
+function TfrmLuaEditMain.DoSaveAsExecute(pFile: TLuaEditBasicTextFile): Boolean;
 begin
   Result := False;
 
-  if Assigned(frmLuaEditMain.jvUnitBar.SelectedTab) then
+  if Assigned(pFile) then
   begin
-    pLuaUnit := TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data);
-
-    if Assigned(pLuaUnit) then
-    begin
-      if SaveUnitsInc then
-        Result := pLuaUnit.SaveInc(pLuaUnit.Path, False, True)
-      else
-        Result := pLuaUnit.Save(pLuaUnit.Path, False, True);
-    end;
+    if SaveUnitsInc then
+      Result := pFile.SaveInc(pFile.Path, False, True)
+    else
+      Result := pFile.Save(pFile.Path, False, True);
   end;
 end;
 
 procedure TfrmLuaEditMain.actSaveAsExecute(Sender: TObject);
+var
+  pFile: TLuaEditBasicTextFile;
 begin
-  DoSaveAsExecute;
+  if Assigned(frmLuaEditMain.jvUnitBar.SelectedTab) then
+  begin
+    pFile := TLuaEditBasicTextFile(frmLuaEditMain.jvUnitBar.SelectedTab.Data);
+    DoSaveAsExecute(pFile);
+  end;
 end;
 
 procedure TfrmLuaEditMain.CheckButtons;
@@ -1571,7 +2052,7 @@ var
   pLuaMacro: TLuaEditMacro;
 begin
   Result := True;
-  pLuaMacro := TLuaEditMacro(AddFileInProject(GetNewFileName('Macro') + '.lmc', True, LuaSingleFiles));
+  pLuaMacro := TLuaEditMacro(LuaSingleFiles.AddFile(GetNewFileName('Macro') + '.lmc', True));
   pLuaMacro.IsLoaded := True;
   AddFileInTab(pLuaMacro);
   frmProjectTree.BuildProjectTree;
@@ -1588,7 +2069,7 @@ var
   pLuaTextFile: TLuaEditBasicTextFile;
 begin
   Result := True;
-  pLuaTextFile := TLuaEditBasicTextFile(AddFileInProject(GetNewFileName('Text') + '.txt', True, LuaSingleFiles));
+  pLuaTextFile := TLuaEditBasicTextFile(LuaSingleFiles.AddFile(GetNewFileName('Text') + '.txt', True));
   pLuaTextFile.IsLoaded := True;
   AddFileInTab(pLuaTextFile);
   frmProjectTree.BuildProjectTree;
@@ -1610,14 +2091,14 @@ begin
   Application.CreateForm(TfrmGUIFormType, frmGUIFormType);
   frmGUIFormType.ShowModal;
   sFileName := GetNewFileName('Form') + '.gui';
-  pLuaEditGUIForm := TLuaEditGUIForm(AddFileInProject(sFileName, True, LuaSingleFiles));
+  pLuaEditGUIForm := TLuaEditGUIForm(LuaSingleFiles.AddFile(sFileName, True));
   pLuaEditGUIForm.IsLoaded := True;
 
   // Created associated script according to user's type
   if frmGUIFormType.optLuaUnit.Checked then
-    pLuaEditGUIForm.LinkedDebugFile := TLuaEditUnit(AddFileInProject(ChangeFileExt(sFileName, '.lua'), True, LuaSingleFiles))
+    pLuaEditGUIForm.LinkedDebugFile := TLuaEditUnit(LuaSingleFiles.AddFile(ChangeFileExt(sFileName, '.lua'), True))
   else
-    pLuaEditGUIForm.LinkedDebugFile := TLuaEditMacro(AddFileInProject(ChangeFileExt(sFileName, '.lmc'), True, LuaSingleFiles));
+    pLuaEditGUIForm.LinkedDebugFile := TLuaEditMacro(LuaSingleFiles.AddFile(ChangeFileExt(sFileName, '.lmc'), True));
 
   // Complete cycling reference
   pLuaEditGUIForm.LinkedDebugFile.LinkedGUIForm := pLuaEditGUIForm;
@@ -1646,7 +2127,7 @@ var
   pLuaUnit: TLuaEditUnit;
 begin
   Result := True;
-  pLuaUnit := TLuaEditUnit(AddFileInProject(GetNewFileName('Unit') + '.lua', True, LuaSingleFiles));
+  pLuaUnit := TLuaEditUnit(LuaSingleFiles.AddFile(GetNewFileName('Unit') + '.lua', True));
   pLuaUnit.IsLoaded := True;
   AddFileInTab(pLuaUnit);
   frmProjectTree.BuildProjectTree;
@@ -1673,7 +2154,7 @@ begin
   ActiveProject := pNewLuaPrj;
 
   Result := True;
-  pLuaUnit := TLuaEditUnit(AddFileInProject(GetNewFileName('Unit') + '.lua', True, pNewLuaPrj));
+  pLuaUnit := TLuaEditUnit(pNewLuaPrj.AddFile(GetNewFileName('Unit') + '.lua', True));
   pLuaUnit.IsLoaded := True;
   AddFileInTab(pLuaUnit);
   frmProjectTree.BuildProjectTree;
@@ -1779,16 +2260,19 @@ end;
 function TfrmLuaEditMain.ClosingUnit(): Boolean;
 var
   Answer, x: Integer;
+  pFile: TLuaEditBasicTextFile;
 begin
   // Initialize result to true
   Result := True;
+  // Retrieve file class from tab
+  pFile := TLuaEditBasicTextFile(jvUnitBar.SelectedTab.Data);
 
   // Prompt user for closing unit or not
-  if ((TLuaEditDebugFile(jvUnitBar.SelectedTab.Data).HasChanged) or (TLuaEditDebugFile(jvUnitBar.SelectedTab.Data).IsNew)) then
+  if ((pFile.HasChanged) or (pFile.IsNew)) then
   begin
-    Answer := Application.MessageBox(PChar('Do you want to save "'+TLuaEditUnit(jvUnitBar.SelectedTab.Data).Path+'"?'), 'LuaEdit', MB_YESNOCANCEL+MB_ICONQUESTION);
+    Answer := Application.MessageBox(PChar('Do you want to save "'+pFile.DisplayPath+'"?'), 'LuaEdit', MB_YESNOCANCEL+MB_ICONQUESTION);
     if Answer = IDYES then
-      Result := DoSaveExecute
+      Result := DoSaveExecute(pFile)
     else if Answer = IDCANCEL then
     begin
       Result := False;
@@ -1809,9 +2293,9 @@ begin
   end;
 
   // Remove file from global opened file list
-  LuaOpenedFiles.Remove(jvUnitBar.SelectedTab.Data);
-  TLuaEditDebugFile(jvUnitBar.SelectedTab.Data).SynUnit.Visible := False;
-  TLuaEditDebugFile(jvUnitBar.SelectedTab.Data).AssociatedTab := nil;
+  LuaOpenedFiles.Remove(pFile);
+  pFile.SynUnit.Visible := False;
+  pFile.AssociatedTab := nil;
 
   // Reinitialize stuff...
   CheckButtons;
@@ -2112,7 +2596,7 @@ begin
   actShowWatchList.Checked := frmWatch.Visible;
   actShowCallStack.Checked := frmStack.Visible;
   actShowLuaStack.Checked := frmLuaStack.Visible;
-  actShowLuaOutput.Checked := frmLuaOutput.Visible;
+  actShowLuaConsole.Checked := frmLuaConsole.Visible;
   actShowBreakpoints.Checked := frmBreakpoints.Visible;
   actShowLuaGlobals.Checked := frmLuaGlobals.Visible;
   actShowLuaLocals.Checked := frmLuaLocals.Visible;
@@ -2152,8 +2636,8 @@ begin
     actPrjSettings.Enabled := ((pData.pLuaEditFile = ActiveProject) and Assigned(ActiveProject));
     frmProjectTree.UnloadFileProject1.Enabled := (pNode.Parent = frmProjectTree.vstProjectTree.RootNode); //(((pData.pLuaEditFile.FileType in LuaEditTextFilesTypeSet) and (pNode.Parent = frmProjectTree.vstProjectTree.RootNode)) or (pData.pLuaEditFile.FileType = otLuaEditProject));
 
-    if pData.pLuaEditFile.FileType = otLuaEditProject then
-      actRemoveFromPrj.Enabled := ((pData.pLuaEditFile = ActiveProject) and Assigned(ActiveProject) and (TLuaEditProject(pData.pLuaEditFile).lstUnits.Count <> 0))
+    if pData.pLuaEditFile.FileType in LuaEditTextFilesTypeSet then
+      actRemoveFromPrj.Enabled := ((Assigned(TLuaEditFile(pData.pLuaEditFile).PrjOwner))) and ((TLuaEditFile(pData.pLuaEditFile).PrjOwner.Name <> '[@@SingleUnits@@]') and (TLuaEditProject(TLuaEditFile(pData.pLuaEditFile).PrjOwner).lstUnits.Count <> 0))
     else
       actRemoveFromPrj.Enabled := False;
   end
@@ -2387,21 +2871,21 @@ begin
   DoShowLuaStackExecute;
 end;
 
-function TfrmLuaEditMain.DoShowLuaOutputExecute(): Boolean;
+function TfrmLuaEditMain.DoShowLuaConsoleExecute(): Boolean;
 begin
   Result := True;
-  actShowLuaOutput.Checked := not actShowLuaOutput.Checked;
-  frmLuaOutput.Visible := actShowLuaOutput.Checked;
+  actShowLuaConsole.Checked := not actShowLuaConsole.Checked;
+  frmLuaConsole.Visible := actShowLuaConsole.Checked;
 
-  if actShowLuaOutput.Checked then
-    ShowDockForm(frmLuaOutput)
+  if actShowLuaConsole.Checked then
+    ShowDockForm(frmLuaConsole)
   else
-    HideDockForm(frmLuaOutput);
+    HideDockForm(frmLuaConsole);
 end;
 
-procedure TfrmLuaEditMain.actShowLuaOutputExecute(Sender: TObject);
+procedure TfrmLuaEditMain.actShowLuaConsoleExecute(Sender: TObject);
 begin
-  DoShowLuaOutputExecute;
+  DoShowLuaConsoleExecute;
 end;
 
 function TfrmLuaEditMain.DoShowLuaGlobalsExecute(): Boolean;
@@ -2740,6 +3224,44 @@ begin
   end;
 end;
 
+function TfrmLuaEditMain.IsFileOpened(sFilePath: String): Boolean;
+var
+  x: Integer;
+  pFile: TLuaEditBasicTextFile;
+begin
+  Result := False;
+
+  for x := 0 to LuaOpenedFiles.Count - 1 do
+  begin
+    pFile := TLuaEditBasicTextFile(LuaOpenedFiles.Items[x]);
+    
+    if sFilePath = pFile.DisplayPath then
+    begin
+      Result := True;
+      Break;
+    end;
+  end;
+end;
+
+function TfrmLuaEditMain.GetOpenedFile(sFilePath: String): TLuaEditBasicTextFile;
+var
+  x: Integer;
+  pFile: TLuaEditBasicTextFile;
+begin
+  Result := nil;
+
+  for x := 0 to LuaOpenedFiles.Count - 1 do
+  begin                
+    pFile := TLuaEditBasicTextFile(LuaOpenedFiles.Items[x]);
+    
+    if sFilePath = pFile.DisplayPath then
+    begin
+      Result := pFile;
+      Break;
+    end;
+  end;
+end;
+
 function TfrmLuaEditMain.DoUndoExecute(): Boolean;
 begin
   Result := True;
@@ -2974,7 +3496,38 @@ function TfrmLuaEditMain.DoFindInFilesExecute(): Boolean;
 var
   Options: TSynSearchOptions;
   Index: Integer;
-  Ext: String;
+
+  function FileIsText(FileName : string) : boolean; 
+  var
+    MS :TMemoryStream;
+    BytesRead, i : integer;
+    FileChar : Char;
+    NonTextChars : set of char;
+  const
+    HT = #9;   // horizontal tab
+    LF = #10;  // line feed
+    FF = #12;  // form feed
+    CR = #13;  // carriage return
+    TextChars : set of char = [HT, LF, FF, CR, ' '..'~'];
+  begin
+    NonTextChars := [#0..#255] - TextChars;
+    Result := true;
+    MS := TMemoryStream.Create;
+    with MS do begin
+      LoadFromFile(FileName);
+      Seek(0, soFromBeginning);
+      BytesRead := Read(FileChar, 1);
+      while BytesRead > 0 do begin
+        if (FileChar in NonTextChars) then begin
+          Result := false;
+          Free;
+          Exit;
+        end;
+        BytesRead := Read(FileChar, 1);
+      end;{while BytesRead > 0}
+      Free;
+    end; {with MS do begin}
+  end;
 
   // Find all instances of the text in the given synedit control
   procedure FindTextInSynEdit(FileName, TextToFind: String; Output: Integer; SynEdit: TSynEdit; SynOptions: TSynSearchOptions);
@@ -3073,10 +3626,8 @@ var
       begin
         if (hSearchHandle.Attr and faDirectory) = 0 then
         begin
-          Ext := ExtractFileExt(FullPathName);
-
           // Make sure the file is a *.lua file
-          if (Ext = '.lua') or (Ext = '.lmc') or (Ext = '.txt') then
+          if FileIsText(FullPathName) then
           begin
             pTmpSynEdit := TSynEdit.Create(nil);
             pTmpSynEdit.Visible := False;
@@ -3777,11 +4328,6 @@ begin
   DoRunScriptExecute;
 end;
 
-procedure HookCaller(L: Plua_State; AR: Plua_Debug); cdecl;
-begin
-  frmLuaEditMain.CallHookFunc(L, AR);
-end;
-
 {The Lua debug library is calling us every time before executing AR.currentline.
 That means that the first line will get hook but only if AR.what='main' and
 AR.currentline=-1 and AR.event=0. It also means that it will call us on the last
@@ -3807,7 +4353,7 @@ var
 
     if (PrevFile <> NextFile) then
     begin
-      LuaEditDebugFile := TLuaEditDebugFile(FindUnitInTabsStr(PrevFile));
+      LuaEditDebugFile := TLuaEditDebugFile(GetOpenedFile(PrevFile));
 
       if Assigned(LuaEditDebugFile) then
         LuaEditDebugFile.DebugInfos.iCurrentLineDebug := -1;
@@ -4010,25 +4556,25 @@ begin
     end;
 
     // Open the file in LuaEdit if not already opened and if it does exists on the hdd
-    if not Assigned(FileIsInTree(sFileName)) then
+    pLuaEditBasicTextFile := GetOpenedFile(sFileName);
+
+    if not Assigned(pLuaEditBasicTextFile) then
     begin
       if FileExistsAbs(sFileName) then
       begin
         pLuaEditBasicTextFile := TLuaEditBasicTextFile.Create(sFileName);
-        pLuaEditBasicTextFile := TLuaEditBasicTextFile(frmLuaEditMain.AddFileInProject(sFileName, False, LuaSingleFiles));
+        pLuaEditBasicTextFile := TLuaEditBasicTextFile(LuaSingleFiles.AddFile(sFileName, False));
         pLuaEditBasicTextFile.IsLoaded := True;
         frmLuaEditMain.AddFileInTab(pLuaEditBasicTextFile);
         frmProjectTree.BuildProjectTree;
         frmLuaEditMain.CheckButtons;
-        Result := pLuaEditBasicTextFile;
       end;
     end
     else
-    begin
-      pLuaEditBasicTextFile := frmLuaEditMain.FindUnitInTabsStr(sFileName);
       frmLuaEditMain.jvUnitBar.SelectedTab := pLuaEditBasicTextFile.AssociatedTab;
-      Result := pLuaEditBasicTextFile;
-    end;
+
+    // Set the file as result
+    Result := pLuaEditBasicTextFile;
   finally
     // Jump to specified line if we found the unit
     if ((iLine > 0) and Assigned(Result)) then
@@ -4047,6 +4593,11 @@ begin
             HIGHLIGHT_BREAKLINE:  TLuaEditDebugFile(Result).DebugInfos.iCurrentLineDebug := iLine;
           end;
         end;
+      end
+      else if Result.FileType in LuaEditTextFilesTypeSet then
+      begin
+        if HighlightMode = HIGHLIGHT_SELECT then
+          SynEditSelectExactLineText(Result.SynUnit, iLine);
       end;
 
       Result.synUnit.Refresh;
@@ -4091,8 +4642,9 @@ end;
 // print local list and fill the list of locals
 procedure TfrmLuaEditMain.PrintLocal(L: Plua_State; Level: Integer = 0);
 begin
-  LuaLocalToStrings(L, frmLuaLocals.lstLocals.Items, MaxTablesSize, Level, MaxSubTablesLevel, CheckCyclicReferencing);
-  LuaLocalToStrings(L, lstLocals, MaxTablesSize, Level, MaxSubTablesLevel, CheckCyclicReferencing);
+//  LuaLocalToVariables(L, frmLuaLocals.lstLocals.Items, MaxTablesSize, Level, MaxSubTablesLevel, CheckCyclicReferencing);
+  LuaLocalToVariables(L, lstLocals, MaxTablesSize, Level, MaxSubTablesLevel, CheckCyclicReferencing);
+  frmLuaLocals.FillLocalsList(lstLocals);
 end;
 
 // print global list
@@ -4104,12 +4656,13 @@ begin
     Exit;
 
   LuaTableToVirtualTreeView(L, LUA_GLOBALSINDEX, frmLuaGlobals.vstGlobals, MaxTablesSize, MaxSubTablesLevel, CheckCyclicReferencing);
-  LuaGlobalToStrings(L, lstGlobals, MaxTablesSize, MaxSubTablesLevel, CheckCyclicReferencing);
+  LuaGlobalToVariables(L, ltGlobals, MaxTablesSize, MaxSubTablesLevel, CheckCyclicReferencing);
 end;
 
 // print watches list
 procedure TfrmLuaEditMain.PrintWatch(L: Plua_State);
 var
+  DummyVar: TLuaVariable;
   x, iLen: Integer;
   sSub, sValue, sLookup, sSubTable: String;
   lstTable: TStringList;
@@ -4229,6 +4782,12 @@ var
           end;
         end;
 
+        // Check if the two last characters are '()'. If so, that means it's a function
+        // and that its actual index is the name; not the name + '()'.
+        if Length(sName) >= 2 then
+          if ((sName[Length(sName) - 1] = '(') and (sName[Length(sName)] = ')')) then
+            sName := Copy(sName, 1, Length(sName) - 2);
+            
         pStrLst.Values[sName] := sValue;
         Inc(iPos);
       end;
@@ -4306,11 +4865,15 @@ begin
         else
           sLookup := pData.Name;
 
-        if lstLocals.Values[sLookup] <> '' then
-          sValue := lstLocals.Values[sLookup];
+        // Check in locals first...
+        DummyVar := GetLocal(sLookup);
+        if Assigned(DummyVar) then
+          sValue := DummyVar.Value;
 
-        if ((sValue = '') and (lstGlobals.Values[sLookup] <> '')) then
-          sValue := lstGlobals.Values[sLookup];
+        // Check in globals if not found in locals...
+        DummyVar := ltGlobals.GetAt(sLookup);
+        if ((sValue = '') and Assigned(DummyVar)) then
+          sValue := DummyVar.Value;
 
         if sValue = '' then
           sValue := 'nil';
@@ -4482,9 +5045,12 @@ var
     end;
 
     // Evaluate condition in temporary state now containing globals as locals of main debug state
-    if luaL_dostring(LuaStateTemp, PChar('return '+sCond)) = 0 then
-      Result := lua_toboolean(LuaStateTemp, -1);
-      
+    // NOTE: There is no need to pop the values since it's only done in a temporary state
+    if luaL_loadstring(LuaStateTemp, PChar('return '+sCond)) = 0 then
+      if lua_pcall(LuaStateTemp, 0, 1, 0) = 0 then
+        if lua_type(LuaStateTemp, -1) = LUA_TBOOLEAN then
+          Result := (lua_toboolean(LuaStateTemp, -1) = 1);
+
     lua_close(LuaStateTemp);
   end;
 
@@ -4493,14 +5059,22 @@ var
   begin
     Result := False;
 
-    if luaL_dostring(L, PChar('return '+sCond)) = 0 then
-      Result := lua_toboolean(L, -1);
-      
+    if luaL_loadstring(L, PChar('return '+sCond)) = 0 then
+    begin
+      if lua_pcall(L, 0, 1, 0) = 0 then
+        if lua_type(L, -1) = LUA_TBOOLEAN then
+          Result := (lua_toboolean(L, -1) = 1);
+
+      // Pop either the return value or the error message returned by lua_pcall
+      lua_pop(L, 1);
+    end;
+
+    // Pop either the function or the error message returned by luaL_loadstring
     lua_pop(L, 1);
   end;
 begin
   Result := False;
-  pLuaUnit := TLuaEditDebugFile(FindUnitInTabsStr(sFileName));
+  pLuaUnit := TLuaEditDebugFile(GetOpenedFile(sFileName));
 
   if Assigned(pLuaUnit) then
   begin
@@ -4514,7 +5088,7 @@ begin
         if BreakCondition <> '' then
         begin
           // Testing conditions for locals and globals (see comment above about those functions)
-          if LuaTestGlobals(LuaState, BreakCondition) or LuaTestLocals(LuaState, BreakCondition) then
+          if LuaTestLocals(LuaState, BreakCondition) or LuaTestGlobals(LuaState, BreakCondition) then
           begin
             // Breakpoint hit!!!
             Result := True;
@@ -4547,16 +5121,6 @@ end;
 function TfrmLuaEditMain.IsICI(ICI: Integer): Boolean;
 begin
   Result := (ICI <= PauseICI);
-end;
-
-// stdout extended function for lua_print and lua_io_write override
-procedure DoLuaStdoutEx(F, S: PChar; L, N: Integer);
-const
-  CR = #$0D;
-  LF = #$0A;
-  CRLF = CR + LF;
-begin
-  frmLuaOutput.Put(F, StringReplace(S, LF, CRLF, [rfReplaceAll]), L);
 end;
 
 // check if the given unit was modified
@@ -4758,9 +5322,9 @@ begin
         if ((pFile.HasChanged) or (pFile.IsNew)) then
         begin
           if pLuaProject.Name = '[@@SingleUnits@@]' then
-            frmExSaveExit.lstFiles.AddItem(ExtractFileExt(pFile.DisplayPath), pFile)
+            frmExSaveExit.lstFiles.AddItem(pFile.DisplayPath, pFile)
           else
-            frmExSaveExit.lstFiles.AddItem('     ' + ExtractFileExt(pFile.DisplayPath), pFile);
+            frmExSaveExit.lstFiles.AddItem('     ' + pFile.DisplayPath, pFile);
         end;
       end;
     end;
@@ -5007,6 +5571,7 @@ end;
 
 procedure TfrmLuaEditMain.synEditMouseCursor(Sender: TObject; const aLineCharPos: TBufferCoord; var aCursor: TCursor);
 var
+  DummyVar: TLuaVariable;
   sWord: String;
   pFile: TLuaEditBasicTextFile;
 begin
@@ -5033,24 +5598,20 @@ begin
               if sWord <> '' then
               begin
                 // Find the "local" value associated to that word if any
-                if lstLocals.Values[sWord] <> '' then
+                DummyVar := GetLocal(sWord);
+
+                // If not found in locals, we find the "global" value associated to that word if any
+                if not Assigned(DummyVar) then
+                  DummyVar := ltGlobals.GetAt(sWord);
+
+                if Assigned(DummyVar) then
                 begin
-                  if pFile.SynUnit.Hint <> sWord + ' = ' + lstLocals.Values[sWord] then
+                  if pFile.SynUnit.Hint <> sWord + '=' + DummyVar.Value then
                   begin
                     Application.CancelHint;
                   end;
 
-                  pFile.SynUnit.Hint := sWord + ' = ' + lstLocals.Values[sWord];
-                end
-                // Otherwise, we find the "global" value associated to that word if any
-                else if lstGlobals.Values[sWord] <> '' then
-                begin
-                  if pFile.SynUnit.Hint <> sWord + ' = ' + lstGlobals.Values[sWord] then
-                  begin
-                    Application.CancelHint;
-                  end;
-
-                  pFile.SynUnit.Hint := sWord + ' = ' + lstGlobals.Values[sWord];
+                  pFile.SynUnit.Hint := sWord + '=' + DummyVar.Value;
                 end
                 else
                   pFile.SynUnit.Hint := '';
@@ -5313,7 +5874,7 @@ begin
   begin
     if FilePathToAdd <> '' then
     begin
-      TLuaEditBasicTextFile(AddFileInProject(FilePathToAdd, False, ActiveProject)).IsLoaded := True;
+      TLuaEditBasicTextFile(ActiveProject.AddFile(FilePathToAdd, False)).IsLoaded := True;
       ActiveProject.HasChanged := True;
     end
     else
@@ -5322,7 +5883,7 @@ begin
       begin
         for x := 0 to frmAddToPrj.lstFiles.Count - 1 do
         begin
-          TLuaEditBasicTextFile(AddFileInProject(frmAddToPrj.lstFiles.Strings[x], False, ActiveProject)).IsLoaded := True;
+          TLuaEditBasicTextFile(ActiveProject.AddFile(frmAddToPrj.lstFiles.Strings[x], False)).IsLoaded := True;
           ActiveProject.HasChanged := True;
         end;
       end
@@ -5367,7 +5928,7 @@ begin
           end;
         end;
 
-        pFile := TLuaEditBasicTextFile(AddFileInProject('Unit'+IntToStr(NewUnit)+'.lua', True, ActiveProject));
+        pFile := TLuaEditBasicTextFile(ActiveProject.AddFile('Unit'+IntToStr(NewUnit)+'.lua', True));
         pFile.IsLoaded := True;
         AddFileInTab(pFile);
         ActiveProject.HasChanged := True;
@@ -5387,50 +5948,75 @@ end;
 function TfrmLuaEditMain.DoRemoveFromPrjExecute(pFileToRemove: TLuaEditFile): Boolean;
 var
   pFile: TLuaEditFile;
+  iAnswer: Integer;
+  bWasSaved: Boolean;
 begin
   Result := False;
-  frmRemoveFile.FillCombo(ActiveProject);
-
-  if Assigned(pFileToRemove) then
-  begin
-    if frmRemoveFile.ShowModal = mrOk then
-      pFile := TLuaEditFile(frmRemoveFile.cboUnit.Items.Objects[frmRemoveFile.cboUnit.ItemIndex]);
-  end
-  else
-    pFile := pFileToRemove;
+  pFile := pFileToRemove;
+  bWasSaved := False;
+  iAnswer := -1;
 
   if Assigned(pFile) then
   begin
     if ((pFile.HasChanged) or (pFile.IsNew)) then
     begin
-      if Application.MessageBox(PChar('Save changes to file "'+pFile.Path+'"?'), 'LuaEdit', MB_ICONQUESTION+MB_YESNO) = IDYES then
+      iAnswer := Application.MessageBox(PChar('Save changes to file "'+pFile.DisplayPath+'"?'), 'LuaEdit', MB_ICONQUESTION+MB_YESNOCANCEL);
+
+      if iAnswer = IDYES then
       begin
         if SaveUnitsInc then
-          TLuaEditBasicTextFile(pFile).SaveInc(pFile.Path)
+        begin
+          bWasSaved := TLuaEditBasicTextFile(pFile).SaveInc(pFile.Path);
+        end
         else
-          TLuaEditBasicTextFile(pFile).Save(pFile.Path);
+        begin
+          bWasSaved := TLuaEditBasicTextFile(pFile).Save(pFile.Path);
+        end;
+      end
+      else if iAnswer = IDNO then
+      begin
+        bWasSaved := True;
       end;
     end;
 
-    if LuaOpenedFiles.IndexOf(pFile) <> -1 then
+    // Make sure user didn't press the cancel button
+    if ((iAnswer <> IDCANCEL) and bWasSaved) then
     begin
-      if Assigned(TLuaEditBasicTextFile(pFile).AssociatedTab) then
-        TLuaEditBasicTextFile(pFile).AssociatedTab.Free;
+      // Remove file from the opened file global list if it's in there
+      if LuaOpenedFiles.IndexOf(pFile) <> -1 then
+      begin
+        if Assigned(TLuaEditBasicTextFile(pFile).AssociatedTab) then
+          TLuaEditBasicTextFile(pFile).AssociatedTab.Free;
 
-      LuaOpenedFiles.Remove(pFile);
+        LuaOpenedFiles.Remove(pFile);
+      end;
+
+      // Remove file from project, flag project as modified and rebuild the project tree
       Result := True;
+      ActiveProject.lstUnits.Remove(pFile);
+      pFile.Free;
+      ActiveProject.HasChanged := True;
+      frmProjectTree.BuildProjectTree;
     end;
-
-    ActiveProject.lstUnits.Remove(pFile);
-    pFile.Free;
-    ActiveProject.HasChanged := True;
-    frmProjectTree.BuildProjectTree;
   end;
 end;
 
 procedure TfrmLuaEditMain.actRemoveFromPrjExecute(Sender: TObject);
+var
+  pNode: PVirtualNode;
+  pData: PProjectTreeData;
+  pFile: TLuaEditFile;
 begin
-  DoRemoveFromPrjExecute;
+  pNode := frmProjectTree.vstProjectTree.GetFirstSelected();
+
+  if Assigned(pNode) then
+  begin
+    pData := frmProjectTree.vstProjectTree.GetNodeData(pNode);
+    pFile := pData.pLuaEditFile;
+
+    if Assigned(pFile) then
+      DoRemoveFromPrjExecute(pFile);
+  end;
 end;
 
 procedure TfrmLuaEditMain.Project1Click(Sender: TObject);
@@ -6857,452 +7443,6 @@ begin
   BrowseURL('http://luaedit.luaforge.net');
 end;
 
-procedure CallRemoteHookFunc(pSock: TSocket);
-var
-  sStackString: String;
-  x, Status: Integer;
-  BtnInfos: Integer;
-  Answer, CaretY: Integer;
-  Len, ItemCount: Integer;
-  AR: lua_Debug;
-  DbgBuffer: array[0..5000] of char;
-  DbgString: String;
-  DbgInt: Integer;
-  DbgLen: Integer;
-  Buffer: array[0..5000] of char;
-begin
-  if StopPressed then
-  begin
-    Answer := 1;
-    StopPressed := False;
-    TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).DebugInfos.iCurrentLineDebug := -1;
-  end
-  else
-    Answer := 0;
-
-  //sending Stop button status
-  Status := send(pSock, Answer, SizeOf(Answer), 0);
-  if Status <> SizeOf(Answer) then
-    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the stop button status');
-
-  //sending Pause button status
-  if PausePressed then
-    Answer := 1
-  else
-    Answer := 0;
-    
-  Status := send(pSock, Answer, SizeOf(Answer), 0);
-  if Status <> SizeOf(Answer) then
-    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the pause button status');
-
-  //sending RunToCursor button status
-  if RunToCursorPressed then
-    Answer := 1
-  else
-    Answer := 0;
-
-  Status := send(pSock, Answer, SizeOf(Answer), 0);
-  if Status <> SizeOf(Answer) then
-    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the RunToCursor button status');
-
-  //receiving the lua_debug structure
-  Status := recv(pSock, DbgInt, SizeOf(DbgInt), 0);
-  if Status <> SizeOf(DbgInt) then
-    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
-
-  // - 1 because of the lua debug bug!!!
-  AR.currentline := DbgInt - 1;
-
-  Status := recv(pSock, DbgInt, SizeOf(DbgInt), 0);
-  if Status <> SizeOf(DbgInt) then
-    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
-
-  AR.event := DbgInt;
-
-  Status := recv(pSock, DbgInt, SizeOf(DbgInt), 0);
-  if Status <> SizeOf(DbgInt) then
-    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
-
-  AR.i_ci := DbgInt;
-
-  Status := recv(pSock, DbgInt, SizeOf(DbgInt), 0);
-  if Status <> SizeOf(DbgInt) then
-    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
-
-  AR.linedefined := DbgInt;
-
-  Status := recv(pSock, DbgInt, SizeOf(DbgInt), 0);
-  if Status <> SizeOf(DbgInt) then
-    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
-
-  AR.nups := DbgInt;
-
-  FillChar(DbgBuffer, 5000, 0);
-  DbgString := '';
-  DbgLen := 0;
-
-  Status := recv(pSock, DbgLen, SizeOf(DbgLen), 0);
-  if Status <> SizeOf(DbgLen) then
-    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
-
-  Status := recv(pSock, DbgBuffer, DbgLen, 0);
-  if Status <> DbgLen then
-    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
-
-  DbgString := DbgBuffer;
-  if DbgString = '@@LUA_TNIL@@' then
-    AR.name := nil
-  else
-    AR.name := PChar(DbgString); 
-
-  FillChar(DbgBuffer, 5000, 0);
-  DbgString := '';
-  DbgLen := 0;
-
-  Status := recv(pSock, DbgLen, SizeOf(DbgLen), 0);
-  if Status <> SizeOf(DbgLen) then
-    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
-
-  Status := recv(pSock, DbgBuffer, DbgLen, 0);
-  if Status <> DbgLen then
-    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
-
-  DbgString := DbgBuffer;
-  if DbgString = '@@LUA_TNIL@@' then
-    AR.namewhat := nil
-  else
-    AR.namewhat := PChar(DbgString);
-
-  FillChar(DbgBuffer, 5000, 0);
-  DbgString := '';
-  DbgLen := 0;
-
-  Status := recv(pSock, DbgLen, SizeOf(DbgLen), 0);
-  if Status <> SizeOf(DbgLen) then
-    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
-
-  Status := recv(pSock, DbgBuffer, DbgLen, 0);
-  if Status <> DbgLen then
-    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
-
-  DbgString := DbgBuffer;
-  if DbgString = '@@LUA_TNIL@@' then
-    AR.short_src := ''
-  else
-    StrPCopy(AR.short_src, DbgString[1]);
-
-  FillChar(DbgBuffer, 5000, 0);
-  DbgString := '';
-  DbgLen := 0;
-
-  Status := recv(pSock, DbgLen, SizeOf(DbgLen), 0);
-  if Status <> SizeOf(DbgLen) then
-    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
-
-  Status := recv(pSock, DbgBuffer, DbgLen, 0);
-  if Status <> DbgLen then
-    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
-
-  DbgString := DbgBuffer;
-  if DbgString = '@@LUA_TNIL@@' then
-    AR.source := nil
-  else
-    AR.source := PChar(DbgString);
-
-  FillChar(DbgBuffer, 5000, 0);
-  DbgString := '';
-  DbgLen := 0;
-
-  Status := recv(pSock, DbgLen, SizeOf(DbgLen), 0);
-  if Status <> SizeOf(DbgLen) then
-    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
-
-  Status := recv(pSock, DbgBuffer, DbgLen, 0);
-  if Status <> DbgLen then
-    raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving a field of the PLua_Debug structure');
-
-  DbgString := DbgBuffer;
-  if DbgString = '@@LUA_TNIL@@' then
-    AR.what := nil
-  else
-    AR.what := PChar(DbgString);
-
-  //Sending Current line informations...
-  if TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).DebugInfos.IsBreakPointLine(AR.currentline) then
-  begin
-    Answer := 1;
-    frmLuaEditMain.Running := False;
-    WaitInCallLevel := -1;
-  end
-  else if FirstLineStop then
-  begin
-    FirstLineStop := False;
-    Answer := 1;
-    frmLuaEditMain.Running := False;
-    WaitInCallLevel := -1;
-  end
-  else
-    Answer := 0;
-
-  Status := send(pSock, Answer, SizeOf(Answer), 0);
-  if Status <> SizeOf(Answer) then
-    ELuaEditException.Create('Remote Debug Failed: The operation failed while sending Current line informations');
-
-  //sending Caret Y...
-  CaretY := TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).synUnit.CaretY;
-  Status := send(pSock, CaretY, SizeOf(CaretY), 0);
-  if Status <> SizeOf(CaretY) then
-    raise ELuaEditException.Create('Remote Debug Failed: The opertion failed while sending the caret y position');
-
-  if ((RunToCursorPressed = True) and (AR.currentline = TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).synUnit.CaretY)) then
-  begin
-    RunToCursorPressed := False;
-    frmLuaEditMain.Running := False;
-    WaitInCallLevel := -1;
-  end
-  else if ((RunToCursorPressed = True) and not frmLuaEditMain.Running) then
-  begin
-    frmLuaEditMain.Running := True;
-  end;
-
-  if (not frmLuaEditMain.Running and (StopPressed = False)) then
-  begin
-    frmStack.lstCallStack.Items.Assign(Main.lstStack);
-    frmStack.lstCallStack.Refresh;
-    lstLuaStack.Clear;
-
-    //receiving item numbers...
-    Status := recv(pSock, ItemCount, SizeOf(ItemCount), 0);
-    if Status <> SizeOf(ItemCount) then
-      raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the number of item for the lua stack');
-
-    //receiving items values
-    for x := 0 to ItemCount - 1 do
-    begin
-      FillChar(Buffer, SizeOf(Buffer), 0);
-      Len := 0;
-
-      Status := recv(pSock, Len, SizeOf(Len), 0);
-      if Status <> SizeOf(Len) then
-        raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the length of an item value for the lua stack');
-
-      Status := recv(pSock, Buffer, Len, 0);
-      if Status <> Len then
-        raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the value of an item for the lua stack');
-
-      lstLuaStack.Add(Buffer);
-    end;
-
-    frmLuaStack.lstLuaStack.Items.Assign(Main.lstLuaStack);
-    frmLuaStack.lstLuaStack.Refresh;
-  end;
-
-  Case AR.event of
-    LUA_HOOKCALL:
-    begin
-      if AR.name <> nil then
-      begin
-        //receiving sStackString...
-        FillChar(Buffer, SizeOf(Buffer), 0);
-        Len := 0;
-
-        Status := recv(pSock, Len, SizeOf(Len), 0);
-        if Status <> SizeOf(Len) then
-          raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the length of the sStackString value');
-
-        Status := recv(pSock, Buffer, Len, 0);
-        if Status <> Len then
-          raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the sStackString value');
-
-        sStackString := Buffer;
-
-        lstStack.Add(sStackString);
-      end;
-      Inc(CallLevel);
-    end;
-    LUA_HOOKRET:
-    begin
-      if AR.name <> nil then
-      begin
-        lstStack.Delete(lstStack.Count - 1);
-        StepIntoPressed := False;
-      end;
-      Dec(CallLevel);
-    end;
-    LUA_HOOKLINE:
-    begin
-      if ((WaitInCallLevel <> -1) and (PausePressed = False)) then
-      begin
-        if CallLevel > WaitInCallLevel then
-        begin
-          Exit;
-        end
-        else
-        begin
-          WaitInCallLevel := -1;
-        end;
-      end;
-      
-      if (not frmLuaEditMain.Running or (PausePressed = True)) then
-      begin
-        TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).synUnit.GotoLineAndCenter(AR.currentline);
-        TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).DebugInfos.iCurrentLineDebug := AR.currentline;
-        TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).synUnit.Refresh;
-        frmStack.lstCallStack.Items.Assign(Main.lstStack);
-        lstLuaStack.Clear;
-        lstLocals.Clear;
-        lstGlobals.Clear;
-
-        //receiving items numbers...
-        Status := recv(pSock, ItemCount, SizeOf(ItemCount), 0);
-        if Status <> SizeOf(ItemCount) then
-          raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the number of item for the lua stack');
-
-        //receiving items values
-        for x := 0 to ItemCount - 1 do
-        begin
-          FillChar(Buffer, SizeOf(Buffer), 0);
-          Len := 0;
-
-          Status := recv(pSock, Len, SizeOf(Len), 0);
-          if Status <> SizeOf(Len) then
-            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the length of an item value for the lua stack');
-
-          Status := recv(pSock, Buffer, Len, 0);
-          if Status <> Len then
-            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the value of an item for the lua stack');
-
-          lstLuaStack.Add(Buffer);
-        end;
-
-        //receiving locals numbers...
-        Status := recv(pSock, ItemCount, SizeOf(ItemCount), 0);
-        if Status <> SizeOf(ItemCount) then
-          raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the number of locals to get');
-
-        //receiving locals values
-        for x := 0 to ItemCount - 1 do
-        begin
-          FillChar(Buffer, SizeOf(Buffer), 0);
-          Len := 0;
-
-          Status := recv(pSock, Len, SizeOf(Len), 0);
-          if Status <> SizeOf(Len) then
-            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the length of a local value');
-
-          Status := recv(pSock, Buffer, Len, 0);
-          if Status <> Len then
-            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the value of a local');
-
-          lstLocals.Add(Buffer);
-        end;
-
-        //receiving globals numbers...
-        Status := recv(pSock, ItemCount, SizeOf(ItemCount), 0);
-        if Status <> SizeOf(ItemCount) then
-          raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the number of globals to get');
-
-        //receiving globals values
-        for x := 0 to ItemCount - 1 do
-        begin
-          FillChar(Buffer, SizeOf(Buffer), 0);
-          Len := 0;
-
-          Status := recv(pSock, Len, SizeOf(Len), 0);
-          if Status <> SizeOf(Len) then
-            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the length of a global value');
-
-          Status := recv(pSock, Buffer, Len, 0);
-          if Status <> Len then
-            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while receiving the value of a global');
-
-          lstGlobals.Add(Buffer);
-        end;
-
-        frmLuaStack.lstLuaStack.Items.Assign(Main.lstLuaStack);
-
-        if PausePressed then
-        begin
-          frmLuaEditMain.Running := False;
-          StepOverPressed := False;
-          StepIntoPressed := False;
-          PlayPressed := False;
-          PausePressed := False;
-        end;
-
-        //Waiting for user action...
-        while ((StepOverPressed = False) and (StepIntoPressed = False) and (PlayPressed = False) and (StopPressed = False)) do
-        begin
-          Application.ProcessMessages;
-          Sleep(20);
-        end;
-
-        //Send pressed button informations
-        if StepOverPressed then
-        begin
-          BtnInfos := LUA_DBGSTEPOVER;
-          Status := send(pSock, BtnInfos, SizeOf(BtnInfos), 0);
-          if Status <> SizeOf(BtnInfos) then
-            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the pressed button informations');
-        end
-        else if StepIntoPressed then
-        begin
-          BtnInfos := LUA_DBGSTEPINTO;
-          Status := send(pSock, BtnInfos, SizeOf(BtnInfos), 0);
-          if Status <> SizeOf(BtnInfos) then
-            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the pressed button informations');
-        end
-        else if PlayPressed then
-        begin
-          BtnInfos := LUA_DBGPLAY;
-          Status := send(pSock, BtnInfos, SizeOf(BtnInfos), 0);
-          if Status <> SizeOf(BtnInfos) then
-            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the pressed button informations');
-        end
-        else if StopPressed then
-        begin
-          BtnInfos := LUA_DBGSTOP;
-          Status := send(pSock, BtnInfos, SizeOf(BtnInfos), 0);
-          if Status <> SizeOf(BtnInfos) then
-            raise ELuaEditException.Create('Remote Debug Failed: The operation failed while sending the pressed button informations');
-        end;
-
-        if HasChangedWhileCompiled then
-        begin
-          if Application.MessageBox('Source has been modified. Recompile?', 'LuaEdit', MB_YESNO+MB_ICONQUESTION) = IDYES then
-          begin
-            Answer := 1;
-            StopPressed := True;
-          end
-          else
-          begin
-            Answer := 0;
-            HasChangedWhileCompiled := False;
-          end;
-        end
-        else
-          Answer := 0;
-
-        //sending changing status...
-        Status := send(pSock, Answer, SizeOf(Answer), 0);
-        if Status <> SizeOf(Answer) then
-          ELuaEditException.Create('Remote Debug Failed: The operation failed while sending changing status');
-
-        if StepOverPressed = True then
-        begin
-          WaitInCallLevel := CallLevel;
-          TLuaEditUnit(frmLuaEditMain.jvUnitBar.SelectedTab.Data).DebugInfos.iCurrentLineDebug := -1;
-        end;
-
-        StepOverPressed := False;
-        StepIntoPressed := False;
-        PlayPressed := False;
-        PausePressed := False;
-      end;
-    end;
-  end;
-end;
-
 procedure TfrmLuaEditMain.ContributorsList1Click(Sender: TObject);
 begin
   frmContributors.ShowModal();
@@ -7336,13 +7476,6 @@ begin
   end
   else
     Application.MessageBox(PChar('Cannot open file "'+WordAtCursor+'"'), 'LuaEdit', MB_OK+MB_ICONERROR);
-end;
-
-function LocalOutput(L: PLua_State): Integer; cdecl;
-begin
-  //prints out here!
-  lua_print(L);
-  Result := 0;
 end;
 
 procedure TfrmLuaEditMain.ppmEditorPopup(Sender: TObject);
@@ -7413,49 +7546,58 @@ begin
   begin
     if Assigned(jvUnitBar.SelectedTab.Data) then
     begin
-      pLuaUnit := TLuaEditUnit(jvUnitBar.SelectedTab.Data);
-
-      if not DoSaveExecute then
-        Exit;
-
-      // Prompt user for the output file path
-      if pLuaUnit.PrjOwner.sCompileDirectory = '' then
+      if TLuaEditFile(jvUnitBar.SelectedTab.Data).FileType in LuaEditDebugFilesTypeSet then
       begin
-        sdlgCompileOut.FileName := ChangeFileExt(pLuaUnit.Name, pLuaUnit.PrjOwner.sCompileExtension);
-        sdlgCompileOut.InitialDir := ExtractFileDir(pLuaUnit.Path);
+        pLuaUnit := TLuaEditUnit(jvUnitBar.SelectedTab.Data);
 
-        if not sdlgCompileOut.Execute then
+        if not DoSaveExecute(pLuaUnit) then
+        begin
+          frmLuaEditMessages.Put('Could not compile script "'+pLuaUnit.DisplayPath+'" because the file could not be saved or the action has been canceled.', LUAEDIT_WARNING_MSG);
           Exit;
+        end;
 
-        sFileOut := sdlgCompileOut.FileName;
-      end
-      else
-        sFileOut := pLuaUnit.PrjOwner.sCompileDirectory + ChangeFileExt(pLuaUnit.Name, pLuaUnit.PrjOwner.sCompileExtension);
+        // Prompt user for the output file path
+        if pLuaUnit.PrjOwner.sCompileDirectory = '' then
+        begin
+          sdlgCompileOut.FileName := ChangeFileExt(pLuaUnit.Name, pLuaUnit.PrjOwner.sCompileExtension);
+          sdlgCompileOut.InitialDir := ExtractFileDir(pLuaUnit.Path);
 
-      // Initialize createprocess variables for call
-      Screen.Cursor := crHourGlass;
-      ShowDockForm(frmLuaEditMessages);
-      frmLuaEditMessages.Put('Begin of Script Compilation - '+DateTimeToStr(Now), LUAEDIT_HINT_MSG);
-      FillChar(si, sizeof(si), 0);
-      si.cb := sizeof(si);
-      sCmd := PChar('"' + GetLuaEditInstallPath() + '\luac.exe" -l -o "' + sFileOut + '" "' + pLuaUnit.Path + '"');
+          if not sdlgCompileOut.Execute then
+          begin
+            frmLuaEditMessages.Put('Could not compile script "'+pLuaUnit.DisplayPath+'" because no output path/name was specified.', LUAEDIT_WARNING_MSG);
+            Exit;
+          end;
 
-      // Call luac application to compile (hidden process)
-      CreateProcess(nil, sCmd, nil, nil, True, CREATE_NO_WINDOW, nil, nil, si, pi);
+          sFileOut := sdlgCompileOut.FileName;
+        end
+        else
+          sFileOut := pLuaUnit.PrjOwner.sCompileDirectory + ChangeFileExt(pLuaUnit.Name, pLuaUnit.PrjOwner.sCompileExtension);
 
-      // Wait until the process is done
-      stbMain.Panels[5].Text := 'Compiling Script... Please Wait';
-      stbMain.Refresh;
-      frmLuaEditMessages.Put('Compiling Script... Please Wait - '+DateTimeToStr(Now), LUAEDIT_HINT_MSG);
-      Application.ProcessMessages;
+        // Initialize createprocess variables for call
+        Screen.Cursor := crHourGlass;
+        ShowDockForm(frmLuaEditMessages);
+        frmLuaEditMessages.Put('Begin of Script Compilation - '+DateTimeToStr(Now), LUAEDIT_HINT_MSG);
+        FillChar(si, sizeof(si), 0);
+        si.cb := sizeof(si);
+        sCmd := PChar('"' + GetLuaEditInstallPath() + '\luac.exe" -l -o "' + sFileOut + '" "' + pLuaUnit.Path + '"');
 
-      WaitForSingleObject(pi.hProcess, INFINITE);
+        // Call luac application to compile (hidden process)
+        CreateProcess(nil, sCmd, nil, nil, True, CREATE_NO_WINDOW, nil, nil, si, pi);
 
-      stbMain.Panels[5].Text := '';
-      stbMain.Refresh;
-      frmLuaEditMessages.Put('End of Script Compilation - '+DateTimeToStr(Now), LUAEDIT_HINT_MSG);
-      Screen.Cursor := crDefault;
-      Application.ProcessMessages;
+        // Wait until the process is done
+        stbMain.Panels[5].Text := 'Compiling Script... Please Wait';
+        stbMain.Refresh;
+        frmLuaEditMessages.Put('Compiling Script... Please Wait - '+DateTimeToStr(Now), LUAEDIT_HINT_MSG);
+        Application.ProcessMessages;
+
+        WaitForSingleObject(pi.hProcess, INFINITE);
+
+        stbMain.Panels[5].Text := '';
+        stbMain.Refresh;
+        frmLuaEditMessages.Put('End of Script Compilation - '+DateTimeToStr(Now), LUAEDIT_HINT_MSG);
+        Screen.Cursor := crDefault;
+        Application.ProcessMessages;
+      end;
     end;
   end;
 end;
@@ -7530,57 +7672,6 @@ end;
 procedure TfrmLuaEditMain.actCheckSyntaxExecute(Sender: TObject);
 begin
   DoCheckSyntaxExecute;
-end;
-
-// Return the value of a given local variable
-function TfrmLuaEditMain.GetValue(Name: string): string;
-begin
-  Result := '[ERROR] Undeclared Identifier';
-
-  if lstLocals.Values[Name] <> ''  then
-    Result := lstLocals.Values[Name]
-  else if lstGlobals.Values[Name] <> '' then
-    Result := lstGlobals.Values[Name];
-end;
-
-// Find a unit among all opened unit (wich are placed in tabs...)
-function TfrmLuaEditMain.FindUnitInTabs(pLuaEditBasicTextFile: TLuaEditBasicTextFile): TLuaEditBasicTextFile;
-var
-  x: Integer;
-begin
-  Result := nil;
-
-  for x := 0 to jvUnitBar.Tabs.Count - 1 do
-  begin
-    if Assigned(jvUnitBar.Tabs[x].Data) then
-    begin
-      if TLuaEditBasicTextFile(jvUnitBar.Tabs[x].Data) = pLuaEditBasicTextFile then
-      begin
-        Result := TLuaEditBasicTextFile(jvUnitBar.Tabs[x].Data); // Return the unit data object
-        Exit; // No need to go further cause we found the unit
-      end;
-    end;
-  end;
-end;
-
-// Find a unit among all opened unit (wich are placed in tabs...)
-function TfrmLuaEditMain.FindUnitInTabsStr(sUnitName: String): TLuaEditBasicTextFile;
-var
-  x: Integer;
-begin
-  Result := nil;
-
-  for x := 0 to jvUnitBar.Tabs.Count - 1 do
-  begin
-    if Assigned(jvUnitBar.Tabs[x].Data) then
-    begin
-      if TLuaEditBasicTextFile(jvUnitBar.Tabs[x].Data).Path = sUnitName then
-      begin
-        Result := TLuaEditBasicTextFile(jvUnitBar.Tabs[x].Data); // Return the unit data object
-        Exit; // No need to go further cause we found the unit
-      end;
-    end;
-  end;
 end;
 
 // check the syntax of the current unit

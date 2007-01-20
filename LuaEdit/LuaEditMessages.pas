@@ -52,6 +52,10 @@ begin
   pData.MsgType := MsgType;
   pData.LineNumber := LineNumber;
 
+  // Popup luaedit messages window if it's an error message
+  if MsgType = LUAEDIT_ERROR_MSG then
+    Self.Show;
+
   vstLuaEditMessages.FullExpand();
   Result := pNode;
 end;
@@ -67,6 +71,10 @@ begin
   pData.MsgText := MsgText;
   pData.MsgType := MsgType;
   pData.LineNumber := LineNumber;
+
+  // Popup luaedit messages window if it's an error message
+  if MsgType = LUAEDIT_ERROR_MSG then
+    Self.Show;
 
   vstLuaEditMessages.FullExpand();
   Result := pNode;

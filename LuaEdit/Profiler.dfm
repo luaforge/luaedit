@@ -1,7 +1,7 @@
 object frmProfiler: TfrmProfiler
   Left = 356
   Top = 236
-  Width = 612
+  Width = 862
   Height = 211
   BorderStyle = bsSizeToolWin
   Caption = 'Profiler'
@@ -14,6 +14,7 @@ object frmProfiler: TfrmProfiler
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   Font.Style = []
+  FormStyle = fsStayOnTop
   OldCreateOrder = False
   Position = poOwnerFormCenter
   OnCreate = FormCreate
@@ -23,7 +24,7 @@ object frmProfiler: TfrmProfiler
   object vstLuaProfiler: TVirtualStringTree
     Left = 0
     Top = 0
-    Width = 604
+    Width = 854
     Height = 184
     Align = alClient
     Header.AutoSizeIndex = 0

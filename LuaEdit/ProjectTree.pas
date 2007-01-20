@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ComCtrls, CommCtrl, ExtCtrls, ImgList, Menus, JvComponent, ShellAPI,
-  JvDockControlForm, JvExComCtrls, JvComCtrls, JvDotNetControls, Main, Misc,
+  JvDockControlForm, JvExComCtrls, JvComCtrls, JvDotNetControls, Misc,
   VirtualTrees;
 
 type
@@ -35,6 +35,8 @@ type
     vstProjectTree: TVirtualDrawTree;
     SystemImages: TImageList;
     StatesImages: TImageList;
+    N3: TMenuItem;
+    SaveAs1: TMenuItem;
     procedure UnloadFileProject1Click(Sender: TObject);
     procedure ppmProjectTreePopup(Sender: TObject);
     procedure vstProjectTreeGetNodeDataSize(Sender: TBaseVirtualTree; var NodeDataSize: Integer);
@@ -47,6 +49,8 @@ type
     procedure vstProjectTreeDrawNode(Sender: TBaseVirtualTree; const PaintInfo: TVTPaintInfo);
     procedure FormCreate(Sender: TObject);
     procedure vstProjectTreeInitNode(Sender: TBaseVirtualTree; ParentNode, Node: PVirtualNode; var InitialStates: TVirtualNodeInitStates);
+    procedure N3Click(Sender: TObject);
+    procedure SaveAs1Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -58,6 +62,8 @@ var
   frmProjectTree: TfrmProjectTree;
 
 implementation
+
+uses Main;
 
 {$R *.dfm}
 
@@ -142,7 +148,7 @@ begin
 
       if pFile.IsLoaded then
       begin
-        frmLuaEditMain.PopUpUnitToScreen(pFile.Path);
+        frmLuaEditMain.PopUpUnitToScreen(pFile.DisplayPath);
       end;
     end
     else if pData.pLuaEditFile.FileType = otLuaEditForm then
@@ -505,7 +511,8 @@ var
   pData: PProjectTreeData;
   pNode: PVirtualNode;
 begin
-  pNode := vstProjectTree.GetFirstSelected;
+  frmLuaEditMain.CheckButtons();
+  pNode := vstProjectTree.GetFirstSelected();
   mnuFindTarget.Enabled := Assigned(pNode);
 
   if Assigned(pNode) then
@@ -715,6 +722,48 @@ begin
   end
   else
     GetOpenAndClosedIcons(pData.pLuaEditFile.Path, pData.OpenIndex, pData.CloseIndex);
+end;
+
+procedure TfrmProjectTree.N3Click(Sender: TObject);
+var
+  pNode: PVirtualNode;
+  pData: PProjectTreeData;
+begin
+  pNode := vstProjectTree.GetFirstSelected();
+
+  if Assigned(pNode) then
+  begin
+    pData := vstProjectTree.GetNodeData(pNode);
+
+    if TLuaEditFile(pData).FileType = otLuaEditProject then
+      if SaveProjectsInc then
+        TLuaEditProject(pData).SaveInc(TLuaEditProject(pData).Path)
+      else
+        TLuaEditProject(pData).Save(TLuaEditProject(pData).Path)
+    else
+      frmLuaEditMain.DoSaveExecute(TLuaEditBasicTextFile(pData));
+  end;
+end;
+
+procedure TfrmProjectTree.SaveAs1Click(Sender: TObject);
+var
+  pNode: PVirtualNode;
+  pData: PProjectTreeData;
+begin
+  pNode := vstProjectTree.GetFirstSelected();
+
+  if Assigned(pNode) then
+  begin
+    pData := vstProjectTree.GetNodeData(pNode);
+
+    if TLuaEditFile(pData).FileType = otLuaEditProject then
+      if SaveProjectsInc then
+        TLuaEditProject(pData).SaveInc(TLuaEditProject(pData).Path, False, True)
+      else
+        TLuaEditProject(pData).Save(TLuaEditProject(pData).Path, False, True)
+    else
+      frmLuaEditMain.DoSaveAsExecute(TLuaEditBasicTextFile(pData));
+  end;
 end;
 
 end.

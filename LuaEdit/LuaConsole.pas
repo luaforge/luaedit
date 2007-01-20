@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, ComCtrls, ExtCtrls, JvComponent, JvDockControlForm,
-  VirtualTrees, Menus, Clipbrd, Lua, LuaUtils;
+  VirtualTrees, Menus, Clipbrd, lua, lauxlib, luaconf, LuaUtils;
 
 type
   PLuaConsoleLine = ^TPLuaConsoleLine;

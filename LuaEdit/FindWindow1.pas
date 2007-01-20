@@ -198,7 +198,7 @@ procedure TfrmFindWindow1.lvwResultDblClick(Sender: TObject);
 begin
   // Bring the file in the editor and go directly to the line where it's defined
   if Assigned(lvwResult.Selected) then
-    frmLuaEditMain.PopUpUnitToScreen(lvwResult.Selected.Caption, StrToInt(lvwResult.Selected.SubItems[0]), False, HIGHLIGHT_STACK);
+    frmLuaEditMain.PopUpUnitToScreen(lvwResult.Selected.Caption, StrToInt(lvwResult.Selected.SubItems[0]), False, HIGHLIGHT_SELECT);
 end;
 
 end.

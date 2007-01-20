@@ -122,8 +122,8 @@ object frmLuaEditMain: TfrmLuaEditMain
             AutoFreeClosed = False
             SelectBeforeClose = True
             AllowTabMoving = True
-            Tabs = <>
             Painter = jvModernUnitBarPainter
+            Tabs = <>
             OnTabClosed = jvUnitBarTabClosed
             OnTabSelecting = jvUnitBarTabSelecting
             OnChange = jvUnitBarChange
@@ -145,7 +145,7 @@ object frmLuaEditMain: TfrmLuaEditMain
     TabOrder = 1
     OnDockOver = ctrlBarDockOver
     object tlbRun: TToolBar
-      Left = 389
+      Left = 387
       Top = 2
       Width = 283
       Height = 22
@@ -255,7 +255,7 @@ object frmLuaEditMain: TfrmLuaEditMain
     object tlbBaseFile: TToolBar
       Left = 11
       Top = 2
-      Width = 365
+      Width = 352
       Height = 22
       Align = alLeft
       AutoSize = True
@@ -798,8 +798,8 @@ object frmLuaEditMain: TfrmLuaEditMain
     end
     object actRemoveFromPrj: TAction
       Category = 'Project Manipulations'
-      Caption = 'Remove File From Project...'
-      Hint = 'Remove File from Project...'
+      Caption = 'Remove File From Project'
+      Hint = 'Remove File from Project'
       ImageIndex = 36
       ShortCut = 8315
       OnExecute = actRemoveFromPrjExecute
@@ -924,12 +924,12 @@ object frmLuaEditMain: TfrmLuaEditMain
       ImageIndex = 49
       OnExecute = actShowLuaStackExecute
     end
-    object actShowLuaOutput: TAction
+    object actShowLuaConsole: TAction
       Category = 'View Actions'
-      Caption = 'Lua Output'
-      Hint = 'Show Lua Output'
+      Caption = 'Lua Console'
+      Hint = 'Show Lua Console'
       ImageIndex = 48
-      OnExecute = actShowLuaOutputExecute
+      OnExecute = actShowLuaConsoleExecute
     end
     object actShowLuaGlobals: TAction
       Category = 'View Actions'
@@ -1081,7 +1081,7 @@ object frmLuaEditMain: TfrmLuaEditMain
     Left = 48
     Top = 217
     Bitmap = {
-      494C010148004A00040010001000FF00FF00FF00FFFFFFFFFFFFFFFF424D3600
+      494C010148004A00040010001000FF00FF00FF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003001000001002000000000000030
       0100000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -3593,7 +3593,8 @@ object frmLuaEditMain: TfrmLuaEditMain
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
-      00000000000000000000000000000000}
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000}
   end
   object odlgOpenUnit: TOpenDialog
     Filter = 
@@ -4828,9 +4829,6 @@ object frmLuaEditMain: TfrmLuaEditMain
       object N27: TMenuItem
         Caption = '-'
       end
-      object BringGUIFormtoFront1: TMenuItem
-        Action = actBringGUIFormToFront
-      end
     end
     object View1: TMenuItem
       Action = actMainMenuView
@@ -4876,7 +4874,7 @@ object frmLuaEditMain: TfrmLuaEditMain
           Action = actShowLuaStack
         end
         object LuaOutput1: TMenuItem
-          Action = actShowLuaOutput
+          Action = actShowLuaConsole
         end
         object LuaGlobals1: TMenuItem
           Action = actShowLuaGlobals
@@ -4904,6 +4902,12 @@ object frmLuaEditMain: TfrmLuaEditMain
         object Run1: TMenuItem
           Caption = 'Run'
         end
+      end
+      object N28: TMenuItem
+        Caption = '-'
+      end
+      object BringGUIFormtoFront1: TMenuItem
+        Action = actBringGUIFormToFront
       end
     end
     object Project2: TMenuItem
@@ -5123,5 +5127,10 @@ object frmLuaEditMain: TfrmLuaEditMain
     Options = [ofOverwritePrompt, ofHideReadOnly, ofEnableSizing]
     Left = 144
     Top = 249
+  end
+  object XMLDocument1: TXMLDocument
+    Left = 184
+    Top = 200
+    DOMVendorDesc = 'MSXML'
   end
 end

@@ -258,7 +258,7 @@ object frmEditorSettings: TfrmEditorSettings
           Top = 56
           Width = 161
           Height = 17
-          Caption = 'Save Units Incrementally'
+          Caption = 'Save Files Incrementally'
           TabOrder = 4
         end
         object chkSaveBreakpoints: TCheckBox
